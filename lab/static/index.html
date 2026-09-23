@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Duck Lab</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">🦆</span>
+      <div>
+        <h1>Duck Lab</h1>
+        <p class="sub">An open-source voice agent, running on this Mac</p>
+      </div>
+    </div>
+    <div class="status" id="status" data-state="stopped">
+      <span class="dot"></span><span id="status-text">Agent stopped</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- The relay race: each stage lights up while it works -->
+    <section class="card relay" aria-labelledby="relay-h">
+      <div class="card-head">
+        <h2 id="relay-h">The relay race</h2>
+        <p class="hint">Five small models pass your words along. Each lights up while it works.</p>
+      </div>
+      <ol class="stages" id="stages">
+        <li data-stage="listening"><span class="node"></span><b>Listening</b><small>Is someone talking?</small><em class="time">–</em></li>
+        <li data-stage="turn"><span class="node"></span><b>Turn check</b><small>Finished, or just a pause?</small><em class="time">–</em></li>
+        <li data-stage="stt"><span class="node"></span><b>Speech → text</b><small>Writes down your words</small><em class="time">–</em></li>
+        <li data-stage="thinking"><span class="node"></span><b>Thinking</b><small>The language model replies</small><em class="time">–</em></li>
+        <li data-stage="voice"><span class="node"></span><b>Voice</b><small>Turns the reply into sound</small><em class="time">–</em></li>
+      </ol>
+      <div class="headline">
+        <span>End of your speech → first sound</span>
+        <strong id="total">–</strong>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Conversation -->
+      <section class="card convo" aria-labelledby="convo-h">
+        <div class="card-head">
+          <h2 id="convo-h">Conversation</h2>
+          <button class="ghost small" id="clear-chat">Clear</button>
+        </div>
+        <div class="chat" id="chat" aria-live="polite">
+          <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
+        </div>
+        <div class="talk-row">
+          <button class="talk" id="talk" disabled aria-pressed="false">
+            <span class="mic" aria-hidden="true"></span>
+            <span id="talk-label">Tap to talk</span>
+          </button>
+          <label class="check">
+            <input type="checkbox" id="mute-while-speaking" checked>
+            <span>Mute my mic while it speaks <small>(keep on without headphones)</small></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="side">
+        <!-- Agent -->
+        <section class="card" aria-labelledby="agent-h">
+          <div class="card-head"><h2 id="agent-h">Brain</h2></div>
+          <label class="field">
+            <span>Language model</span>
+            <select id="model"></select>
+          </label>
+          <p class="hint" id="model-note"></p>
+          <div class="row">
+            <button class="primary" id="start">Start agent</button>
+            <button class="ghost" id="stop" disabled>Stop</button>
+          </div>
+        </section>
+
+        <!-- Voice & personality -->
+        <section class="card" aria-labelledby="persona-h">
+          <div class="card-head"><h2 id="persona-h">Voice &amp; personality</h2></div>
+          <label class="field">
+            <span>Voice</span>
+            <select id="voice"></select>
+          </label>
+          <label class="field">
+            <span>Personality <small>(instructions for the model)</small></span>
+            <select id="preset"></select>
+          </label>
+          <textarea id="instructions" rows="4" spellcheck="true"></textarea>
+          <div class="row">
+            <button class="ghost" id="apply">Apply</button>
+            <span class="hint" id="apply-note">Changes apply instantly, no restart.</span>
+          </div>
+        </section>
+
+        <!-- Tests -->
+        <section class="card" aria-labelledby="tests-h">
+          <div class="card-head"><h2 id="tests-h">Test questions</h2></div>
+          <p class="hint">Plays recorded questions into the agent, so every run is the same and you can compare settings.</p>
+          <button class="primary" id="run-tests" disabled>▶ Run test questions</button>
+          <div class="table-wrap">
+            <table class="results" id="results" hidden>
+              <thead><tr><th>#</th><th>Asked</th><th>Heard</th><th>Reply</th><th>Time</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <details class="card log">
+      <summary>Under the hood <small>(the agent's live log)</small></summary>
+      <pre id="log"></pre>
+    </details>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>
