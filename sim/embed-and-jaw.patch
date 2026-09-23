@@ -1,0 +1,56 @@
+diff --git a/app/src/App.jsx b/app/src/App.jsx
+index d75c6f2..4dc080e 100644
+--- a/app/src/App.jsx
++++ b/app/src/App.jsx
+@@ -61,7 +61,7 @@ export default function App() {
+     // The title menu opens right away and holds its own loading gate
+     // (central spinner) until logo, fonts, duck stage and game boot are
+     // in. ?boot=1 skips the title entirely - testing hook.
+-    if (params.get("boot") === "1") {
++    if (params.get("boot") === "1" || params.get("embed") === "1") {
+       useGame.setState({ prebootDone: true, entered: true, menuOpen: false });
+     } else {
+       useGame.setState({ prebootDone: true, menuOpen: true });
+@@ -75,6 +75,11 @@ export default function App() {
+     };
+   }, []);
+ 
++  // Duck Lab: ?embed=1 shows just the duck (no HUD, CRT or title menu).
++  if (new URLSearchParams(location.search).get("embed") === "1") {
++    return <GameCanvas />;
++  }
++
+   return (
+     <>
+       <GameCanvas />
+diff --git a/app/src/game/game.js b/app/src/game/game.js
+index da73538..6b37f54 100644
+--- a/app/src/game/game.js
++++ b/app/src/game/game.js
+@@ -1676,6 +1676,8 @@ async function boot({ scene, camera, renderer }) {
+   const QUACK_MS = 480;
+   let quackAt = -Infinity;
+   let padJaw = 0;
++  // Duck Lab: beak opening driven from outside (a voice agent), 0..1.
++  let externalJaw = 0;
+   const CHIRP_TAKES = "abcdefghijkl";
+   const VOICE_BANK = { classic: "duck1", charcoal: "duck2", purple: "duck3", blue: "duck4" };
+   function playChirp() {
+@@ -1717,7 +1719,7 @@ async function boot({ scene, camera, renderer }) {
+     // Runtime mouth-mode rule (main.rs: motor_targets[MOUTH] += offset):
+     // the policy's jaw is the BASE and the trigger/quack opening is an
+     // additive offset on top, clamped - it never fights the pick motion.
+-    return Math.min(1, pickJawNow() + Math.max(flap, padJaw));
++    return Math.min(1, pickJawNow() + Math.max(flap, padJaw, externalJaw));
+   }
+   function syncJaw() {
+     setJawOpen(rig, jawOpenNow());
+@@ -2223,6 +2225,8 @@ async function boot({ scene, camera, renderer }) {
+     get chaseYaw() { return { follow: chaseYawFollow, smooth: chaseYawSmooth, held: chaseHeldYaw, tracking: chaseYawTracking }; },
+     padOrbitStep,
+     jawOpenNow,
++    // Duck Lab hook: let a voice agent open the beak (0 = shut, 1 = wide).
++    setJaw: (v) => { externalJaw = Math.max(0, Math.min(1, Number(v) || 0)); },
+     step: async (n = 1) => { for (let i = 0; i < n; i++) await controlStep(); },
+     render: () => { syncRig(); renderer.render(scene, camera); },
+     frame: (dt = 1 / 60) => frame(dt),
