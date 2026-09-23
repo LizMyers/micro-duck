@@ -247,3 +247,6 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
   border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
 }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* The hidden attribute must win over display rules above. */
+[hidden] { display: none !important; }
