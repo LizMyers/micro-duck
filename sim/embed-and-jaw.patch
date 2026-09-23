@@ -1,7 +1,16 @@
 diff --git a/app/src/App.jsx b/app/src/App.jsx
-index d75c6f2..4dc080e 100644
+index d75c6f2..7d213e9 100644
 --- a/app/src/App.jsx
 +++ b/app/src/App.jsx
+@@ -10,7 +10,7 @@ import Hud from "./ui/Hud.jsx";
+ import TouchOverlay from "./ui/TouchOverlay.jsx";
+ import BiosOverlay from "./ui/BiosOverlay.jsx";
+ import TitleMenu from "./ui/TitleMenu.jsx";
+-import { useGame } from "./store.js";
++import { useGame, gameApi } from "./store.js";
+ 
+ export default function App() {
+   useEffect(() => {
 @@ -61,7 +61,7 @@ export default function App() {
      // The title menu opens right away and holds its own loading gate
      // (central spinner) until logo, fonts, duck stage and game boot are
@@ -11,18 +20,33 @@ index d75c6f2..4dc080e 100644
        useGame.setState({ prebootDone: true, entered: true, menuOpen: false });
      } else {
        useGame.setState({ prebootDone: true, menuOpen: true });
-@@ -75,6 +75,11 @@ export default function App() {
+@@ -75,6 +75,13 @@ export default function App() {
      };
    }, []);
  
 +  // Duck Lab: ?embed=1 shows just the duck (no HUD, CRT or title menu).
++  // The BIOS overlay normally cues the entrance draw-in; without it, cue it
++  // ourselves as soon as the game has booted.
 +  if (new URLSearchParams(location.search).get("embed") === "1") {
-+    return <GameCanvas />;
++    return <EmbedStage />;
 +  }
 +
    return (
      <>
        <GameCanvas />
+@@ -87,3 +94,12 @@ export default function App() {
+     </>
+   );
+ }
++
++function EmbedStage() {
++  useEffect(() => {
++    const start = () => gameApi.startEntrance?.();
++    if (useGame.getState().bootDone) return start();
++    return useGame.subscribe((s) => s.bootDone, (done) => done && start());
++  }, []);
++  return <GameCanvas />;
++}
 diff --git a/app/src/game/game.js b/app/src/game/game.js
 index da73538..6b37f54 100644
 --- a/app/src/game/game.js
