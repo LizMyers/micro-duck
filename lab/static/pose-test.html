@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Tuning page: shows the sim with a given mood pose, for screenshots.
+     /static/pose-test.html?mood=listening -->
+<html><head><style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%}</style></head>
+<body>
+<iframe id="sim" src="/sim/?embed=1"></iframe>
+<div hidden><span id="m"></span><span id="w"></span><span id="b"></span><span id="n"></span><span id="d"></span><span id="t"></span></div>
+<script type="module">
+import { DuckBody } from "/static/duck-body.js";
+const $ = (id) => document.getElementById(id);
+const body = new DuckBody({ iframe: $("sim"), moodEl: $("m"), whyEl: $("w"), beakBar: $("b"), beakNum: $("n"), headDot: $("d"), headText: $("t") });
+const p = new URLSearchParams(location.search);
+body.whenReady(() => setTimeout(() => {
+  body.setMood(p.get("mood") || "idle");
+  if (p.get("jaw")) body.jawOverride = +p.get("jaw");
+}, 3000));
+</script></body></html>

@@ -35,7 +35,37 @@ export class DuckBody {
     this.analyser = null;
     this.buf = null;
     this.timer = null;
+    this.jawOverride = null;   // set a number to hold the beak open (for tuning)
     requestAnimationFrame(() => this.tick());
+    // Once the simulator has booted and the entrance has played, face the duck.
+    this.iframe.addEventListener("load", () =>
+      this.whenReady(() => setTimeout(() => this.faceCamera(), 3000)));
+  }
+
+  // Portrait camera: stop the game's chase cam (which films the duck from behind)
+  // and place the camera in front of the duck, a little above eye level.
+  // Coordinates: MuJoCo is z-up; the 3D scene uses x, y-up, z = -mujoco_y.
+  faceCamera({ distance = 0.55, height = 0.22, lookHeight = 0.14 } = {}) {
+    const rl = this.rl;
+    if (!rl?.data || !rl.camera || !rl.controls) return false;
+    const q = rl.data.qpos;
+    // Heading (yaw) from the trunk quaternion (w, x, y, z) = qpos[3..6].
+    const [w, x, y, z] = [q[3], q[4], q[5], q[6]];
+    const yaw = Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z));
+    const cx = q[0], cz = -q[1];
+    rl.chaseCam = false;
+    rl.controls.target.set(cx, lookHeight, cz);
+    rl.camera.position.set(cx + Math.cos(yaw) * distance, height, cz - Math.sin(yaw) * distance);
+    rl.camera.lookAt(rl.controls.target);
+    rl.controls.update();
+    return true;
+  }
+
+  // Call once the simulator has booted and the duck has settled.
+  whenReady(fn, tries = 200) {
+    const rl = this.rl;
+    if (rl?.data && rl.camera && rl.headTarget) return fn(rl);
+    if (tries > 0) setTimeout(() => this.whenReady(fn, tries - 1), 250);
   }
 
   get rl() {
@@ -93,6 +123,7 @@ export class DuckBody {
     // Open quickly, close a little slower, so it reads as syllables, not flicker.
     const k = target > this.jaw ? 0.6 : 0.25;
     this.jaw += (target - this.jaw) * k;
+    if (this.jawOverride != null) this.jaw = this.jawOverride;
     this.rl?.setJaw?.(this.jaw);
     const pct = Math.round(this.jaw * 100);
     this.beakBar.style.width = `${pct}%`;
