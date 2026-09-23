@@ -5,3 +5,4 @@ __pycache__/
 .env
 recordings/
 microduck-press-kit/
+lab/prompts/*.wav
