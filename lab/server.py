@@ -36,6 +36,8 @@ HERE = Path(__file__).parent
 STATIC = HERE / "static"
 PROMPTS = HERE / "prompts"
 S2S_DIR = Path(os.environ.get("S2S_DIR", Path.home() / "Documents/Development/speech-to-speech"))
+# Pollen's Microduck browser simulator, built with VITE_BASE=/sim/ (see notes/02).
+SIM_DIST = Path(os.environ.get("SIM_DIST", Path.home() / "Documents/Development/microduck-simulator/app/dist"))
 HF_CACHE = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
 
 LAB_PORT = 8770
@@ -214,6 +216,7 @@ def options() -> dict:
     return {
         "models": [{**m, "cached": is_cached(m["id"])} for m in MODELS],
         "voices": VOICES,
+        "sim_url": "/sim/?embed=1" if SIM_DIST.exists() else None,
         "agent_url": f"ws://127.0.0.1:{AGENT_PORT}/v1/realtime",
         "tests": [{"text": t, "url": f"/prompts/prompt_{i:02d}.wav"} for i, t in enumerate(TEST_PROMPTS)],
     }
@@ -261,6 +264,8 @@ async def events() -> StreamingResponse:
 
 
 app.mount("/prompts", StaticFiles(directory=PROMPTS), name="prompts")
+if SIM_DIST.exists():
+    app.mount("/sim", StaticFiles(directory=SIM_DIST, html=True), name="sim")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

@@ -23,8 +23,55 @@
     </div>
   </header>
 
-  <main>
-    <!-- The relay race: each stage lights up while it works -->
+  <main class="quad">
+    <!-- ① Upper left: conversation -->
+    <section class="card convo" aria-labelledby="convo-h">
+      <div class="card-head">
+        <h2 id="convo-h">Conversation</h2>
+        <button class="ghost small" id="clear-chat">Clear</button>
+      </div>
+      <div class="chat" id="chat" aria-live="polite">
+        <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
+      </div>
+      <div class="talk-row">
+        <button class="talk" id="talk" disabled aria-pressed="false">
+          <span class="mic" aria-hidden="true"></span>
+          <span id="talk-label">Tap to talk</span>
+        </button>
+        <label class="check">
+          <input type="checkbox" id="mute-while-speaking" checked>
+          <span>Mute my mic while it speaks <small>(keep on without headphones)</small></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- ② Upper right: the duck and its body language -->
+    <section class="card duck" aria-labelledby="duck-h">
+      <div class="card-head">
+        <h2 id="duck-h">The duck</h2>
+        <span class="mood" id="mood" data-mood="idle">Idle</span>
+      </div>
+      <div class="sim-wrap">
+        <iframe id="sim" title="Microduck simulator" loading="eager"></iframe>
+        <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
+      </div>
+      <dl class="body-readout">
+        <div>
+          <dt>Beak</dt>
+          <dd><span class="meter"><span id="beak-meter"></span></span><span class="num" id="beak-num">0%</span></dd>
+        </div>
+        <div>
+          <dt>Head</dt>
+          <dd><span class="head-dial" aria-hidden="true"><span id="head-dot"></span></span><span id="head-text">neutral</span></dd>
+        </div>
+        <div>
+          <dt>Why</dt>
+          <dd id="mood-why">Waiting for someone to talk.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ③ Lower left: the relay race -->
     <section class="card relay" aria-labelledby="relay-h">
       <div class="card-head">
         <h2 id="relay-h">The relay race</h2>
@@ -43,75 +90,56 @@
       </div>
     </section>
 
-    <div class="grid">
-      <!-- Conversation -->
-      <section class="card convo" aria-labelledby="convo-h">
-        <div class="card-head">
-          <h2 id="convo-h">Conversation</h2>
-          <button class="ghost small" id="clear-chat">Clear</button>
-        </div>
-        <div class="chat" id="chat" aria-live="polite">
-          <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
-        </div>
-        <div class="talk-row">
-          <button class="talk" id="talk" disabled aria-pressed="false">
-            <span class="mic" aria-hidden="true"></span>
-            <span id="talk-label">Tap to talk</span>
-          </button>
-          <label class="check">
-            <input type="checkbox" id="mute-while-speaking" checked>
-            <span>Mute my mic while it speaks <small>(keep on without headphones)</small></span>
-          </label>
-        </div>
-      </section>
-
-      <div class="side">
-        <!-- Agent -->
-        <section class="card" aria-labelledby="agent-h">
-          <div class="card-head"><h2 id="agent-h">Brain</h2></div>
-          <label class="field">
-            <span>Language model</span>
-            <select id="model"></select>
-          </label>
-          <p class="hint" id="model-note"></p>
-          <div class="row">
-            <button class="primary" id="start">Start agent</button>
-            <button class="ghost" id="stop" disabled>Stop</button>
-          </div>
-        </section>
-
-        <!-- Voice & personality -->
-        <section class="card" aria-labelledby="persona-h">
-          <div class="card-head"><h2 id="persona-h">Voice &amp; personality</h2></div>
-          <label class="field">
-            <span>Voice</span>
-            <select id="voice"></select>
-          </label>
-          <label class="field">
-            <span>Personality <small>(instructions for the model)</small></span>
-            <select id="preset"></select>
-          </label>
-          <textarea id="instructions" rows="4" spellcheck="true"></textarea>
-          <div class="row">
-            <button class="ghost" id="apply">Apply</button>
-            <span class="hint" id="apply-note">Changes apply instantly, no restart.</span>
-          </div>
-        </section>
-
-        <!-- Tests -->
-        <section class="card" aria-labelledby="tests-h">
-          <div class="card-head"><h2 id="tests-h">Test questions</h2></div>
-          <p class="hint">Plays recorded questions into the agent, so every run is the same and you can compare settings.</p>
-          <button class="primary" id="run-tests" disabled>▶ Run test questions</button>
-          <div class="table-wrap">
-            <table class="results" id="results" hidden>
-              <thead><tr><th>#</th><th>Asked</th><th>Heard</th><th>Reply</th><th>Time</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
+    <!-- ④ Lower right: settings and tests, in tabs -->
+    <section class="card controls" aria-label="Settings and tests">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-brain" aria-selected="true" aria-controls="panel-brain">Brain</button>
+        <button role="tab" id="tab-voice" aria-selected="false" aria-controls="panel-voice">Voice &amp; personality</button>
+        <button role="tab" id="tab-tests" aria-selected="false" aria-controls="panel-tests">Tests</button>
       </div>
-    </div>
+
+      <div role="tabpanel" id="panel-brain" aria-labelledby="tab-brain">
+        <label class="field">
+          <span>Language model</span>
+          <select id="model"></select>
+        </label>
+        <p class="hint" id="model-note"></p>
+        <div class="row">
+          <button class="primary" id="start">Start agent</button>
+          <button class="ghost" id="stop" disabled>Stop</button>
+        </div>
+        <p class="hint">Starting takes about 3 minutes while the models load.</p>
+      </div>
+
+      <div role="tabpanel" id="panel-voice" aria-labelledby="tab-voice" hidden>
+        <label class="field">
+          <span>Voice</span>
+          <select id="voice"></select>
+        </label>
+        <label class="field">
+          <span>Personality <small>(instructions for the model)</small></span>
+          <select id="preset"></select>
+        </label>
+        <textarea id="instructions" rows="4" spellcheck="true"></textarea>
+        <div class="row">
+          <button class="ghost" id="apply">Apply</button>
+          <span class="hint">Changes apply instantly, no restart.</span>
+        </div>
+      </div>
+
+      <div role="tabpanel" id="panel-tests" aria-labelledby="tab-tests" hidden>
+        <p class="hint">Plays recorded questions into the agent, so every run is the same and you can compare settings.</p>
+        <div class="row">
+          <button class="primary" id="run-tests" disabled>▶ Run test questions</button>
+        </div>
+        <div class="table-wrap">
+          <table class="results" id="results" hidden>
+            <thead><tr><th>#</th><th>Asked</th><th>Heard</th><th>Reply</th><th>Time</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <details class="card log">
       <summary>Under the hood <small>(the agent's live log)</small></summary>

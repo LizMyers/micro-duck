@@ -5,6 +5,8 @@
 //   we get   ← speech_started/stopped, transcripts, response.output_audio.delta (reply audio)
 // Timings for each stage come from the lab server, which reads the agent's log.
 
+import { DuckBody } from "/static/duck-body.js";
+
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
 
@@ -30,6 +32,11 @@ const ui = {
   runTests: $("run-tests"), results: $("results"),
   total: $("total"), log: $("log"), toast: $("toast"),
 };
+
+const body = new DuckBody({
+  iframe: $("sim"), moodEl: $("mood"), whyEl: $("mood-why"),
+  beakBar: $("beak-meter"), beakNum: $("beak-num"), headDot: $("head-dot"), headText: $("head-text"),
+});
 
 const state = {
   options: null,
@@ -98,6 +105,8 @@ async function loadOptions() {
   for (const v of state.options.voices) {
     ui.voice.add(new Option(v.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()), v));
   }
+  if (state.options.sim_url) $("sim").src = state.options.sim_url;
+  else $("sim-missing").hidden = false;
   for (const name of Object.keys(PRESETS)) ui.preset.add(new Option(name, name));
   ui.instructions.value = PRESETS[ui.preset.value];
   restorePrefs();
@@ -314,12 +323,16 @@ function onAgentEvent(ev) {
   switch (ev.type) {
     case "input_audio_buffer.speech_started":
       // Barge-in: if you start talking while it's replying, it stops.
+      const wasTalking = isPlaying() || (state.botBubble && !state.botBubble.done);
       stopPlayback();
       if (state.botBubble && !state.botBubble.done) finishBotBubble("interrupted");
+      if (wasTalking) body.setMood("interrupted", { holdMs: 700, then: "listening" });
+      else body.setMood("listening");
       if (!state.turn || state.turn.done) newTurn();
       break;
     case "input_audio_buffer.speech_stopped":
       if (state.turn) state.turn.stoppedAt = performance.now();
+      body.setMood("thinking");
       break;
     case "conversation.item.input_audio_transcription.delta":
       userBubble(ev.item_id).text += ev.delta;
@@ -340,6 +353,7 @@ function onAgentEvent(ev) {
       break;
     case "response.output_audio.delta":
       if (state.turn && !state.turn.firstAudioAt) state.turn.firstAudioAt = performance.now();
+      if (body.mood !== "speaking") body.setMood("speaking");
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
     case "response.done": {
@@ -347,6 +361,7 @@ function onAgentEvent(ev) {
       finishBotBubble(status === "cancelled" ? "interrupted" : null);
       if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
       state.warm = true;
+      whenQuiet(() => { if (body.mood === "speaking" || body.mood === "thinking") body.setMood("idle"); });
       const waiters = state.waiters.splice(0);
       for (const w of waiters) w(status);
       break;
@@ -465,6 +480,12 @@ function isPlaying() {
   return state.audio && state.playhead > state.audio.ctx.currentTime;
 }
 
+// Run fn once the reply has finished playing.
+function whenQuiet(fn) {
+  if (!isPlaying()) return fn();
+  setTimeout(() => whenQuiet(fn), 100);
+}
+
 function playChunk(samples) {
   const { ctx } = state.audio || {};
   if (!ctx) return;
@@ -472,7 +493,7 @@ function playChunk(samples) {
   buf.copyToChannel(samples, 0);
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.connect(ctx.destination);
+  src.connect(body.attachAudio(ctx));
   // A small cushion (60 ms) on the first chunk so playback doesn't stutter.
   const startAt = Math.max(state.playhead, ctx.currentTime + 0.06);
   src.start(startAt);
@@ -572,6 +593,16 @@ async function runTests() {
 }
 
 // ---------- Wire up the page ---------------------------------------------------------------
+
+for (const tab of document.querySelectorAll('[role="tab"]')) {
+  tab.onclick = () => {
+    for (const t of document.querySelectorAll('[role="tab"]')) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      $(t.getAttribute("aria-controls")).hidden = !on;
+    }
+  };
+}
 
 ui.model.onchange = () => { showModelNote(); savePrefs(); };
 ui.start.onclick = startAgent;
