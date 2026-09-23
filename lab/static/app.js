@@ -6,6 +6,7 @@
 // Timings for each stage come from the lab server, which reads the agent's log.
 
 import { DuckBody } from "/static/duck-body.js";
+import { TOOLS, runTool, TOOL_LABELS } from "/static/duck-tools.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -52,6 +53,8 @@ const state = {
   turn: null,           // timings for the current turn
   warm: false,          // has the agent answered at least once since starting?
   waiters: [],          // resolve functions waiting for a response.done
+  toolOutputs: [],      // results to report back once the current response is done
+  followUps: 0,         // spoken follow-ups requested after tools, this turn
 };
 
 // ---------- Small helpers ----------------------------------------------------------------
@@ -124,7 +127,9 @@ function savePrefs() {
   try {
     localStorage.setItem("duck-lab", JSON.stringify({
       model: ui.model.value, voice: ui.voice.value, preset: ui.preset.value,
-      instructions: ui.instructions.value, mute: ui.muteWhileSpeaking.checked,
+      instructions: ui.instructions.value,
+      tools: TOOLS,
+      tool_choice: "auto", mute: ui.muteWhileSpeaking.checked,
     }));
   } catch {}
 }
@@ -322,6 +327,7 @@ function send(obj) {
 function onAgentEvent(ev) {
   switch (ev.type) {
     case "input_audio_buffer.speech_started":
+      state.followUps = 0;
       // Barge-in: if you start talking while it's replying, it stops.
       const wasTalking = isPlaying() || (state.botBubble && !state.botBubble.done);
       stopPlayback();
@@ -356,8 +362,29 @@ function onAgentEvent(ev) {
       if (body.mood !== "speaking") body.setMood("speaking");
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
+    case "response.function_call_arguments.done": {
+      // The model wants the duck to do something: do it now, report back later.
+      let args = {};
+      try { args = JSON.parse(ev.arguments || "{}"); } catch {}
+      const result = runTool(body.rl, ev.name, args);
+      addAction(ev.name, result);
+      if (state.botBubble) state.botBubble.acted = true;
+      state.toolOutputs.push({ call_id: ev.call_id, output: JSON.stringify(result) });
+      break;
+    }
     case "response.done": {
       const status = ev.response?.status;
+      const spoke = !!state.botBubble?.text;
+      if (state.toolOutputs.length) {
+        for (const out of state.toolOutputs.splice(0)) {
+          send({ type: "conversation.item.create", item: { type: "function_call_output", ...out } });
+        }
+        // If it acted without saying anything, let it say something once.
+        if (status === "completed" && !spoke && state.followUps < 1) {
+          state.followUps++;
+          send({ type: "response.create" });
+        }
+      }
       finishBotBubble(status === "cancelled" ? "interrupted" : null);
       if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
       state.warm = true;
@@ -386,6 +413,12 @@ function addBubble(cls) {
   el.className = `bubble ${cls}`;
   ui.chat.append(el);
   return el;
+}
+
+function addAction(name, result) {
+  const el = addBubble("action");
+  el.textContent = `🦆 ${TOOL_LABELS[name] || name}` + (result.ok ? "" : ` (failed: ${result.error})`);
+  ui.chat.scrollTop = ui.chat.scrollHeight;
 }
 
 function userBubble(id) {
@@ -420,7 +453,10 @@ function finishBotBubble(tag) {
   if (!b || b.done) return;
   b.done = true;
   b.el.classList.remove("pending");
-  if (!b.text) b.el.textContent = "(no reply)";
+  if (!b.text) {
+    if (b.acted) { b.el.remove(); state.botBubble = null; return; }
+    b.el.textContent = "(no reply)";
+  }
   if (tag) {
     const t = document.createElement("span");
     t.className = "tag";

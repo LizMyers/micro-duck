@@ -48,10 +48,28 @@ index d75c6f2..7d213e9 100644
 +  return <GameCanvas />;
 +}
 diff --git a/app/src/game/game.js b/app/src/game/game.js
-index da73538..6b37f54 100644
+index da73538..7a6a2ab 100644
 --- a/app/src/game/game.js
 +++ b/app/src/game/game.js
-@@ -1676,6 +1676,8 @@ async function boot({ scene, camera, renderer }) {
+@@ -513,8 +513,16 @@ async function boot({ scene, camera, renderer }) {
+     isSuppressed: () => inputLocked || headMode || mode !== "walk" || !!grab,
+     getManualOverride: () => padSource.isActive() || touchSource.isActive() || kbSource.isActive(),
+   });
++  // Duck Lab: a voice agent steers through its own source, ranked below the
++  // keyboard/pad/touch (a human always wins) and above click-to-walk.
++  const agentSource = {
++    id: "agent", connected: true,
++    command: new Float32Array(3), axes: {}, pressed: {},
++    isActive() { return this.command.some((v) => Math.abs(v) > 1e-3); },
++    init() {}, dispose() {}, poll() {},
++  };
+   // Keyboard, pad and touch preempt by priority; waypoint is the fallback.
+-  const controller = new Controller({ sources: [padSource, touchSource, kbSource, waypointSource] });
++  const controller = new Controller({ sources: [padSource, touchSource, kbSource, agentSource, waypointSource] });
+   // Right-stick camera state, read by the telemetry before the camera-orbit
+   // section below has evaluated.
+   let padOrbitLive = false;
+@@ -1676,6 +1684,8 @@ async function boot({ scene, camera, renderer }) {
    const QUACK_MS = 480;
    let quackAt = -Infinity;
    let padJaw = 0;
@@ -60,7 +78,7 @@ index da73538..6b37f54 100644
    const CHIRP_TAKES = "abcdefghijkl";
    const VOICE_BANK = { classic: "duck1", charcoal: "duck2", purple: "duck3", blue: "duck4" };
    function playChirp() {
-@@ -1717,7 +1719,7 @@ async function boot({ scene, camera, renderer }) {
+@@ -1717,7 +1727,7 @@ async function boot({ scene, camera, renderer }) {
      // Runtime mouth-mode rule (main.rs: motor_targets[MOUTH] += offset):
      // the policy's jaw is the BASE and the trigger/quack opening is an
      // additive offset on top, clamped - it never fights the pick motion.
@@ -69,11 +87,24 @@ index da73538..6b37f54 100644
    }
    function syncJaw() {
      setJawOpen(rig, jawOpenNow());
-@@ -2223,6 +2225,8 @@ async function boot({ scene, camera, renderer }) {
+@@ -2223,6 +2233,21 @@ async function boot({ scene, camera, renderer }) {
      get chaseYaw() { return { follow: chaseYawFollow, smooth: chaseYawSmooth, held: chaseHeldYaw, tracking: chaseYawTracking }; },
      padOrbitStep,
      jawOpenNow,
-+    // Duck Lab hook: let a voice agent open the beak (0 = shut, 1 = wide).
++    // Duck Lab hooks: let a voice agent steer (m/s, m/s, rad/s; clamped to the
++    // current limits), read its heading, and open the beak (0 = shut, 1 = wide).
++    setTwist: (vx = 0, vy = 0, wz = 0) => {
++      const [fwd, back, ang] = velLims();
++      agentSource.command[0] = Math.max(back, Math.min(fwd, vx));
++      agentSource.command[1] = Math.max(-fwd, Math.min(fwd, vy));
++      agentSource.command[2] = Math.max(-ang, Math.min(ang, wz));
++    },
++    get yaw() { return duckYaw(data.qpos); },
++    // Sit down / stand up (legs only). Standing back up takes ~2 s.
++    sit: () => { if (!(mode === "sitstand" && sitFlag === 1)) setMode("sit"); },
++    stand: () => { if (mode === "sitstand") setMode("walk"); },
++    get sitting() { return mode === "sitstand" && sitFlag === 1; },
++    get velLimits() { return velLims(); },
 +    setJaw: (v) => { externalJaw = Math.max(0, Math.min(1, Number(v) || 0)); },
      step: async (n = 1) => { for (let i = 0; i < n; i++) await controlStep(); },
      render: () => { syncRig(); renderer.render(scene, camera); },

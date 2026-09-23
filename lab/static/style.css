@@ -143,6 +143,10 @@ main { max-width: 1400px; margin: 0 auto; padding: 8px 16px 40px; }
 .bubble.bot { align-self: flex-start; background: var(--surface-2); border-bottom-left-radius: 4px; }
 .bubble.pending { opacity: .7; font-style: italic; }
 .bubble .tag { display: block; font-size: 11px; opacity: .75; margin-top: 4px; font-style: normal; }
+.bubble.action {
+  align-self: center; font-size: 13px; padding: 4px 12px; border-radius: 999px;
+  background: var(--bg); border: 1px dashed var(--accent); color: var(--ink);
+}
 .bubble.test { outline: 2px dashed var(--line); outline-offset: 2px; }
 
 .talk-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); }
