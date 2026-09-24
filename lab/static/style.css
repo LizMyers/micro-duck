@@ -359,3 +359,7 @@ kbd {
 .os-feed li[data-level="warn"] span { color: var(--warn); }
 .os-feed li[data-level="bad"] span { color: var(--bad); font-weight: 600; }
 
+
+/* Model log (raw): warnings and errors stand out */
+#log [data-level="warning"] { color: var(--warn); }
+#log [data-level="error"], #log [data-level="critical"] { color: var(--bad); font-weight: 600; }
