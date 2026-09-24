@@ -66,7 +66,11 @@ export class SimonSaysGame {
   }
 
   async start() {
-    await this.app.prepare();
+    $("ss-start").disabled = true;
+    this.render("Starting the camera… face it, looking straight ahead.", "");
+    const problem = await this.app.prepare();
+    $("ss-start").disabled = false;
+    if (problem) return this.render(problem, "");
     Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0 });
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
