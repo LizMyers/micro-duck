@@ -316,3 +316,24 @@ kbd {
 #panel-log pre { flex: 1; margin: 0; overflow: auto; font: 12px/1.5 var(--mono); background: var(--bg); padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-all; }
 .side .talk-row { margin-top: 8px; }
 .duck .sim-wrap { aspect-ratio: 16 / 9; }
+
+/* Webcam picture-in-picture */
+.cam-pip {
+  position: absolute; right: 12px; bottom: 12px; width: 30%; min-width: 180px;
+  background: #000; border-radius: 10px; overflow: hidden; border: 2px solid var(--accent);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
+}
+.cam-pip canvas { display: block; width: 100%; height: auto; }
+.cam-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 11px; }
+.cam-bar .ghost { color: #fff; border-color: rgb(255 255 255 / 40%); padding: 2px 8px; font-size: 11px; }
+.pose-chips {
+  position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 62%;
+  list-style: none; margin: 0; padding: 0;
+}
+.pose-chips li {
+  font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgb(0 0 0 / 55%); color: rgb(255 255 255 / 70%);
+  transition: background .15s, color .15s;
+}
+.pose-chips li.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.pose-chips li.off-limits { text-decoration: line-through; opacity: .5; }
+#camera[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
