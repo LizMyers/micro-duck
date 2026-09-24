@@ -882,10 +882,15 @@ function setDuckColour(name) {
 }
 new SimonSaysGame({
   tracker: () => cam.tracker,
-  ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY."
-    : !cam.on ? "Turn the camera on (📷 Camera, above the sim)."
-    : !cam.calibrated ? "Press Calibrate while facing the camera normally." : null,
-  prepare: async () => { await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false); },
+  ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY." : null,
+  // Starting a game turns the camera on and calibrates it (it calibrates itself 2.5 s after starting).
+  prepare: async () => {
+    await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false);
+    if (!cam.on) await startCamera();
+    for (let t = 0; t < 8000 && cam.on && !cam.calibrated; t += 200) await sleep(200);
+    if (!cam.calibrated) calibrate();
+    return cam.calibrated ? null : "The camera can't see you: sit where your head and shoulders are in view, then start again.";
+  },
   sayLine,
   lookAt: (dir) => body.lookAt(dir),
   // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
