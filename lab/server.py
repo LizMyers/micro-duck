@@ -243,18 +243,26 @@ LAB_STARTED = time.time()
 
 
 # --- The lab narrates what it does ----------------------------------------------------------
-# Every message goes to the Terminal (flushed straight away, so `| tee lab/logs/lab.log`
-# sees it) and to the page's Simon OS tab. `cmd` is the Terminal command a human would
+# Every message goes to the Terminal, to lab/logs/lab.log (so Claude can read it too)
+# and to the page's Simon OS tab. `cmd` is the Terminal command a human would
 # type to do or check the same thing: that's what the tab teaches.
 lab_messages: deque[dict] = deque(maxlen=200)
 
 
 def lab_log(text: str, cmd: str | None = None, level: str = "info") -> None:
     msg = {"type": "lab", "text": text, "cmd": cmd, "level": level}
-    print(f"[lab] {time.strftime('%H:%M:%S')} {text}" + (f"\n        $ {cmd}" if cmd else ""), flush=True)
+    line = f"[lab] {time.strftime('%H:%M:%S')} {text}" + (f"\n        $ {cmd}" if cmd else "")
+    print(line, flush=True)
+    write_lab_log(line)
     agent.publish(msg)  # adds the timestamp
     msg.setdefault("t", time.time())
     lab_messages.append(msg)
+
+
+def write_lab_log(line: str) -> None:
+    LOG_DIR.mkdir(exist_ok=True)
+    with open(LOG_DIR / "lab.log", "a") as f:
+        f.write(line + "\n")
 
 
 def model_label(model_id: str | None) -> str:
@@ -334,7 +342,7 @@ async def no_cache(request, call_next):
 async def _startup() -> None:
     agent.loop = asyncio.get_running_loop()
     lab_log(f"Server started: pid {os.getpid()}, http://localhost:{LAB_PORT}.",
-            cmd="uv run duck-lab 2>&1 | tee lab/logs/lab.log")
+            cmd="uv run duck-lab   (or double-click Duck Lab.command)")
     for p in await asyncio.to_thread(leftovers):
         lab_log(f"Stray process: {describe(p)}. Stop strays stops it.", cmd=f"kill {p['pid']}", level="warn")
     await asyncio.to_thread(make_test_prompts)
@@ -468,7 +476,7 @@ def restart_lab() -> dict:
     """Replace this lab with a fresh copy of itself (same pid, same Terminal, same log)."""
     lab_log("Restarting server: stopping the model, loading fresh code, starting the model again. "
             "The page reloads when it's back.",
-            cmd="Ctrl+C, then: uv run duck-lab 2>&1 | tee lab/logs/lab.log")
+            cmd="Ctrl+C in the server's Terminal, then: uv run duck-lab")
 
     def later() -> None:
         time.sleep(0.5)
@@ -530,6 +538,7 @@ def main() -> None:
     # first copy's agent and then fail. Now it stops here and points you at the first one.
     if port_busy(LAB_PORT):
         pids = ", ".join(map(str, listening_pids(LAB_PORT))) or "unknown"
+        write_lab_log(f"[lab] {time.strftime('%H:%M:%S')} Refused to start: the server is already running (pid {pids}).")
         print(f"[lab] The Duck Lab server is already running at {url} (pid {pids}).\n"
               f"      Use that one, or stop it first: Ctrl+C in its Terminal, or Simon OS → Restart server.\n"
               f"      $ lsof -nP -iTCP:{LAB_PORT} -sTCP:LISTEN", flush=True)
@@ -538,6 +547,7 @@ def main() -> None:
         sys.exit(1)
     if not os.environ.get("DUCK_LAB_NO_BROWSER"):
         threading.Timer(1.5, webbrowser.open, args=(url,)).start()
+    write_lab_log(f"\n===== {time.strftime('%Y-%m-%d %H:%M:%S')} server starting =====")
     print(f"[lab] Duck Lab running at {url}", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=LAB_PORT, log_level="warning")
 

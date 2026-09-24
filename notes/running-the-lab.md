@@ -24,15 +24,15 @@ That's why the page is sometimes already "Loading…" before you've touched anyt
 ## Restarting it yourself (the shared way)
 1. **Stop:** in the Terminal window running the lab, press **Ctrl+C** (or close the window).
    The lab shuts the agent down on its way out.
-2. **Start** in a fresh Terminal window:
+2. **Start:** double-click **Duck Lab.command**, or in Terminal:
    ```
    cd ~/Documents/Development/micro-duck
-   uv run duck-lab 2>&1 | tee lab/logs/lab.log
+   uv run duck-lab
    ```
-   - `uv run duck-lab`: starts the lab (same as the double-click file).
-   - `2>&1`: merges normal output and error messages into one stream.
-   - `| tee lab/logs/lab.log`: sends that stream to the screen *and* a file, so you watch it live
-     and Claude reads the same thing from the file.
+   The server writes its own `lab/logs/lab.log` (same lines as the Terminal), so Claude can read it.
+   Once it's running, restart from the page: Simon OS → **Restart server**.
+   *(Earlier today we used `uv run duck-lab 2>&1 | tee lab/logs/lab.log`: `2>&1` merges output and
+   errors, `tee` copies them to a file. Not needed any more.)*
 3. Open **http://localhost:8770** (`localhost`, not 127.0.0.0).
 
 ## Simon OS and Help: the same thing, in the page
@@ -74,7 +74,7 @@ one home, and nothing is hidden: every process, port, command and timing is stil
 ## Where the logs are
 | Log | Written by | Where |
 |---|---|---|
-| Lab log | The lab server | Your Terminal, plus `lab/logs/lab.log` (when started with `tee`) |
+| Lab log | The server | Your Terminal, plus `lab/logs/lab.log` (written by the server itself) |
 | Agent log | speech-to-speech | `lab/logs/agent-<date>-<time>.log`, also the page's **Agent log** tab |
 
 ## Is it running? (handy checks)
