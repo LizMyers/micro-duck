@@ -45,22 +45,33 @@
   color-scheme: dark;
 }
 
-/* Duck colourways (Simon OS → Colour). Only these follow the duck: the page background, the Tap to
-   talk button, the RAM banner, the game timer, and Simon's beak bar and head dot. Swatches from the simulator and Pollen's press kit. */
+/* Duck colourways (Simon OS → Colour). These follow the duck: the page background and the light
+   shades behind things (beak bar track, Idle chip, dropdowns), Tap to talk, the RAM banner, the game
+   timer, the tab underline, and Simon's beak bar and head dot. Swatches from the simulator and Pollen's press kit. */
 :root { --duck: #f08a24; --duck-ink: #ffffff; --duck-bg: #fbf5ea; }                       /* Cream */
 :root[data-duck="blue"] { --duck: #4a8bbf; --duck-ink: #ffffff; --duck-bg: #eaf3f9; }     /* Sky */
 :root[data-duck="purple"] { --duck: #8468bd; --duck-ink: #ffffff; --duck-bg: #f2eefa; }   /* Lavender */
 :root[data-duck="charcoal"] { --duck: #4c4c52; --duck-ink: #ffffff; --duck-bg: #eeedeb; } /* Graphite */
+/* The light shades behind things (beak bar track, Idle chip, dropdowns, boxes) follow the duck too. */
+:root[data-duck="blue"] { --bg: #f1f7fb; --surface-2: #dcebf4; --line: #d3e2ec; }
+:root[data-duck="purple"] { --bg: #f6f3fb; --surface-2: #e8e0f4; --line: #ddd3ec; }
+:root[data-duck="charcoal"] { --bg: #f4f3f1; --surface-2: #e6e4e0; --line: #dcd9d4; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --duck: #f5a04a; --duck-ink: #1c1b1a; --duck-bg: #1c1b1a; }
   :root[data-duck="blue"]:not([data-theme="light"]) { --duck: #7fb8e0; --duck-ink: #161b1f; --duck-bg: #151b20; }
   :root[data-duck="purple"]:not([data-theme="light"]) { --duck: #b39ddd; --duck-ink: #1a1820; --duck-bg: #1a1721; }
   :root[data-duck="charcoal"]:not([data-theme="light"]) { --duck: #b9b5ae; --duck-ink: #1a1a1b; --duck-bg: #19191a; }
+  :root[data-duck="blue"]:not([data-theme="light"]) { --bg: #1a2127; --surface-2: #2a343b; --line: #33414a; }
+  :root[data-duck="purple"]:not([data-theme="light"]) { --bg: #1d1a24; --surface-2: #312c3b; --line: #3c3647; }
+  :root[data-duck="charcoal"]:not([data-theme="light"]) { --bg: #1c1c1d; --surface-2: #2e2e31; --line: #38383c; }
 }
 :root[data-theme="dark"] { --duck: #f5a04a; --duck-ink: #1c1b1a; --duck-bg: #1c1b1a; }
 :root[data-theme="dark"][data-duck="blue"] { --duck: #7fb8e0; --duck-ink: #161b1f; --duck-bg: #151b20; }
 :root[data-theme="dark"][data-duck="purple"] { --duck: #b39ddd; --duck-ink: #1a1820; --duck-bg: #1a1721; }
 :root[data-theme="dark"][data-duck="charcoal"] { --duck: #b9b5ae; --duck-ink: #1a1a1b; --duck-bg: #19191a; }
+:root[data-theme="dark"][data-duck="blue"] { --bg: #1a2127; --surface-2: #2a343b; --line: #33414a; }
+:root[data-theme="dark"][data-duck="purple"] { --bg: #1d1a24; --surface-2: #312c3b; --line: #3c3647; }
+:root[data-theme="dark"][data-duck="charcoal"] { --bg: #1c1c1d; --surface-2: #2e2e31; --line: #38383c; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -262,7 +273,7 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
   background: none; border: none; padding: 8px 12px; font-weight: 600; color: var(--ink-2); cursor: pointer;
   border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
 }
-.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--duck); }
 
 /* The hidden attribute must win over display rules above. */
 [hidden] { display: none !important; }
