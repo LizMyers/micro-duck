@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 
 const HEALTH = {
   ready: ["READY", (s) => `${s.label} is running.`],
+  busy: ["MODEL BUSY", () => "Another Duck Lab tab is connected to the model (it serves one page at a time). Close the other tabs."],
   starting: ["LOADING", (s) => `Loading ${s.label}: ${s.secs} s (usually 60–180 s).`],
   stopped: ["STOPPED", () => "The model is not running."],
   error: ["CRASHED", () => "The model exited unexpectedly. See system messages."],
@@ -27,6 +28,7 @@ export class SimonOS {
     this.status = "unknown";
     this.label = "";
     this.startingSince = null;
+    this.busy = false;
     $("os-check").onclick = () => this.refresh(true);
     $("os-restart-agent").onclick = () => this.restartAgent();
     $("os-stop-agent").onclick = () => this.app.stopAgent();
@@ -74,6 +76,11 @@ export class SimonOS {
     this.label = label || "The model";
     this.renderHealth();
     this.refreshSoon();
+  }
+
+  setBusy(busy) {
+    this.busy = busy;
+    this.renderHealth();
   }
 
   // ---- buttons ----
@@ -154,9 +161,10 @@ export class SimonOS {
   }
 
   renderHealth() {
-    const [word, detail] = HEALTH[this.status] || HEALTH.unknown;
+    const state = this.status === "ready" && this.busy ? "busy" : this.status;
+    const [word, detail] = HEALTH[state] || HEALTH.unknown;
     const secs = this.startingSince ? Math.round((Date.now() - this.startingSince) / 1000) : 0;
-    $("health").dataset.state = this.status;
+    $("health").dataset.state = state;
     $("health-word").textContent = word;
     $("health-detail").textContent = detail({ label: this.label, secs });
   }

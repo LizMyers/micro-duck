@@ -350,15 +350,19 @@ function connect() {
   ws.onmessage = (e) => {
     const ev = JSON.parse(e.data);
     inspector.message("in", ev);
+    // The model serves one page at a time; a second page is told so, then closed (code 1008).
+    if (ev.type === "error" && ev.error?.type === "session_limit_reached") setBusy(true);
+    else if (ev.type === "session.created" || ev.type === "session.updated") setBusy(false);
     onAgentEvent(ev);
   };
-  ws.onclose = () => {
+  ws.onclose = (e) => {
     if (state.ws === ws) state.ws = null;
     ui.talk.disabled = true;
     ui.runTests.disabled = true;
     setMic(false);
-    // If the agent is still up (e.g. the socket dropped), try again shortly.
-    if (state.agentStatus === "ready") setTimeout(connect, 1500);
+    if (e.code === 1008) setBusy(true);
+    // If the model is still up (e.g. the socket dropped), try again: slowly while another tab has it.
+    if (state.agentStatus === "ready") setTimeout(connect, state.modelBusy ? 5000 : 1500);
   };
 }
 
@@ -610,9 +614,18 @@ async function setMic(on) {
   setTalkLabel();
 }
 
+function setBusy(busy) {
+  if (state.modelBusy === busy) return;
+  state.modelBusy = busy;
+  inspector.note(busy ? "Model busy: another Duck Lab tab is connected to it" : "Connected to the model", null, busy ? "err" : undefined);
+  os.setBusy(busy);
+  setTalkLabel();
+}
+
 // The talk button says why it's disabled, so the status is visible from every tab.
 function setTalkLabel() {
   ui.talkLabel.textContent = state.micOn ? "Listening… tap to stop"
+    : state.agentStatus === "ready" && state.modelBusy ? "Model busy: close other Duck Lab tabs"
     : state.agentStatus === "ready" ? "Tap to talk"
     : state.agentStatus === "starting" ? "Model loading…"
     : state.agentStatus === "error" ? "Model crashed"
