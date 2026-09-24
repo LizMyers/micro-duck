@@ -229,30 +229,49 @@ export class SimonSaysGame {
   }
 }
 
-// All-time scoreboard, flip-card style (like a volleyball scoreboard). Saved in this browser.
+// All-time scoreboard, split-flap style (like a train-station board). Saved in this browser.
 const BOARD_KEY = "simon-says-score";
 
 class Scoreboard {
   constructor() {
     this.totals = { simon: 0, you: 0 };
     try { Object.assign(this.totals, JSON.parse(localStorage.getItem(BOARD_KEY) || "{}")); } catch {}
-    for (const who of ["simon", "you"]) $(`ss-card-${who}`).textContent = this.totals[who];
+    for (const who of ["simon", "you"]) setCard($(`ss-card-${who}`), this.totals[who]);
   }
 
   add(who) {
-    this.totals[who]++;
+    const from = this.totals[who]++;
     try { localStorage.setItem(BOARD_KEY, JSON.stringify(this.totals)); } catch {}
-    flip($(`ss-card-${who}`), this.totals[who]);
+    flip($(`ss-card-${who}`), from, this.totals[who]);
   }
 }
 
-// The card folds away from the top, the number changes, and the new card folds down into place.
-function flip(card, value) {
-  const half = { duration: 180, easing: "ease-in", fill: "forwards" };
-  card.animate([{ transform: "rotateX(0deg)" }, { transform: "rotateX(-90deg)" }], half).finished.then(() => {
-    card.textContent = value;
-    card.animate([{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }], { ...half, easing: "ease-out" });
-  });
+// A card is two halves, each showing half of the number: the top half and the bottom half.
+function half(cls, value) {
+  const h = document.createElement("span");
+  h.className = `half ${cls}`;
+  const b = document.createElement("b");
+  b.textContent = value;
+  h.append(b);
+  return h;
+}
+
+function setCard(card, value) {
+  card.replaceChildren(half("top", value), half("bottom", value));
+}
+
+// Split-flap: the new number appears behind the top half, the old top half folds down on the hinge,
+// and lands as the new bottom half.
+function flip(card, from, to) {
+  card.replaceChildren(half("top", to), half("bottom", from));
+  const flapTop = half("top flap", from), flapBottom = half("bottom flap", to);
+  card.append(flapTop, flapBottom);
+  flapBottom.style.transform = "rotateX(90deg)";
+  const fold = { duration: 220, fill: "forwards" };
+  flapTop.animate([{ transform: "rotateX(0deg)" }, { transform: "rotateX(-90deg)" }], { ...fold, easing: "ease-in" })
+    .finished.then(() => flapBottom.animate([{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }],
+      { ...fold, easing: "cubic-bezier(.3,1.6,.6,1)" }).finished)   // a tiny bounce as it lands
+    .then(() => setCard(card, to));
 }
 
 // Small numbers as words for the voice ("3" -> "three"); bigger ones stay as digits.
