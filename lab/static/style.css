@@ -393,3 +393,10 @@ kbd {
 .ram-warning[data-level="critical"] { background: var(--bad); color: #fff; }
 .ram-warning span { flex: 1; min-width: 200px; }
 .ram-warning .ghost { color: inherit; border-color: currentColor; }
+
+/* Simon Says game */
+.ss-command { margin: 16px 0 8px; font-size: 26px; font-weight: 700; line-height: 1.2; min-height: 1.2em; }
+.ss-timer-wrap { height: 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.ss-timer-wrap span { display: block; height: 100%; width: 0; background: var(--accent); }
+.ss-result { margin: 10px 0 0; font-size: 15px; font-weight: 600; min-height: 1.5em; }
+.ss-score { margin: 4px 0 8px; font-family: var(--mono); font-size: 13px; color: var(--ink-2); min-height: 1.4em; }

@@ -11,6 +11,7 @@ import { PoseTracker, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
 import { SimonOS } from "/static/simon-os.js";
 import { MacOS } from "/static/mac-os.js";
+import { SimonSaysGame } from "/static/simon-says.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -416,6 +417,7 @@ function onAgentEvent(ev) {
       break;
     case "response.output_audio.delta":
       if (state.turn && !state.turn.firstAudioAt) state.turn.firstAudioAt = performance.now();
+      if (state.line) { state.line.onAudio(); state.line.onAudio = () => {}; }
       if (body.mood !== "speaking") body.setMood("speaking");
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
@@ -442,6 +444,7 @@ function onAgentEvent(ev) {
     }
     case "response.done": {
       const status = ev.response?.status;
+      if (state.line) { const l = state.line; state.line = null; l.onDone(); }
       const spoke = !!state.botBubble?.text;
       state.responding = false;
       if (state.toolOutputs.length) {
@@ -506,6 +509,29 @@ function finishAction(el, r) {
 // Ask for a spoken reply that can't trigger another move.
 function sayOnly(instructions) {
   send({ type: "response.create", response: { tool_choice: "none", instructions: ui.instructions.value + "\n\n" + instructions } });
+}
+
+// Simon Says lines: Simon speaks an exact line, out-of-band (conversation "none"), so game lines
+// never grow his conversation history. `started` resolves true at the first sound (or false
+// after 15 s), `done` when the reply has finished playing.
+function sayLine(text) {
+  let startedResolve, doneResolve;
+  const started = new Promise((r) => (startedResolve = r));
+  const done = new Promise((r) => (doneResolve = r));
+  const timer = setTimeout(() => startedResolve(false), 15000);
+  whenIdle(() => {
+    // Claim the next reply only once any earlier one has finished.
+    state.line = {
+      onAudio: () => { clearTimeout(timer); startedResolve(true); },
+      onDone: () => { clearTimeout(timer); startedResolve(false); whenQuiet(doneResolve); },
+    };
+    send({ type: "response.create", response: {
+      conversation: "none", tool_choice: "none",
+      instructions: "You are Simon, a robot duck hosting a game of Simon Says. Repeat the user's line exactly, word for word, and nothing else.",
+      input: [{ type: "message", role: "user", content: [{ type: "input_text", text }] }],
+    } });
+  });
+  return { started, done };
 }
 
 // Some messages must wait until the agent isn't in the middle of a reply.
@@ -789,6 +815,16 @@ $("os-change-voice").onclick = () => $("tab-voice").click();
 ui.switchModel.onclick = () => startAgent(ui.model.value, "you switched model");
 const os = new SimonOS({ startAgent, stopAgent, selectedModel: () => ui.model.value, toast });
 new MacOS();
+new SimonSaysGame({
+  tracker: () => cam.tracker,
+  ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY."
+    : !cam.on ? "Turn the camera on (📷 Camera, above the sim)."
+    : !cam.calibrated ? "Press Calibrate while standing normally." : null,
+  prepare: async () => { await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false); },
+  sayLine,
+  lookAt: (dir) => body.lookAt(dir),
+  note: (text, data) => inspector.note(text, data),
+});
 ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
 ui.apply.onclick = () => {
   savePrefs();
