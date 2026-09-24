@@ -106,17 +106,21 @@ export class SimonSaysGame {
     const simonWon = this.out;
     this.board.add(simonWon ? "simon" : "you");
     const { simon, you } = this.board.totals;
-    const tally = `All-time score: Simon ${simon}, you ${you}.`;
+    // Numbers as words, in its own short line: the voice model dropped the end of
+    // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
+    const tally = `The score is Simon ${words(simon)}, you ${words(you)}.`;
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
       await this.speak(this.outLine, { improvise: true });
-      await this.speak(`Simon wins! ${tally}`);
+      await this.speak("Simon wins!");
+      await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
       await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
         "Congratulate them, a little grudgingly, and say clearly that they win.", { improvise: true });
-      await this.speak(`You win! ${tally}`);
+      await this.speak("You win!");
+      await this.speak(tally);
     }
     this.stop(null);
   }
@@ -234,3 +238,8 @@ function flip(card, value) {
     card.animate([{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }], { ...half, easing: "ease-out" });
   });
 }
+
+// Small numbers as words for the voice ("3" -> "three"); bigger ones stay as digits.
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+export function words(n) { return NUMBER_WORDS[n] ?? String(n); }

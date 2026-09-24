@@ -143,6 +143,10 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   right.)"), not just the called move. Prompted by round 3 of her log, where looking right on "Turn right!" survived.
 - **All-time scoreboard** (flip cards, localStorage) and a fixed spoken result line after Simon's improvised one.
 
+- **Voice model drops sentence endings with digits (hypothesis):** "You win! All-time score: Simon 3, you 2." was
+  fully received (7.2 s of audio) but Liz heard it stop at "Simon 3". Now: "You win!" then "The score is Simon
+  three, you two." (numbers as words, separate short line). Verify; if it holds, an upstream TTS note.
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
