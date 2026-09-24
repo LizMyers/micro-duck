@@ -132,6 +132,11 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   means only that arm; both arms lights "Both arms up" alone, and on a single-arm command it's
   "Wrong move: that was both arms!".
 
+- **Liz: "The trick to starting the game is that you have to look right into the camera."** Calibration (2.5 s
+  after the camera starts) records where the head points as neutral; if you're looking elsewhere, looks are
+  skewed. Idea: a "Look at Simon: 3… 2… 1…" countdown before round 1, calibrating on "1", so neutral is where
+  players actually look during play (Simon on screen).
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
