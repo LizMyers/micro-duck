@@ -69,7 +69,7 @@ export class DuckBody {
   // into its frame (it listens on its own window), unless you're typing.
   forwardKeys() {
     const KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
-      "KeyW", "KeyA", "KeyS", "KeyD", "KeyR", "KeyQ", "KeyE"]);
+      "KeyW", "KeyA", "KeyS", "KeyD", "KeyR", "KeyQ", "KeyE", "KeyM"]);
     const typing = (el) => el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" ||
       el.tagName === "SELECT" || el.isContentEditable);
     const pass = (type) => (e) => {

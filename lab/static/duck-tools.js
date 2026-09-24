@@ -11,67 +11,41 @@
 
 const noArgs = { type: "object", properties: {}, required: [] };
 
+const count = (what, dflt, max) => ({
+  type: "object",
+  properties: { [what]: { type: "number", description: `Default ${dflt}, at most ${max}.` } },
+  required: [],
+});
+
+// Deliberately simple: one action per tool, at most one number. Small local
+// models fill in multi-field tools unreliably (e.g. step(forward=1)).
 export const TOOLS = [
-  {
-    type: "function", name: "sit_down",
-    description: "Make the duck sit down on the floor.",
-    parameters: noArgs,
-  },
-  {
-    type: "function", name: "stand_up",
-    description: "Make the duck stand back up after sitting.",
-    parameters: noArgs,
-  },
-  {
-    type: "function", name: "turn",
-    description: "Turn the duck on the spot, to its left or right, by some degrees (90 = quarter turn, 360 = full circle).",
-    parameters: {
-      type: "object",
-      properties: {
-        direction: { type: "string", enum: ["left", "right"] },
-        degrees: { type: "number", description: "How far to turn, 10 to 720. Default 90." },
-      },
-      required: ["direction"],
-    },
-  },
-  {
-    type: "function", name: "step",
-    description: "Take steps forward or backward (default one step).",
-    parameters: {
-      type: "object",
-      properties: {
-        direction: { type: "string", enum: ["forward", "backward"] },
-        steps: { type: "number", description: "How many steps, 1 to 10. Default 1." },
-      },
-      required: ["direction"],
-    },
-  },
-  {
-    type: "function", name: "raise_leg",
-    description: "Kick one leg up (the duck's own left or right leg).",
-    parameters: {
-      type: "object",
-      properties: { side: { type: "string", enum: ["left", "right"] } },
-      required: ["side"],
-    },
-  },
-  {
-    type: "function", name: "bow",
-    description: "Take a polite bow.",
-    parameters: noArgs,
-  },
+  { type: "function", name: "sit_down", description: "Sit down.", parameters: noArgs },
+  { type: "function", name: "stand_up", description: "Stand back up.", parameters: noArgs },
+  { type: "function", name: "step_forward", description: "Step forward.", parameters: count("steps", 1, 10) },
+  { type: "function", name: "step_back", description: "Step backward.", parameters: count("steps", 1, 10) },
+  { type: "function", name: "turn_left", description: "Turn left on the spot.", parameters: count("degrees", 90, 720) },
+  { type: "function", name: "turn_right", description: "Turn right on the spot.", parameters: count("degrees", 90, 720) },
+  { type: "function", name: "bow", description: "Take a polite bow.", parameters: noArgs },
+  { type: "function", name: "kick_left_leg", description: "Kick up your left leg.", parameters: noArgs },
+  { type: "function", name: "kick_right_leg", description: "Kick up your right leg.", parameters: noArgs },
+  { type: "function", name: "skates_on", description: "Put your roller skates on.", parameters: noArgs },
+  { type: "function", name: "skates_off", description: "Take your roller skates off.", parameters: noArgs },
 ];
 
+const n = (v, d, max) => Math.max(1, Math.min(max, Math.round(Number(v) || d)));
 export const TOOL_LABELS = {
   sit_down: () => "sits down",
   stand_up: () => "stands up",
-  turn: (a) => `turns ${a.direction || "left"} ${a.degrees || 90}°`,
-  step: (a) => {
-    const n = Math.max(1, Math.min(10, Math.round(a.steps || 1)));
-    return `takes ${n} step${n > 1 ? "s" : ""} ${a.direction === "backward" ? "back" : "forward"}`;
-  },
-  raise_leg: (a) => `kicks up its ${a.side || "right"} leg`,
+  step_forward: (a) => `steps forward ×${n(a.steps, 1, 10)}`,
+  step_back: (a) => `steps back ×${n(a.steps, 1, 10)}`,
+  turn_left: (a) => `turns left ${n(a.degrees, 90, 720)}°`,
+  turn_right: (a) => `turns right ${n(a.degrees, 90, 720)}°`,
   bow: () => "takes a bow",
+  kick_left_leg: () => "kicks its left leg",
+  kick_right_leg: () => "kicks its right leg",
+  skates_on: () => "puts its skates on",
+  skates_off: () => "takes its skates off",
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -137,6 +111,7 @@ async function doStep(rl, direction, steps) {
 }
 
 async function doBow(rl) {
+  needLegs(rl, "bow");
   await ensureStanding(rl);
   // The bow is a community-trained move; it lives in the simulator's "trick" slot.
   if (rl.customPolicy?.slot !== "trick") {
@@ -149,13 +124,29 @@ async function doBow(rl) {
 }
 
 async function doKick(rl, side) {
+  needLegs(rl, "kick");
   await ensureStanding(rl);
   rl.triggerKick(side === "left" ? "left" : "right", "agent");
   await until(() => rl.mode !== "walk", 1000);
   await until(() => rl.mode === "walk", 4000);
 }
 
+// Roller skates: the simulator swaps to a separate skating body and policy.
+async function setSkates(rl, on) {
+  const want = on ? "rollers" : "legs";
+  if (rl.loco === want) return;
+  rl.setLoco(want);
+  const ok = await until(() => rl.loco === want && !rl.locoSwitching, 15000);
+  if (!ok) throw new Error(on ? "couldn't get the skates on" : "couldn't get the skates off");
+  await until(() => !rl.inputLocked, 5000);
+}
+
+const needLegs = (rl, what) => {
+  if (rl.loco === "rollers") throw new Error(`can't ${what} with skates on (take them off first)`);
+};
+
 async function doSit(rl) {
+  needLegs(rl, "sit");
   if (rl.sitting) return;
   await ensureStanding(rl);
   rl.sit();
@@ -172,10 +163,15 @@ async function doStand(rl) {
 const MOVES = {
   sit_down: (rl) => doSit(rl),
   stand_up: (rl) => doStand(rl),
-  turn: (rl, a) => doTurn(rl, a.direction, a.degrees),
-  step: (rl, a) => doStep(rl, a.direction, a.steps),
-  raise_leg: (rl, a) => doKick(rl, a.side),
+  step_forward: (rl, a) => doStep(rl, "forward", a.steps),
+  step_back: (rl, a) => doStep(rl, "backward", a.steps),
+  turn_left: (rl, a) => doTurn(rl, "left", a.degrees),
+  turn_right: (rl, a) => doTurn(rl, "right", a.degrees),
   bow: (rl) => doBow(rl),
+  kick_left_leg: (rl) => doKick(rl, "left"),
+  kick_right_leg: (rl) => doKick(rl, "right"),
+  skates_on: (rl) => setSkates(rl, true),
+  skates_off: (rl) => setSkates(rl, false),
 };
 
 // One move at a time, in order.
