@@ -1,5 +1,5 @@
 // Unit tests for the pose rules, with hand-built landmarks (no camera needed).
-// Run: node --test lab/static/tests/
+// Run: node --test lab/static/tests/pose-rules.test.mjs
 //
 // Fixtures are in the *camera's* image coordinates (not mirrored): a person
 // facing the camera has their LEFT shoulder on the RIGHT of the image.
