@@ -29,14 +29,12 @@ export const LM = {
 export const POSE_IDS = [
   "look_up", "look_down", "look_left", "look_right",
   "turn_left", "turn_right",
-  "sit_down", "stand_up",
   "left_arm_up", "right_arm_up", "both_arms_up",
 ];
 
 export const POSE_LABELS = {
   look_up: "Look up", look_down: "Look down", look_left: "Look left", look_right: "Look right",
   turn_left: "Turn left", turn_right: "Turn right",
-  sit_down: "Sit down", stand_up: "Stand up",
   left_arm_up: "Left arm up", right_arm_up: "Right arm up", both_arms_up: "Both arms up",
 };
 
@@ -141,12 +139,6 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   out.turn_right = result(turned && dir < 0, c, turned ? (dir < 0 ? "body turned to your right" : "turned, but to your left")
     : "shoulders still face the camera", turnRatio);
 
-  // Sit down: the head drops well below its standing height (was "crouch").
-  // Stand up: the head is back up near its standing height.
-  const drop = m.noseY - baseline.noseY;
-  const need = Math.max(0.6 * baseline.shoulderToNose, 0.3 * baseline.shoulderWidth);
-  out.sit_down = result(drop > need, c, drop > need ? "head well below its standing height" : "head hasn't dropped enough", drop / need);
-  out.stand_up = result(drop < 0.5 * need, c, drop < 0.5 * need ? "head at standing height" : "head is still low", drop / need);
 
   // Arms up (good for playing at a desk): the wrist is well above its shoulder, measured in
   // shoulder widths, and not resting on the head. Value = how far above, in shoulder widths.

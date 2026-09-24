@@ -36,42 +36,41 @@ const only = (res, ...trueIds) => {
   }
 };
 
-// Everyone standing normally counts as "stand up", so most tests expect that too.
 const check = (lm, base) => evaluatePose(lm, base, ASPECT);
 
-test("neutral stance: only 'stand up'", () => {
+test("neutral stance: nothing", () => {
   const { lm, base } = neutral();
-  only(check(lm, base), "stand_up");
+  only(check(lm, base));
 });
 
 test("look left (player's left = image right)", () => {
   const { lm, set, base } = neutral();
   set(LM.nose, 0.535, 0.35);
-  only(check(lm, base), "look_left", "stand_up");
+  only(check(lm, base), "look_left");
 });
 
 test("look right is NOT look left (the mirror trap)", () => {
   const { lm, set, base } = neutral();
   set(LM.nose, 0.465, 0.35);
-  only(check(lm, base), "look_right", "stand_up");
+  only(check(lm, base), "look_right");
 });
 
 test("a small head wobble is not a look", () => {
   const { lm, set, base } = neutral();
   set(LM.nose, 0.51, 0.35);
-  only(check(lm, base), "stand_up");
+  only(check(lm, base));
 });
 
 test("look up", () => {
   const { lm, set, base } = neutral();
   set(LM.nose, 0.5, 0.315);
-  only(check(lm, base), "look_up", "stand_up");
+  only(check(lm, base), "look_up");
 });
 
 test("look down", () => {
   const { lm, set, base } = neutral();
   set(LM.nose, 0.5, 0.385);
-  only(check(lm, base), "look_down", "stand_up");
+  only(check(lm, base), "look_down");
 });
 
 // Turning the body: shoulders look narrow, the nearer shoulder (smaller z) shows the direction,
@@ -87,19 +86,19 @@ function turned(dir) {
 
 test("turn left: right shoulder comes towards the camera", () => {
   const { lm, base } = turned("left");
-  only(check(lm, base), "turn_left", "stand_up");
+  only(check(lm, base), "turn_left");
 });
 
 test("turn right is NOT turn left", () => {
   const { lm, base } = turned("right");
-  only(check(lm, base), "turn_right", "stand_up");
+  only(check(lm, base), "turn_right");
 });
 
 test("turn direction falls back to the head when shoulder depth is unclear", () => {
   const { lm, set, base } = turned("left");
   set(LM.leftShoulder, 0.54, 0.5, 0);
   set(LM.rightShoulder, 0.46, 0.5, 0);
-  only(check(lm, base), "turn_left", "stand_up");
+  only(check(lm, base), "turn_left");
 });
 
 test("a body turn is not also a 'look' (head turns with the body)", () => {
@@ -117,18 +116,6 @@ test("moving further from the camera is not a turn (everything shrinks, not just
   const r = check(scaled(lm, 0.8), base);
   assert.equal(r.turn_left, false);
   assert.equal(r.turn_right, false);
-});
-
-test("sit down: head drops well below the calibrated standing height", () => {
-  const { lm, base } = neutral();
-  const low = lm.map((p) => ({ ...p, y: p.y + 0.15 }));
-  only(check(low, base), "sit_down");
-});
-
-test("a small dip is not sitting, and still counts as standing", () => {
-  const { lm, base } = neutral();
-  const dip = lm.map((p) => ({ ...p, y: p.y + 0.04 }));
-  only(check(dip, base), "stand_up");
 });
 
 test("everything needs calibrating first", () => {
@@ -153,7 +140,7 @@ test("rules hold when calibrated further from the camera (smaller in frame)", ()
   const far = scaled(lm, 0.6);
   const base = baselineFrom(far, ASPECT);
   set(LM.nose, 0.535, 0.35);
-  only(check(scaled(lm, 0.6), base), "look_left", "stand_up");
+  only(check(scaled(lm, 0.6), base), "look_left");
 });
 
 test("every result carries the measured number (for tuning)", () => {
@@ -165,19 +152,19 @@ test("every result carries the measured number (for tuning)", () => {
 test("right arm up (player's right = image left) is not left arm up", () => {
   const { lm, set, base } = neutral();
   set(LM.rightElbow, 0.38, 0.35); set(LM.rightWrist, 0.38, 0.2);
-  only(check(lm, base), "right_arm_up", "stand_up");
+  only(check(lm, base), "right_arm_up");
 });
 
 test("left arm up", () => {
   const { lm, set, base } = neutral();
   set(LM.leftElbow, 0.62, 0.35); set(LM.leftWrist, 0.62, 0.2);
-  only(check(lm, base), "left_arm_up", "stand_up");
+  only(check(lm, base), "left_arm_up");
 });
 
 test("both arms up", () => {
   const { lm, set, base } = neutral();
   set(LM.leftWrist, 0.62, 0.2); set(LM.rightWrist, 0.38, 0.2);
-  only(check(lm, base), "left_arm_up", "right_arm_up", "both_arms_up", "stand_up");
+  only(check(lm, base), "left_arm_up", "right_arm_up", "both_arms_up");
 });
 
 test("a hand resting on the head is not a raised arm", () => {
