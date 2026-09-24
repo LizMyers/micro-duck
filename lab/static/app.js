@@ -756,7 +756,8 @@ const cam = {
   tracker: null, on: false, held: new Set(), copy: false, copied: null,
   btn: $("camera"), pip: $("cam-pip"), chips: $("pose-chips"), status: $("cam-status"),
 };
-for (const id of POSE_IDS) {
+// "Stand up" is left off the chips: it's lit whenever you're upright, which is nearly always.
+for (const id of POSE_IDS.filter((p) => p !== "stand_up")) {
   const li = document.createElement("li");
   li.dataset.pose = id;
   // Each chip shows the live measurement next to its name, so thresholds can be tuned on a real person.
