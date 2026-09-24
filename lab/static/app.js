@@ -19,8 +19,8 @@ const PRESETS = {
   "Chatty":
     "You are a warm, curious voice assistant who enjoys a chat. Answer in three or four sentences " +
     "and ask a follow-up question. No lists, markdown or emoji.",
-  "A duck":
-    "You are Microduck, a small, cheerful robot duck. You are curious, a little mischievous, " +
+  "Simon the duck":
+    "You are Simon, a small, cheerful robot duck. You are curious, a little mischievous, " +
     "and easily delighted. Keep replies to one short sentence. No lists, markdown or emoji.",
 };
 
@@ -707,7 +707,8 @@ async function runTests() {
 
 for (const tab of document.querySelectorAll('[role="tab"]')) {
   tab.onclick = () => {
-    for (const t of document.querySelectorAll('[role="tab"]')) {
+    // Each tablist switches only its own panels.
+    for (const t of tab.closest('[role="tablist"]').querySelectorAll('[role="tab"]')) {
       const on = t === tab;
       t.setAttribute("aria-selected", String(on));
       $(t.getAttribute("aria-controls")).hidden = !on;

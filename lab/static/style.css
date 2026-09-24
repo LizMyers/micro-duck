@@ -60,9 +60,26 @@ small { color: var(--ink-2); font-weight: 400; }
 button, select, textarea, input { font: inherit; color: inherit; }
 
 .top {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  max-width: 1900px; margin: 0 auto; padding: 20px 16px 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  max-width: 1700px; margin: 0 auto; padding: 14px 16px 6px;
 }
+/* Relay race as a compact status strip in the toolbar */
+.top .relay {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px;
+}
+.top .stages { display: flex; gap: 4px; }
+.top .stages li {
+  display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  background: transparent; border: 1px solid transparent;
+}
+.top .stages li b { font-size: 12px; }
+.top .stages .node { width: 8px; height: 8px; margin: 0; border-width: 1.5px; }
+.top .stages .time { margin: 0; font-size: 12px; color: var(--ink-2); }
+.top .stages li .calc { display: none; }
+.top .headline { margin: 0; padding: 0 0 0 12px; border: none; border-left: 1px solid var(--line); gap: 8px; font-size: 12px; }
+.top .headline strong { font-size: 18px; }
+@media (max-width: 1100px) { .top .relay { order: 3; flex-basis: 100%; } .top .stages .time { display: none; } }
 .brand { display: flex; align-items: center; gap: 12px; }
 .logo {
   display: grid; place-items: center; width: 44px; height: 44px; font-size: 26px;
@@ -80,25 +97,23 @@ button, select, textarea, input { font: inherit; color: inherit; }
 .status[data-state="ready"] .dot { background: var(--good); }
 .status[data-state="error"] .dot { background: var(--bad); }
 
-main { max-width: 1900px; margin: 0 auto; padding: 8px 16px 40px; }
-/* Four quadrants: talk | duck on top, relay race | controls below. */
-.quad {
+main { max-width: 1700px; margin: 0 auto; padding: 8px 16px 24px; }
+/* Column 1: duck on top, controls below. Column 2: one tall tabbed panel. */
+.layout {
   display: grid; gap: 16px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, 0.8fr);
-  grid-template-areas: "convo duck insp" "relay controls insp" "log log insp";
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  grid-template-areas: "duck side" "controls side";
+  grid-template-rows: auto auto;
 }
-.inspector { grid-area: insp; display: flex; flex-direction: column; min-height: 0; max-height: calc(100vh - 110px); position: sticky; top: 12px; }
-@media (max-width: 1300px) {
-  .quad { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "convo duck" "relay controls" "insp insp" "log log"; }
-  .inspector { position: static; max-height: 520px; }
-}
-.convo { grid-area: convo; }
 .duck { grid-area: duck; }
-.relay { grid-area: relay; }
 .controls { grid-area: controls; }
-.log { grid-area: log; }
-@media (max-width: 900px) {
-  .quad { grid-template-columns: 1fr; grid-template-areas: "duck" "convo" "relay" "controls" "log"; }
+.side {
+  grid-area: side; display: flex; flex-direction: column; min-height: 0;
+  height: calc(100vh - 100px); position: sticky; top: 12px;
+}
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: 1fr; grid-template-areas: "duck" "side" "controls"; }
+  .side { height: 640px; position: static; }
 }
 
 .card {
@@ -289,3 +304,15 @@ kbd {
 .insp-row.err { background: #f8dcda; }
 .insp-row pre { margin: 0 0 6px 4.8em; padding: 8px; background: var(--bg); border-radius: 8px; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all; font-size: 11px; }
 .inspector.hide-audio .insp-row.audio { display: none; }
+
+/* Column 2 panel */
+.side .tabs { margin: -4px 0 8px; }
+.side-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.side-panel[hidden] { display: none; }
+.side .chat { max-height: none; flex: 1; }
+.panel-tools { justify-content: flex-end; margin: 0 0 4px; }
+.insp-root { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.hide-audio .insp-row.audio { display: none; }
+#panel-log pre { flex: 1; margin: 0; overflow: auto; font: 12px/1.5 var(--mono); background: var(--bg); padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-all; }
+.side .talk-row { margin-top: 8px; }
+.duck .sim-wrap { aspect-ratio: 16 / 9; }
