@@ -171,3 +171,27 @@ test("every result carries the measured number (for tuning)", () => {
   const d = evaluatePoseDetailed(lm, base, ASPECT);
   for (const id of POSE_IDS) assert.equal(typeof d[id].value, "number", id);
 });
+
+test("right arm up (player's right = image left) is not left arm up", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.38, 0.35); set(LM.rightWrist, 0.38, 0.2);
+  only(check(lm, base), "right_arm_up", "stand_up");
+});
+
+test("left arm up", () => {
+  const { lm, set, base } = neutral();
+  set(LM.leftElbow, 0.62, 0.35); set(LM.leftWrist, 0.62, 0.2);
+  only(check(lm, base), "left_arm_up", "stand_up");
+});
+
+test("both arms up", () => {
+  const { lm, set, base } = neutral();
+  set(LM.leftWrist, 0.62, 0.2); set(LM.rightWrist, 0.38, 0.2);
+  only(check(lm, base), "left_arm_up", "right_arm_up", "both_arms_up", "stand_up");
+});
+
+test("a hand resting on the head is not a raised arm", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightWrist, 0.47, 0.27);
+  assert.equal(check(lm, base).right_arm_up, false);
+});
