@@ -28,7 +28,7 @@ export const LM = {
 // PLAYER's own left and right.
 export const POSE_IDS = [
   "look_up", "look_down", "look_left", "look_right",
-  "turn_left", "turn_right", "step_forward", "step_back",
+  "turn_left", "turn_right",
   "sit_down", "stand_up",
   "left_arm_up", "right_arm_up", "both_arms_up",
 ];
@@ -36,7 +36,6 @@ export const POSE_IDS = [
 export const POSE_LABELS = {
   look_up: "Look up", look_down: "Look down", look_left: "Look left", look_right: "Look right",
   turn_left: "Turn left", turn_right: "Turn right",
-  step_forward: "Lean forward", step_back: "Lean back",
   sit_down: "Sit down", stand_up: "Stand up",
   left_arm_up: "Left arm up", right_arm_up: "Right arm up", both_arms_up: "Both arms up",
 };
@@ -47,7 +46,6 @@ export const THRESHOLDS = {
   look: 0.2,       // head turn: nose offset from the ear midpoint, in ear-widths
   pitch: 0.15,     // head tilt: nose height relative to the ears, in ear-widths
   turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width (for the same size)
-  step: 0.12,      // step: body looks 12% bigger or smaller than at calibration
 };
 
 const VISIBLE = 0.5;
@@ -142,12 +140,6 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
     : "shoulders still face the camera", turnRatio);
   out.turn_right = result(turned && dir < 0, c, turned ? (dir < 0 ? "body turned to your right" : "turned, but to your left")
     : "shoulders still face the camera", turnRatio);
-
-  // Step forward / back: you look bigger or smaller, in height AND width (so a turn doesn't count).
-  const bigger = size > 1 + T.step && width > 1 + T.step;
-  const smaller = size < 1 - T.step && width < 1 - T.step && !turned;
-  out.step_forward = result(bigger, c, bigger ? "closer to the camera than at calibration" : "not closer", size);
-  out.step_back = result(smaller, c, smaller ? "further from the camera than at calibration" : "not further away", size);
 
   // Sit down: the head drops well below its standing height (was "crouch").
   // Stand up: the head is back up near its standing height.
