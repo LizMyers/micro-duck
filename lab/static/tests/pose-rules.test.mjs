@@ -109,20 +109,10 @@ test("a body turn is not also a 'look' (head turns with the body)", () => {
   assert.match(d.look_left.reason, /whole body/);
 });
 
-// Stepping: the whole person gets bigger or smaller in the frame, around the middle.
+// Moving nearer or further: the whole person gets bigger or smaller in the frame, around the middle.
 const scaled = (lm, k) => lm.map((p) => ({ ...p, x: 0.5 + (p.x - 0.5) * k, y: 0.5 + (p.y - 0.5) * k }));
 
-test("step forward: you look bigger", () => {
-  const { lm, base } = neutral();
-  only(check(scaled(lm, 1.25), base), "step_forward", "stand_up");
-});
-
-test("step back: you look smaller", () => {
-  const { lm, base } = neutral();
-  only(check(scaled(lm, 0.8), base), "step_back", "stand_up");
-});
-
-test("stepping back is not a turn (everything shrinks, not just the shoulders)", () => {
+test("moving further from the camera is not a turn (everything shrinks, not just the shoulders)", () => {
   const { lm, base } = neutral();
   const r = check(scaled(lm, 0.8), base);
   assert.equal(r.turn_left, false);

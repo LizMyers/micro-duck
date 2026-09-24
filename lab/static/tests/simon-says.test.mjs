@@ -28,5 +28,5 @@ test("never the same command twice in a row", () => {
 test("about 70% are real 'Simon says'", () => {
   assert.equal(nextCommand(seq(0.69, 0)).says, true);
   assert.equal(nextCommand(seq(0.71, 0)).says, false);
-  assert.ok(Object.keys(COMMANDS).length === 11);
+  assert.ok(Object.keys(COMMANDS).length === 9);
 });
