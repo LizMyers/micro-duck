@@ -45,36 +45,27 @@
   color-scheme: dark;
 }
 
-/* Duck colourways: the page takes the colours of the duck you pick (Simon OS → Colour).
-   Swatches from the simulator's variants and Pollen's press kit. Cream is the default above. */
-:root[data-duck="blue"] {   /* Sky */
-  --bg: #f1f7fb; --surface-2: #dcebf4; --line: #cfe0eb;
-  --accent: #4a8bbf; --accent-soft: #dcecf6; --active: #4a8bbf;
-  --shadow: 0 1px 2px rgb(20 50 80 / 6%), 0 4px 16px rgb(20 50 80 / 6%);
-}
-:root[data-duck="purple"] { /* Lavender */
-  --bg: #f6f3fb; --surface-2: #e8e0f4; --line: #ddd3ec;
-  --accent: #8468bd; --accent-soft: #ece5f6; --active: #8468bd;
-  --shadow: 0 1px 2px rgb(50 30 80 / 6%), 0 4px 16px rgb(50 30 80 / 6%);
-}
-:root[data-duck="charcoal"] { /* Graphite */
-  --bg: #f4f3f1; --surface-2: #e6e4e0; --line: #dcd9d4;
-  --accent: #4c4c52; --accent-soft: #e7e6e3; --active: #4c4c52;
-  --shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 6%);
-}
+/* Duck colourways (Simon OS → Colour). Only three things follow the duck: the page background,
+   the Tap to talk button and the RAM banner. Swatches from the simulator and Pollen's press kit. */
+:root { --duck: #f08a24; --duck-ink: #ffffff; --duck-bg: #fbf5ea; }                       /* Cream */
+:root[data-duck="blue"] { --duck: #4a8bbf; --duck-ink: #ffffff; --duck-bg: #eaf3f9; }     /* Sky */
+:root[data-duck="purple"] { --duck: #8468bd; --duck-ink: #ffffff; --duck-bg: #f2eefa; }   /* Lavender */
+:root[data-duck="charcoal"] { --duck: #4c4c52; --duck-ink: #ffffff; --duck-bg: #eeedeb; } /* Graphite */
 @media (prefers-color-scheme: dark) {
-  :root[data-duck="blue"]:not([data-theme="light"]) { --bg: #161b1f; --surface: #1f262b; --surface-2: #2a343b; --line: #33414a; --accent: #7fb8e0; --accent-soft: #223544; --active: #7fb8e0; --accent-ink: #161b1f; }
-  :root[data-duck="purple"]:not([data-theme="light"]) { --bg: #1a1820; --surface: #24212b; --surface-2: #312c3b; --line: #3c3647; --accent: #b39ddd; --accent-soft: #342b45; --active: #b39ddd; --accent-ink: #1a1820; }
-  :root[data-duck="charcoal"]:not([data-theme="light"]) { --bg: #1a1a1b; --surface: #232325; --surface-2: #2e2e31; --line: #38383c; --accent: #b9b5ae; --accent-soft: #3a3936; --active: #b9b5ae; --accent-ink: #1a1a1b; }
+  :root:not([data-theme="light"]) { --duck: #f5a04a; --duck-ink: #1c1b1a; --duck-bg: #1c1b1a; }
+  :root[data-duck="blue"]:not([data-theme="light"]) { --duck: #7fb8e0; --duck-ink: #161b1f; --duck-bg: #151b20; }
+  :root[data-duck="purple"]:not([data-theme="light"]) { --duck: #b39ddd; --duck-ink: #1a1820; --duck-bg: #1a1721; }
+  :root[data-duck="charcoal"]:not([data-theme="light"]) { --duck: #b9b5ae; --duck-ink: #1a1a1b; --duck-bg: #19191a; }
 }
-:root[data-theme="dark"][data-duck="blue"] { --bg: #161b1f; --surface: #1f262b; --surface-2: #2a343b; --line: #33414a; --accent: #7fb8e0; --accent-soft: #223544; --active: #7fb8e0; --accent-ink: #161b1f; }
-:root[data-theme="dark"][data-duck="purple"] { --bg: #1a1820; --surface: #24212b; --surface-2: #312c3b; --line: #3c3647; --accent: #b39ddd; --accent-soft: #342b45; --active: #b39ddd; --accent-ink: #1a1820; }
-:root[data-theme="dark"][data-duck="charcoal"] { --bg: #1a1a1b; --surface: #232325; --surface-2: #2e2e31; --line: #38383c; --accent: #b9b5ae; --accent-soft: #3a3936; --active: #b9b5ae; --accent-ink: #1a1a1b; }
+:root[data-theme="dark"] { --duck: #f5a04a; --duck-ink: #1c1b1a; --duck-bg: #1c1b1a; }
+:root[data-theme="dark"][data-duck="blue"] { --duck: #7fb8e0; --duck-ink: #161b1f; --duck-bg: #151b20; }
+:root[data-theme="dark"][data-duck="purple"] { --duck: #b39ddd; --duck-ink: #1a1820; --duck-bg: #1a1721; }
+:root[data-theme="dark"][data-duck="charcoal"] { --duck: #b9b5ae; --duck-ink: #1a1a1b; --duck-bg: #19191a; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  background: var(--bg);
+  background: var(--duck-bg);
   color: var(--ink);
   font: 15px/1.5 Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -173,7 +164,7 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
 .talk-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); }
 .talk {
   display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 999px;
-  border: none; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 16px; cursor: pointer;
+  border: none; background: var(--duck); color: var(--duck-ink); font-weight: 600; font-size: 16px; cursor: pointer;
 }
 .talk .mic { width: 12px; height: 12px; border-radius: 50%; background: currentColor; }
 .talk[aria-pressed="true"] { background: var(--bad); color: #fff; }
@@ -396,7 +387,8 @@ kbd {
 .mac-summary { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .mac-summary strong { font-family: var(--mono); font-size: 20px; letter-spacing: .04em; color: var(--good); }
 .mac-summary small { font-size: 13px; }
-.mac-summary[data-pressure="warning"] strong { color: var(--accent); }
+.mac-summary[data-pressure="warning"] strong { color: var(--warn); }
+.mac-summary[data-pressure="warning"] + .ram-bar span { background: var(--warn); }
 .mac-summary[data-pressure="critical"] strong { color: var(--bad); }
 .ram-bar, .mem-bar { height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
 .ram-bar { height: 14px; margin-top: 10px; }
@@ -412,7 +404,7 @@ kbd {
 /* Low-memory warning, shown on top of every tab */
 .ram-warning {
   position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 8px 16px; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 500;
+  padding: 8px 16px; background: var(--duck); color: var(--duck-ink); font-size: 13px; font-weight: 500;
 }
 .ram-warning[hidden] { display: none; }
 .ram-warning[data-level="critical"] { background: var(--bad); color: #fff; }
