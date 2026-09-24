@@ -409,8 +409,8 @@ function onAgentEvent(ev) {
         inspector.note(`🦆 duck finished: ${ev.name} ${r.ok ? "✓" : "✗"}`, r, "tool");
         if (!r.ok) whenIdle(() => {
           send({ type: "conversation.item.create", item: { type: "message", role: "system", content: [
-            { type: "input_text", text: `The ${ev.name} move failed: ${r.error} Tell the user briefly and honestly.` }] } });
-          send({ type: "response.create" });
+            { type: "input_text", text: `The ${ev.name} move failed: ${r.error}` }] } });
+          sayOnly("Tell the user briefly and honestly that the move didn't work. Don't call any tools.");
         });
       });
       break;
@@ -427,7 +427,7 @@ function onAgentEvent(ev) {
         // It acted without saying anything: let it say a few words, once.
         if (status === "completed" && !spoke && state.followUps < 1 && !state.testing) {
           state.followUps++;
-          send({ type: "response.create" });
+          sayOnly("Say a few words about what you just did. Don't call any tools.");
         }
       }
       flushIdle();
@@ -476,6 +476,11 @@ function finishAction(el, r) {
   el.textContent = el.textContent.replace(/…$/, "") +
     (r.ok ? ` ✓${facts.length ? ` (${facts.join(", ")})` : ""}` : ` ✗ ${r.error}`);
   el.classList.toggle("failed", !r.ok);
+}
+
+// Ask for a spoken reply that can't trigger another move.
+function sayOnly(instructions) {
+  send({ type: "response.create", response: { tool_choice: "none", instructions: ui.instructions.value + "\n\n" + instructions } });
 }
 
 // Some messages must wait until the agent isn't in the middle of a reply.

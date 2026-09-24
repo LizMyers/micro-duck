@@ -115,7 +115,10 @@ async function doStep(rl, direction, steps) {
   const yaw = rl.yaw;
   const fwdX = Math.cos(yaw), fwdY = Math.sin(yaw);
   const along = () => { const [x, y] = pos(rl); return (x - x0) * fwdX + (y - y0) * fwdY; };
-  rl.setTwist(back ? -0.12 : 0.15, 0, 0);
+  // Same speed as the arrow keys: the walking policy ignores gentler commands
+  // (at 0.15 m/s it shuffled ~0.5 cm and stopped).
+  const [fwd, bwd] = rl.velLimits ?? [0.25, -0.2];
+  rl.setTwist(back ? bwd : fwd, 0, 0);
   trace("step: moving", snapshot(rl));
   let lastTrace = performance.now();
   await until(() => {
