@@ -26,8 +26,8 @@
 | `micro-duck/microduck-press-kit/` | Pollen press kit (gitignored). Stickers are OK to use; photos are press-only. Never call Microduck "open-source hardware". |
 
 ## How to run
-- **Start here:** [running-the-lab.md](running-the-lab.md), with the shared way to run it (`uv run duck-lab 2>&1 | tee lab/logs/lab.log`)
-  in Liz's own Terminal, so she sees everything and Claude reads `lab/logs/lab.log`.
+- **Start here:** [running-the-lab.md](running-the-lab.md). Double-click `Duck Lab.command` (or `uv run duck-lab`);
+  the server writes `lab/logs/lab.log` itself, so Claude reads what Liz sees. Restart from the page (Simon OS → Restart server).
 - Double-click **`Duck Lab.command`** (or `cd micro-duck && uv run duck-lab`), then open **http://localhost:8770**
   (it's `localhost`: Liz once typed 127.0.0.0 by mistake).
 - Brain tab → **Start agent** (Qwen3 4B), about 1–3 min until the green "Ready". The lab remembers the model and
