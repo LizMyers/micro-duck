@@ -16,3 +16,12 @@ Ghosts are currently disabled in embed mode (`sim/embed-and-jaw.patch`) — re-e
 3. Your webcam as a referee: body tracking in the browser (MediaPipe, privacy, left vs right)
 4. Build a voice game master: Simon (the duck) says — timing, tricks, turn-taking
 5. **Take it further:** multiplayer Simon Says over peer-to-peer WebRTC (see above)
+
+## Simon Says v1 — vocabulary decided (Liz, 2026-09-23)
+Rule: every command is something **both Simon and the player** can do, and the webcam can judge.
+- take 1–2 steps **forward | back**   → player: grows/shrinks in frame (shoulder width vs calibration)
+- turn **left | right**               → player: shoulders rotate / face turns away
+- look **up | down | left | right**   → player: head pitch / yaw from face landmarks (left/right = the mirror trap)
+- **sit down | stand up**             → player: head drops a lot / returns to calibrated height
+Not in v1: arm moves (Simon has no arms), "Quack!" (mic-judged), bow, kick, skates.
+Still to build: look_* moves for Simon (head poses exist), new pose checks for steps/turns/looks, the game master.
