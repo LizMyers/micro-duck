@@ -43,7 +43,7 @@ export const POSE_LABELS = {
 export const THRESHOLDS = {
   look: 0.2,       // head turn: nose offset from the ear midpoint, in ear-widths
   pitch: 0.15,     // head tilt: nose height relative to the ears, in ear-widths
-  turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width (for the same size)
+  turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width
 };
 
 const VISIBLE = 0.5;
@@ -113,10 +113,11 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   const T = THRESHOLDS;
   const c = m.conf;
 
-  // Size compared with calibration, two ways: height (shoulders to nose) and width (shoulders).
-  const size = m.shoulderToNose / baseline.shoulderToNose;
+  // Shoulder width compared with calibration.
   const width = m.shoulderWidth / baseline.shoulderWidth;
-  const turnRatio = width / size;   // < 1 when the shoulders narrow more than the body shrinks: a turn
+  // The player stays seated at the same distance, so narrow shoulders mean a turn. (It used to be
+  // width relative to shoulders-to-nose height, but looking up raised the nose and faked a turn.)
+  const turnRatio = width;
   const turned = turnRatio < T.turned;
 
   // Look left / right: the head turns but the body doesn't.
@@ -131,7 +132,7 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   out.look_up = result(pitch > T.pitch, c, pitch > T.pitch ? "head tilted up" : "head not tilted up", pitch);
   out.look_down = result(pitch < -T.pitch, c, pitch < -T.pitch ? "head tilted down" : "head not tilted down", pitch);
 
-  // Turn left / right: shoulders look narrow for your size; the nearer shoulder says which way.
+  // Turn left / right: shoulders look narrow; the nearer shoulder says which way.
   // If depth is unclear, the direction the head points decides.
   const dir = Math.abs(m.shoulderDepth) > 0.05 ? Math.sign(m.shoulderDepth) : Math.sign(yaw);
   out.turn_left = result(turned && dir > 0, c, turned ? (dir > 0 ? "body turned to your left" : "turned, but to your right")

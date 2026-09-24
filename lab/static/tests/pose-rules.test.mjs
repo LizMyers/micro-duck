@@ -172,3 +172,20 @@ test("a hand resting on the head is not a raised arm", () => {
   set(LM.rightWrist, 0.47, 0.27);
   assert.equal(check(lm, base).right_arm_up, false);
 });
+
+test("looking up a lot is not a body turn", () => {
+  const { lm, set, base } = neutral();
+  set(LM.nose, 0.5, 0.25);
+  const r = check(lm, base);
+  assert.equal(r.look_up, true);
+  assert.equal(r.turn_left, false);
+  assert.equal(r.turn_right, false);
+});
+
+test("a strong head turn alone is not a body turn", () => {
+  const { lm, set, base } = neutral();
+  set(LM.nose, 0.56, 0.35);
+  const r = check(lm, base);
+  assert.equal(r.look_left, true);
+  assert.equal(r.turn_left, false);
+});
