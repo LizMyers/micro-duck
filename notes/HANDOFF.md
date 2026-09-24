@@ -79,6 +79,14 @@ Other candidates: `notes/research/upstream-candidates.md` (Gemma end-of-turn and
 - Pose thresholds come from synthetic test data; they haven't been tuned on Liz yet.
 - `recordings/` is gitignored (screenshots live only locally).
 
+## Update 2026-09-24
+- Simon OS tab (first tab): STATUS / SERVER / MODEL / VOICE / STRAY PROCESSES rows with their controls,
+  system messages (with Terminal equivalents), relay race at the bottom. Help tab = manual keyboard controls.
+  The server always starts the model; a second server refuses to start. See `notes/running-the-lab.md`.
+- **UI is parked:** Liz will redesign it in Figma and hand over the file. Don't polish the UI until then.
+- Liz wants plain names (Server, Model, Voice, Status), no nicknames or emoji, and no changes she didn't ask for.
+- Rest of 2026-09-24: camera (pose checks).
+
 ## Plan for tomorrow (in order, one at a time)
 1. **Make the buttons clear.** Ask Liz what confuses her; likely: one clear agent control (●Start → Loading… →
    ■Stop, with "switch model" separate), labelled toggles ("📷 Camera: off/on"), explain Calibrate inline, and group

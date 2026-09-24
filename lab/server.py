@@ -8,6 +8,8 @@ It does three jobs, so nobody has to touch a terminal:
    ("turn detection took 80 ms", "speech-to-text took 0.30 s", ...) that it
    streams to the page over Server-Sent Events.
 3. Serves the page itself, plus test questions spoken by macOS `say`.
+4. Narrates what it does ("[lab] agent ready after 97 s") to the Terminal and to the
+   page's Simon OS tab, and can check for, and clean up, leftover copies of itself.
 
 The page talks to the agent directly over the OpenAI Realtime WebSocket protocol;
 this server never touches the audio.
@@ -19,7 +21,10 @@ import asyncio
 import json
 import os
 import re
+import signal
+import socket
 import subprocess
+import sys
 import threading
 import time
 import webbrowser
@@ -46,8 +51,9 @@ S2S_DIR = Path(os.environ.get("S2S_DIR", Path.home() / "Documents/Development/sp
 SIM_DIST = Path(os.environ.get("SIM_DIST", Path.home() / "Documents/Development/microduck-simulator/app/dist"))
 HF_CACHE = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
 
-STATE_FILE = HERE / ".agent-state.json"
-LOG_DIR = HERE / "logs"  # one log file per agent run, kept so crashes can be diagnosed  # which model to bring back after a lab restart
+STATE_FILE = HERE / ".agent-state.json"  # the model the agent last ran, so the next launch uses it
+STATE_FILE_REL = "lab/.agent-state.json"  # how the Terminal commands we show refer to it
+LOG_DIR = HERE / "logs"  # one log file per agent run, kept so crashes can be diagnosed
 
 LAB_PORT = 8770
 AGENT_PORT = 8765
@@ -109,6 +115,8 @@ def free_agent_port() -> None:
     for pid in pids:
         cmd = subprocess.run(["ps", "-o", "command=", "-p", pid], capture_output=True, text=True).stdout
         if "speech-to-speech" in cmd:
+            lab_log(f"A stray model process (pid {pid}) was holding port {AGENT_PORT}, so we stopped it.",
+                    cmd=f"kill {pid}", level="warn")
             subprocess.run(["kill", pid])
     if pids:
         time.sleep(2)
@@ -142,7 +150,9 @@ class Agent:
     def snapshot(self) -> dict:
         return {"status": self.status, "model": self.model, "error": self.error}
 
-    def start(self, model_id: str) -> None:
+    def start(self, model_id: str, why: str = "you pressed Start") -> None:
+        lab_log(f"Starting model {model_label(model_id)} ({why}). Loading takes 1–3 minutes.",
+                cmd=f"speech-to-speech serve --mac-optimal-settings --model_name {model_id} --port {AGENT_PORT}")
         with self.lock:
             self._stop_locked()
             free_agent_port()
@@ -172,14 +182,17 @@ class Agent:
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             )
             STATE_FILE.write_text(json.dumps({"model": model_id}))
+            self.started_at = time.time()
             self.set_status("starting")
             threading.Thread(target=self._read_log, args=(self.proc,), daemon=True).start()
 
-    def stop(self, forget: bool = True) -> None:
+    def stop(self, why: str = "you pressed Stop") -> None:
         with self.lock:
+            pid = self.proc.pid if self.proc and self.proc.poll() is None else None
             self._stop_locked()
-        if forget:
-            STATE_FILE.unlink(missing_ok=True)
+        if pid:
+            lab_log(f"Stopped model, pid {pid} ({why}). About 8 GB of memory freed.",
+                    cmd=f"kill {pid}")
         self.set_status("stopped")
 
     def _stop_locked(self) -> None:
@@ -203,6 +216,9 @@ class Agent:
             self.log_tail.append(line)
             self.publish({"type": "log", "line": line[-300:]})
             if READY_LINE in line:
+                took = time.time() - getattr(self, "started_at", time.time())
+                lab_log(f"Model ready after {took:.0f} s: {model_label(self.model)} on port {AGENT_PORT}, "
+                        f"pid {proc.pid}.", level="good")
                 self.set_status("ready")
             for name, pattern, extract in LOG_PATTERNS:
                 m = pattern.search(line)
@@ -213,12 +229,95 @@ class Agent:
         if log_file:
             log_file.write(f"\n[duck-lab] agent exited with code {code}\n")
         if proc is self.proc:
+            reason = {-15: "another process told it to stop (signal 15)",
+                      -9: "another process force-stopped it (signal 9)"}.get(code, "it crashed")
+            lab_log(f"Model exited unexpectedly with code {code}: {reason}. "
+                    f"Details: lab/logs/{Path(log_file.name).name if log_file else 'agent-*.log'}", level="bad")
             tail = "\n".join(list(self.log_tail)[-8:])
-            self.set_status("error", f"The agent stopped unexpectedly.\n{tail}")
+            self.set_status("error", f"The model stopped unexpectedly.\n{tail}")
 
 
 agent = Agent()
 app = FastAPI(title="Duck Lab")
+LAB_STARTED = time.time()
+
+
+# --- The lab narrates what it does ----------------------------------------------------------
+# Every message goes to the Terminal (flushed straight away, so `| tee lab/logs/lab.log`
+# sees it) and to the page's Simon OS tab. `cmd` is the Terminal command a human would
+# type to do or check the same thing: that's what the tab teaches.
+lab_messages: deque[dict] = deque(maxlen=200)
+
+
+def lab_log(text: str, cmd: str | None = None, level: str = "info") -> None:
+    msg = {"type": "lab", "text": text, "cmd": cmd, "level": level}
+    print(f"[lab] {time.strftime('%H:%M:%S')} {text}" + (f"\n        $ {cmd}" if cmd else ""), flush=True)
+    agent.publish(msg)  # adds the timestamp
+    msg.setdefault("t", time.time())
+    lab_messages.append(msg)
+
+
+def model_label(model_id: str | None) -> str:
+    return next((m["label"] for m in MODELS if m["id"] == model_id), model_id or "no model")
+
+
+# --- Looking at what's running (the same checks as lsof and ps in a Terminal) --------------
+
+def listening_pids(port: int) -> list[int]:
+    out = subprocess.run(["lsof", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"], capture_output=True, text=True).stdout
+    return [int(p) for p in out.split()]
+
+
+def process_info(pid: int) -> dict | None:
+    out = subprocess.run(["ps", "-o", "rss=,lstart=,command=", "-p", str(pid)],
+                         capture_output=True, text=True).stdout.strip()
+    if not out:
+        return None
+    rss, rest = out.split(None, 1)
+    started = time.mktime(time.strptime(rest[:24], "%a %b %d %H:%M:%S %Y"))
+    return {"pid": pid, "mb": int(rss) // 1024, "started": started, "command": rest[25:]}
+
+
+def find_pids(pattern: str) -> list[int]:
+    out = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True).stdout
+    return [int(p) for p in out.split()]
+
+
+def leftovers() -> list[dict]:
+    """Other copies of the lab, and agents that no lab owns (e.g. from a hard restart)."""
+    ours = {os.getpid(), agent.proc.pid if agent.proc else -1}
+    found = []
+    for kind, pattern in (("lab", "bin/duck-lab"), ("agent", "speech-to-speech serve")):
+        for pid in find_pids(pattern):
+            info = process_info(pid)
+            if pid in ours or not info or (kind == "lab" and "bin/duck-lab" not in info["command"]):
+                continue
+            found.append({**info, "kind": kind})
+    return found
+
+
+def scan() -> dict:
+    try:
+        auto = json.loads(STATE_FILE.read_text()).get("model")
+    except (OSError, ValueError):
+        auto = None
+    agent_pid = agent.proc.pid if agent.proc and agent.proc.poll() is None else None
+    agent_info = process_info(agent_pid) if agent_pid else None
+    return {
+        "lab": {"pid": os.getpid(), "started": LAB_STARTED, "port": LAB_PORT,
+                "url": f"http://localhost:{LAB_PORT}"},
+        "agent": {**agent.snapshot(), "label": model_label(agent.model) if agent.model else None,
+                  "pid": agent_pid, "mb": agent_info["mb"] if agent_info else None, "port": AGENT_PORT,
+                  "port_pids": listening_pids(AGENT_PORT)},
+        "remembered": {"model": auto, "label": model_label(auto) if auto else None},
+        "leftovers": leftovers(),
+    }
+
+
+def describe(pid_info: dict) -> str:
+    when = time.strftime("%a %H:%M", time.localtime(pid_info["started"]))
+    what = "an old server" if pid_info["kind"] == "lab" else "a model process no server owns"
+    return f"{what} (pid {pid_info['pid']}, since {when}, {pid_info['mb']} MB)"
 
 
 @app.middleware("http")
@@ -234,20 +333,25 @@ async def no_cache(request, call_next):
 @app.on_event("startup")
 async def _startup() -> None:
     agent.loop = asyncio.get_running_loop()
+    lab_log(f"Server started: pid {os.getpid()}, http://localhost:{LAB_PORT}.",
+            cmd="uv run duck-lab 2>&1 | tee lab/logs/lab.log")
+    for p in await asyncio.to_thread(leftovers):
+        lab_log(f"Stray process: {describe(p)}. Stop strays stops it.", cmd=f"kill {p['pid']}", level="warn")
     await asyncio.to_thread(make_test_prompts)
     await asyncio.to_thread(fetch_moves)
-    # If the agent was running when the lab last shut down, bring it back.
+    # Starting the lab starts the agent too, with the model it used last time.
     try:
         last = json.loads(STATE_FILE.read_text()).get("model")
     except (OSError, ValueError):
         last = None
-    if last in {m["id"] for m in MODELS}:
-        await asyncio.to_thread(agent.start, last)
+    if last not in {m["id"] for m in MODELS}:
+        last = MODELS[0]["id"]
+    await asyncio.to_thread(agent.start, last, "started with the server; last model used")
 
 
 @app.on_event("shutdown")
 def _shutdown() -> None:
-    agent.stop(forget=False)
+    agent.stop(why="server shutting down")
 
 
 def make_test_prompts() -> None:
@@ -271,11 +375,12 @@ def fetch_moves() -> None:
         try:
             urllib.request.urlretrieve(url, out)
         except Exception as e:  # the lab still works without the move
-            print(f"Couldn't download move {name}: {e}")
+            lab_log(f"Couldn't download move {name}: {e}", level="warn")
 
 
 class StartRequest(BaseModel):
     model: str
+    why: str = "you pressed Start"
 
 
 @app.get("/api/options")
@@ -298,7 +403,7 @@ def status() -> dict:
 async def start(req: StartRequest) -> dict:
     if req.model not in {m["id"] for m in MODELS}:
         raise HTTPException(400, "Unknown model")
-    await asyncio.to_thread(agent.start, req.model)
+    await asyncio.to_thread(agent.start, req.model, req.why)
     return agent.snapshot()
 
 
@@ -306,6 +411,75 @@ async def start(req: StartRequest) -> dict:
 async def stop() -> dict:
     await asyncio.to_thread(agent.stop)
     return agent.snapshot()
+
+
+@app.get("/api/system")
+async def system(check: bool = False) -> dict:
+    """What's running. With check=1 the lab also narrates the result, like running lsof and ps."""
+    s = await asyncio.to_thread(scan)
+    if check:
+        a = s["agent"]
+        lab_log(f"Server: running, pid {s['lab']['pid']}, port {LAB_PORT}.",
+                cmd=f'lsof -nP -iTCP -sTCP:LISTEN | grep -E ":{LAB_PORT}|:{AGENT_PORT}"')
+        if a["pid"]:
+            lab_log(f"Model: {a['status']}, {a['label']}, pid {a['pid']}, {a['mb']:,} MB of memory.",
+                    cmd=f"ps -o pid,rss,command -p {a['pid']}")
+        elif a["port_pids"]:
+            lab_log(f"Model: not ours, pid {a['port_pids'][0]} holds port {AGENT_PORT}.",
+                    level="warn")
+        else:
+            lab_log("Model: not running.")
+        lab_log(f"Next server start loads {s['remembered']['label']}.",
+                cmd=f"cat {STATE_FILE_REL}")
+        if s["leftovers"]:
+            for p in s["leftovers"]:
+                lab_log(f"Stray process: {describe(p)}.", cmd='ps -ef | grep -E "duck-lab|speech-to-speech"', level="warn")
+        else:
+            lab_log("No stray processes.", cmd='ps -ef | grep -E "duck-lab|speech-to-speech"',
+                    level="good")
+    return s
+
+
+@app.post("/api/system/cleanup")
+async def cleanup() -> dict:
+    def work() -> None:
+        found = leftovers()
+        if not found:
+            lab_log("No stray processes.", level="good")
+        for p in found:
+            lab_log(f"Stopping {describe(p)}…", cmd=f"kill {p['pid']}")
+            os.kill(p["pid"], signal.SIGTERM)
+        deadline = time.time() + 5
+        while found and time.time() < deadline and any(process_info(p["pid"]) for p in found):
+            time.sleep(0.25)
+        for p in found:
+            if process_info(p["pid"]):
+                lab_log(f"pid {p['pid']} ignored kill, so we used kill -9.",
+                        cmd=f"kill -9 {p['pid']}", level="warn")
+                os.kill(p["pid"], signal.SIGKILL)
+            else:
+                lab_log(f"pid {p['pid']} has stopped.", level="good")
+    await asyncio.to_thread(work)
+    return await asyncio.to_thread(scan)
+
+
+@app.post("/api/system/restart-lab")
+def restart_lab() -> dict:
+    """Replace this lab with a fresh copy of itself (same pid, same Terminal, same log)."""
+    lab_log("Restarting server: stopping the model, loading fresh code, starting the model again. "
+            "The page reloads when it's back.",
+            cmd="Ctrl+C, then: uv run duck-lab 2>&1 | tee lab/logs/lab.log")
+
+    def later() -> None:
+        time.sleep(0.5)
+        if agent.proc is not None and agent.proc.poll() is None:
+            agent.stop(why="server restarting")
+        os.environ["DUCK_LAB_NO_BROWSER"] = "1"
+        sys.stdout.flush()
+        os.execv(sys.executable, [sys.executable, *sys.argv])
+
+    threading.Thread(target=later, daemon=True).start()
+    return {"ok": True}
 
 
 @app.get("/api/events")
@@ -316,6 +490,8 @@ async def events() -> StreamingResponse:
     async def stream():
         try:
             yield f"data: {json.dumps({'type': 'status', **agent.snapshot()})}\n\n"
+            for msg in list(lab_messages)[-60:]:
+                yield f"data: {json.dumps({**msg, 'replay': True})}\n\n"
             for line in list(agent.log_tail)[-40:]:
                 yield f"data: {json.dumps({'type': 'log', 'line': line[-300:]})}\n\n"
             while True:
@@ -342,11 +518,27 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html")
 
 
+def port_busy(port: int) -> bool:
+    with socket.socket() as s:
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
 def main() -> None:
-    url = f"http://127.0.0.1:{LAB_PORT}"
+    url = f"http://localhost:{LAB_PORT}"
+    # Check our port *before* anything else. The startup step (auto-starting the agent) runs
+    # before the web server claims the port, so a second copy of the lab used to stop the
+    # first copy's agent and then fail. Now it stops here and points you at the first one.
+    if port_busy(LAB_PORT):
+        pids = ", ".join(map(str, listening_pids(LAB_PORT))) or "unknown"
+        print(f"[lab] The Duck Lab server is already running at {url} (pid {pids}).\n"
+              f"      Use that one, or stop it first: Ctrl+C in its Terminal, or Simon OS → Restart server.\n"
+              f"      $ lsof -nP -iTCP:{LAB_PORT} -sTCP:LISTEN", flush=True)
+        if not os.environ.get("DUCK_LAB_NO_BROWSER"):
+            webbrowser.open(url)
+        sys.exit(1)
     if not os.environ.get("DUCK_LAB_NO_BROWSER"):
         threading.Timer(1.5, webbrowser.open, args=(url,)).start()
-    print(f"Duck Lab running at {url}")
+    print(f"[lab] Duck Lab running at {url}", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=LAB_PORT, log_level="warning")
 
 
