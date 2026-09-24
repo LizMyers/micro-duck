@@ -48,6 +48,17 @@ export const TOOL_LABELS = {
   skates_off: () => "takes its skates off",
 };
 
+// Optional live trace (the page wires this to the Inspector).
+let trace = () => {};
+export function setTrace(fn) { trace = fn; }
+function snapshot(rl, extra = {}) {
+  const c = rl.controller?.getCommand?.();
+  return {
+    mode: rl.mode, locked: rl.inputLocked, skates: rl.loco === "rollers", recovering: rl.recovery,
+    command: c ? Array.from(c).map((v) => +v.toFixed(2)) : null, ...extra,
+  };
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const BOW_URL = `${location.origin}/moves/polite-bow/policy.onnx`;
@@ -77,6 +88,7 @@ async function doTurn(rl, direction, degrees) {
   let prev = rl.yaw, turned = 0;
   const t0 = performance.now(), maxMs = (target / rate) * 1000 * 2 + 2000;
   rl.setTwist(0, 0, sign * rate);
+  trace("turn: turning", snapshot(rl));
   // Keep turning until we've rotated far enough. Count signed progress in the
   // turn direction, so the waddle's side-to-side wiggle cancels out.
   while (turned < target && performance.now() - t0 < maxMs) {
@@ -104,7 +116,15 @@ async function doStep(rl, direction, steps) {
   const fwdX = Math.cos(yaw), fwdY = Math.sin(yaw);
   const along = () => { const [x, y] = pos(rl); return (x - x0) * fwdX + (y - y0) * fwdY; };
   rl.setTwist(back ? -0.12 : 0.15, 0, 0);
-  await until(() => Math.abs(along()) >= n * STEP_M, n * 4000 + 2000, 20);
+  trace("step: moving", snapshot(rl));
+  let lastTrace = performance.now();
+  await until(() => {
+    if (performance.now() - lastTrace > 500) {
+      lastTrace = performance.now();
+      trace("step: still moving", snapshot(rl, { moved_cm: +(along() * 100).toFixed(1) }));
+    }
+    return Math.abs(along()) >= n * STEP_M;
+  }, n * 4000 + 2000, 20);
   rl.setTwist(0, 0, 0);
   await sleep(500);
   return { moved_cm: Math.round(along() * 100) };
