@@ -123,7 +123,7 @@ export class SimonSaysGame {
       this.app.celebrate();
       if (this.outFixed) await this.speak(this.outFixed);
       else await this.speak(this.outLine, { improvise: true });
-      await this.speak("Simon wins!");
+      if (!this.outFixed) await this.speak("Simon wins!");   // the trap line already ends "I win!"
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
