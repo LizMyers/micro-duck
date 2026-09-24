@@ -137,9 +137,15 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   skewed. Idea: a "Look at Simon: 3… 2… 1…" countdown before round 1, calibrating on "1", so neutral is where
   players actually look during play (Simon on screen).
 
+- **Voice rematch:** after a game Liz said "I want a rematch" and Simon bowed ("Sure, here's my best bow").
+  Now Simon has a `play_simon_says` tool: "rematch" / "let's play again" starts a game hands-free.
+- **All-time scoreboard** (flip cards, localStorage) and a fixed spoken result line after Simon's improvised one.
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
+- **Traps: strict or lenient?** Round 3 "Turn right!" (trap): Liz looked right and survived, because only the
+  exact move counts. Strict = any clear move during a trap is out. Currently lenient.
 
 ## Plan for next session (in order, one at a time)
 1. **Play-test Simon Says** with Liz; read the Inspector/logs: which commands judge well, which lines misbehave.

@@ -38,7 +38,15 @@ const BODY_RULES =
   "Never just say you are doing it. Keep what you say about it to a few words. " +
   // Small models happily claim to see. Simon can't: the webcam referee runs separately in the page.
   "You cannot see: you have no eyes or camera. A separate camera referee judges the players' moves; " +
-  "you only hear what people say. If asked what you can see, say you can't see.";
+  "you only hear what people say. If asked what you can see, say you can't see. " +
+  "If someone wants to play Simon Says, a rematch, or another game, call play_simon_says.";
+
+// Starting a game by voice ("I want a rematch!"). The page runs the game; the model just starts it.
+const GAME_TOOL = {
+  type: "function", name: "play_simon_says",
+  description: "Start a game of Simon Says with the player (also for a rematch or playing again).",
+  parameters: { type: "object", properties: {}, required: [] },
+};
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -323,7 +331,7 @@ function sessionUpdate() {
     session: {
       type: "realtime",
       instructions: ui.instructions.value + BODY_RULES,
-      tools: TOOLS,
+      tools: [...TOOLS, GAME_TOOL],
       tool_choice: "auto",
       audio: {
         input: {
@@ -442,6 +450,14 @@ function onAgentEvent(ev) {
       // hears back), and follow up only if the move turns out to fail.
       let args = {};
       try { args = JSON.parse(ev.arguments || "{}"); } catch {}
+      if (ev.name === "play_simon_says") {
+        const started = game.startByVoice();
+        inspector.note(`🎲 voice: play_simon_says → ${started ? "starting a game" : "a game is already running"}`, null, "tool");
+        state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: started ? "starting" : "already playing" } });
+        if (state.botBubble) state.botBubble.acted = true;
+        state.gameStartedByVoice = true;   // the game speaks next, so no "say a few words" follow-up
+        break;
+      }
       const chip = addAction(ev.name, args);
       if (state.botBubble) state.botBubble.acted = true;
       inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
@@ -473,11 +489,12 @@ function onAgentEvent(ev) {
             item: { type: "function_call_output", call_id: o.call_id, output: JSON.stringify(o.output) } });
         }
         // It acted without saying anything: let it say a few words, once.
-        if (status === "completed" && !spoke && state.followUps < 1 && !state.testing) {
+        if (status === "completed" && !spoke && state.followUps < 1 && !state.testing && !state.gameStartedByVoice) {
           state.followUps++;
           sayOnly("Say a few words about what you just did. Don't call any tools.");
         }
       }
+      state.gameStartedByVoice = false;
       flushIdle();
       finishBotBubble(status === "cancelled" ? "interrupted" : null);
       if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
@@ -889,7 +906,7 @@ function setDuckColour(name) {
   setDuckColour(saved);
   for (const d of document.querySelectorAll("#duck-colour .dot")) d.onclick = () => setDuckColour(d.dataset.colour);
 }
-new SimonSaysGame({
+const game = new SimonSaysGame({
   tracker: () => cam.tracker,
   ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY." : null,
   // Starting a game turns the camera on and calibrates it (it calibrates itself 2.5 s after starting).
