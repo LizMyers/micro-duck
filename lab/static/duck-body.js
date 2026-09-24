@@ -44,13 +44,14 @@ export class DuckBody {
     this.buf = null;
     this.timer = null;
     this.jawOverride = null;   // set a number to hold the beak open (for tuning)
+    this.colour = "blue";      // colourway: classic | charcoal | purple | blue (set by the page)
     this.look = null;          // "up" | "down" | "left" | "right" | null: overrides the mood's head pose
     this.forwardKeys();
     requestAnimationFrame(() => this.tick());
     // Once the simulator has booted and the entrance has played, face the duck.
     this.iframe.addEventListener("load", () =>
       this.whenReady(() => {
-        this.setColour("blue");
+        this.setColour(this.colour);
         setTimeout(() => this.faceCamera(), 3000);
       }));
   }
