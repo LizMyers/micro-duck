@@ -67,6 +67,7 @@
     <section class="card controls" aria-label="Settings">
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-os" aria-selected="true" aria-controls="panel-os">Simon OS</button>
+        <button role="tab" id="tab-game" aria-selected="false" aria-controls="panel-game">Simon Says</button>
         <button role="tab" id="tab-voice" aria-selected="false" aria-controls="panel-voice">Voice &amp; personality</button>
         <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Mac OS</button>
         <button role="tab" id="tab-help" aria-selected="false" aria-controls="panel-help">Help</button>
@@ -137,6 +138,19 @@
           </ol>
   <div class="headline" title="End of your speech → first sound"><span>Reply in</span><strong id="total">–</strong></div>
         </div>
+      </div>
+
+      <div role="tabpanel" id="panel-game" class="game" aria-labelledby="tab-game" hidden>
+        <div class="row tight">
+          <button class="primary" id="ss-start" disabled>Start game</button>
+          <span class="hint" id="ss-ready">–</span>
+        </div>
+        <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>
+        <div class="ss-timer-wrap" aria-hidden="true"><span id="ss-timer"></span></div>
+        <p class="ss-result" id="ss-result"></p>
+        <p class="ss-score" id="ss-score"></p>
+        <p class="hint">Commands: look up / down / left / right, turn left / right, take a step forward / back, sit down, stand up.
+          Left and right are yours. Three lives; it speeds up as you score. Your mic is off during the game.</p>
       </div>
 
       <div role="tabpanel" id="panel-voice" aria-labelledby="tab-voice" hidden>
