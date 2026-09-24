@@ -9,6 +9,7 @@ import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
 import { PoseTracker, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
+import { SimonOS } from "/static/simon-os.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -36,8 +37,7 @@ const BODY_RULES =
 
 const $ = (id) => document.getElementById(id);
 const ui = {
-  status: $("status"), statusText: $("status-text"),
-  model: $("model"), modelNote: $("model-note"), start: $("start"), stop: $("stop"),
+  model: $("model"), modelNote: $("model-note"), switchModel: $("switch-model"), switchHint: $("switch-hint"),
   voice: $("voice"), preset: $("preset"), instructions: $("instructions"), apply: $("apply"),
   talk: $("talk"), talkLabel: $("talk-label"), muteWhileSpeaking: $("mute-while-speaking"),
   chat: $("chat"), chatEmpty: $("chat-empty"), clearChat: $("clear-chat"),
@@ -128,12 +128,18 @@ async function loadOptions() {
   for (const name of Object.keys(PRESETS)) ui.preset.add(new Option(name, name));
   ui.instructions.value = PRESETS[ui.preset.value];
   restorePrefs();
+  showVoice();
   showModelNote();
 }
 
 function showModelNote() {
-  const m = state.options.models.find((x) => x.id === ui.model.value);
+  const m = state.options?.models.find((x) => x.id === ui.model.value);
   if (!m) return;
+  const current = state.agentModel === m.id && state.agentStatus !== "stopped";
+  ui.switchModel.disabled = current || state.agentStatus === "starting";
+  ui.switchHint.textContent = current ? "Running."
+    : state.agentStatus === "starting" ? "Wait until READY."
+    : "Switch restarts the model: 1–3 minutes.";
   ui.modelNote.textContent =
     `${m.note} ` + (m.cached ? "Already downloaded." : `First start downloads ${m.gb} GB, so give it a few minutes.`);
 }
@@ -160,13 +166,13 @@ function restorePrefs() {
   } catch {}
 }
 
-async function startAgent() {
+async function startAgent(model = ui.model.value, why = "you pressed Start") {
   savePrefs();
-  ui.start.disabled = true;
+  ui.switchModel.disabled = true;
   disconnect();
   const res = await fetch("/api/agent/start", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: ui.model.value }),
+    body: JSON.stringify({ model, why }),
   });
   if (!res.ok) toast(`Couldn't start the agent: ${(await res.json()).detail}`);
 }
@@ -177,10 +183,13 @@ async function stopAgent() {
 }
 
 function listenToLab() {
-  const es = new EventSource("/api/events");
+  const es = new EventSource("/api/events");  // reconnects by itself if the lab restarts
+  es.onopen = () => os.connected();
+  es.onerror = () => os.disconnected();
   es.onmessage = (e) => {
     const ev = JSON.parse(e.data);
     if (ev.type === "status") onAgentStatus(ev);
+    else if (ev.type === "lab") os.onLab(ev);
     else if (ev.type === "log") appendLog(ev.line);
     else if (ev.type === "stage") {
       onStage(ev);
@@ -193,18 +202,12 @@ function listenToLab() {
 function onAgentStatus(ev) {
   const prev = state.agentStatus;
   state.agentStatus = ev.status;
-  ui.status.dataset.state = ev.status;
+  state.agentModel = ev.model;
   const model = state.options?.models.find((m) => m.id === ev.model);
   const label = model ? model.label : "";
-  ui.statusText.textContent = {
-    stopped: "Agent stopped",
-    starting: `Starting ${label}… (loading models)`,
-    ready: `Ready · ${label}`,
-    error: "Agent crashed",
-  }[ev.status];
-  ui.start.textContent = ev.status === "stopped" || ev.status === "error" ? "Start agent" : "Restart with this model";
-  ui.start.disabled = ev.status === "starting";
-  ui.stop.disabled = ev.status === "stopped";
+  os.onStatus(ev, label);
+  showModelNote();
+  setTalkLabel();
   if (ev.status === "error" && ev.error) toast(ev.error, 10000);
   if (ev.status === "ready" && prev !== "ready") {
     state.warm = false;
@@ -585,7 +588,16 @@ async function setMic(on) {
   }
   state.micOn = on;
   ui.talk.setAttribute("aria-pressed", String(on));
-  ui.talkLabel.textContent = on ? "Listening… tap to stop" : "Tap to talk";
+  setTalkLabel();
+}
+
+// The talk button says why it's disabled, so the status is visible from every tab.
+function setTalkLabel() {
+  ui.talkLabel.textContent = state.micOn ? "Listening… tap to stop"
+    : state.agentStatus === "ready" ? "Tap to talk"
+    : state.agentStatus === "starting" ? "Model loading…"
+    : state.agentStatus === "error" ? "Model crashed"
+    : "Model stopped";
 }
 
 function isPlaying() {
@@ -797,15 +809,19 @@ setInterval(() => {
 }, 300);
 
 ui.model.onchange = () => { showModelNote(); savePrefs(); };
-ui.start.onclick = startAgent;
-ui.stop.onclick = stopAgent;
-ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); };
+function showVoice() {
+  $("os-voice").textContent = `${ui.voice.selectedOptions[0]?.text || "–"} · personality: ${ui.preset.value}`;
+}
+$("os-change-voice").onclick = () => $("tab-voice").click();
+ui.switchModel.onclick = () => startAgent(ui.model.value, "you switched model");
+const os = new SimonOS({ startAgent, stopAgent, selectedModel: () => ui.model.value, toast });
+ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
 ui.apply.onclick = () => {
   savePrefs();
   send(sessionUpdate());
   toast("Personality and voice updated.");
 };
-ui.voice.onchange = () => { savePrefs(); send(sessionUpdate()); };
+ui.voice.onchange = () => { savePrefs(); send(sessionUpdate()); showVoice(); };
 ui.muteWhileSpeaking.onchange = savePrefs;
 ui.talk.onclick = () => setMic(!state.micOn);
 ui.runTests.onclick = runTests;

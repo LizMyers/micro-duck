@@ -19,8 +19,7 @@ That's why the page is sometimes already "Loading…" before you've touched anyt
 (Code: `_startup()` and `Agent.stop(forget=...)` in `lab/server.py`.)
 
 > ⚠️ Gotcha: the page doesn't explain any of this yet. "Start agent" silently becomes "Restart with this model".
-> Open question: always auto-start (one status line plus a Stop button) or never auto-start (one Start/Stop button)?
-> Claude leans towards always auto-starting. Decide as part of "make the buttons clear".
+> **Decided (2026-09-24):** the lab always starts the agent. See below.
 
 ## Restarting it yourself (the shared way)
 1. **Stop:** in the Terminal window running the lab, press **Ctrl+C** (or close the window).
@@ -35,6 +34,42 @@ That's why the page is sometimes already "Loading…" before you've touched anyt
    - `| tee lab/logs/lab.log`: sends that stream to the screen *and* a file, so you watch it live
      and Claude reads the same thing from the file.
 3. Open **http://localhost:8770** (`localhost`, not 127.0.0.0).
+
+## Simon OS and Help: the same thing, in the page
+Starting the lab now **always** starts the agent too, with the model it used last
+(remembered in `lab/.agent-state.json`; Qwen3 4B the first time). So "start the lab" is the only step.
+
+- **Simon OS** (the first tab, read-only): one status row, **health first**
+  (READY / LOADING / STOPPED / CRASHED, or **?** when the page can't reach the lab), then the
+  relay race (Listen / Turn / Hear / Think / Speak, and "Reply in"). Below it: what's running
+  (lab, agent with pid and memory, leftovers), then **system messages**. The lab narrates everything
+  it does, and each message shows the Terminal command it stands in for. The same lines go to the
+  Terminal as `[lab] 11:26:03 …`, so `lab/logs/lab.log` has them too.
+- **Help** (the last tab): the buttons that fix things, each with *when* to use it and its Terminal command:
+  🔍 Check system · ↻ Restart agent · ■ Stop agent · 🧹 Clean up leftovers · ⟳ Restart lab.
+- **Brain** only switches models now. The **Tap to talk** button says why it's disabled
+  ("Simon is waking up…"), so health is visible from every tab. The header is just 🦆 Duck Lab.
+
+⟳ Restart lab replaces the lab with a fresh copy of itself (same Terminal, same log, same pid:
+Python's `os.execv`), starts the agent again and reloads the page.
+
+**Why simplify:** we had three things answering "can I talk to Simon?" (a top-right badge, a health
+badge and the talk button) and start/stop buttons in two places. Now each fact and each control has
+one home, and nothing is hidden: every process, port, command and timing is still on screen.
+
+## Gotcha: two copies of the lab (2026-09-24)
+> ⚠️ Gotcha: we started a second lab while last night's copy was still running in the background.
+> The second copy auto-started the agent first, which stopped the first copy's agent. Then it found port
+> 8770 taken (`[Errno 48] ... address already in use`) and exited, taking its own agent with it.
+> The page showed "Agent crashed" and Tap to talk stayed disabled.
+> **Why:** the web server runs its startup steps (including auto-start) *before* it claims the port.
+> **Fix:** `main()` now checks the port first and stops with "Duck Lab is already running at
+> http://localhost:8770 (pid …)". The lab also lists leftover copies at startup, and Simon OS → Clean up
+> stops them (politely with `kill`, then with `kill -9` if they ignore it).
+
+> ⚠️ Gotcha: `lab.log` was empty even with `tee`. Python holds printed text back in large batches
+> when its output goes into a pipe instead of the screen, and the web server was set to warnings only.
+> **Fix:** every lab message is printed with `flush=True`.
 
 ## Where the logs are
 | Log | Written by | Where |

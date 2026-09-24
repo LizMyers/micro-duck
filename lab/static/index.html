@@ -13,26 +13,7 @@
   <header class="top">
     <div class="brand">
       <span class="logo" aria-hidden="true">🦆</span>
-      <div>
-        <h1>Duck Lab</h1>
-        <p class="sub">Open-source voice agent · runs on this Mac</p>
-      </div>
-    </div>
-
-    <!-- The relay race, as a compact status strip -->
-    <div class="relay" aria-label="Where the time goes">
-      <ol class="stages" id="stages">
-        <li data-stage="listening" title="Is someone talking?"><span class="node"></span><b>Listen</b><em class="time">–</em><small hidden></small></li>
-        <li data-stage="turn" title="Finished, or just a pause?"><span class="node"></span><b>Turn</b><em class="time">–</em><small hidden>Finished, or just a pause?</small></li>
-        <li data-stage="stt" title="Speech → text"><span class="node"></span><b>Hear</b><em class="time">–</em><small hidden></small></li>
-        <li data-stage="thinking" title="The language model replies"><span class="node"></span><b>Think</b><em class="time">–</em><small hidden></small></li>
-        <li data-stage="voice" title="Text → voice"><span class="node"></span><b>Speak</b><em class="time">–</em><small hidden></small></li>
-      </ol>
-      <div class="headline" title="End of your speech → first sound"><span>Reply in</span><strong id="total">–</strong></div>
-    </div>
-
-    <div class="status" id="status" data-state="stopped">
-      <span class="dot"></span><span id="status-text">Agent stopped</span>
+      <h1>Duck Lab</h1>
     </div>
   </header>
 
@@ -43,7 +24,6 @@
         <h2 id="duck-h">Simon <small>the duck</small></h2>
         <div class="duck-actions">
           <button class="ghost small" id="camera" aria-pressed="false" title="Your webcam: the Simon Says referee">📷 Camera</button>
-          <button class="ghost small" id="skates" aria-pressed="false" title="Roller skates on/off (M)">🛼 Skates</button>
           <span class="mood" id="mood" data-mood="idle">Idle</span>
         </div>
       </div>
@@ -61,7 +41,6 @@
         </div>
         <ul class="pose-chips" id="pose-chips" hidden aria-label="Poses the camera sees"></ul>
       </div>
-      <p class="keys-hint"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &amp; turn · <kbd>R</kbd> sit / stand · <kbd>Q</kbd> <kbd>E</kbd> kick · <kbd>M</kbd> skates</p>
       <dl class="body-readout">
         <div>
           <dt>Beak</dt>
@@ -81,21 +60,77 @@
     <!-- Column 1, row 2: settings and tests -->
     <section class="card controls" aria-label="Settings and tests">
       <div class="tabs" role="tablist">
-        <button role="tab" id="tab-brain" aria-selected="true" aria-controls="panel-brain">Brain</button>
+        <button role="tab" id="tab-os" aria-selected="true" aria-controls="panel-os">Simon OS</button>
         <button role="tab" id="tab-voice" aria-selected="false" aria-controls="panel-voice">Voice &amp; personality</button>
         <button role="tab" id="tab-tests" aria-selected="false" aria-controls="panel-tests">Tests</button>
+        <button role="tab" id="tab-help" aria-selected="false" aria-controls="panel-help">Help</button>
       </div>
-      <div role="tabpanel" id="panel-brain" aria-labelledby="tab-brain">
-        <label class="field">
-          <span>Language model</span>
-          <select id="model"></select>
-        </label>
-        <p class="hint" id="model-note"></p>
-        <div class="row">
-          <button class="primary" id="start">Start agent</button>
-          <button class="ghost" id="stop" disabled>Stop</button>
+      <div role="tabpanel" id="panel-os" class="os" aria-labelledby="tab-os">
+        <!-- Server, model, voice, stray processes: each with its controls beside it -->
+        <div class="os-rows">
+          <div class="os-row">
+            <div class="os-label">Status</div>
+            <div class="health" id="health" data-state="unknown" role="status">
+              <span class="health-dot" aria-hidden="true"></span>
+              <strong id="health-word">?</strong>
+              <small id="health-detail">Checking…</small>
+            </div>
+            <div class="os-btns"></div>
+          </div>
+          <div class="os-row">
+            <div class="os-label">Server</div>
+            <div class="os-info" id="os-lab">–</div>
+            <div class="os-btns">
+              <button class="ghost small" id="os-restart-lab" title="Loads fresh lab code, restarts the model and reloads this page. Terminal: Ctrl+C, then uv run duck-lab 2>&amp;1 | tee lab/logs/lab.log">Restart server</button>
+            </div>
+          </div>
+          <div class="os-row">
+            <div class="os-label">Model</div>
+            <div class="os-info">
+              <div id="os-agent">–</div>
+              <div class="os-model">
+                <select id="model" aria-label="Language model"></select>
+                <button class="ghost small" id="switch-model" disabled>Switch</button>
+              </div>
+              <small id="model-note"></small> <small id="switch-hint"></small>
+            </div>
+            <div class="os-btns">
+              <button class="ghost small" id="os-restart-agent" title="Restarts speech-to-speech with the selected model; keeps the page. Terminal: kill &lt;pid&gt;, then speech-to-speech serve …">Restart model</button>
+              <button class="ghost small" id="os-stop-agent" title="Frees about 8 GB of memory. Terminal: kill &lt;pid&gt;">Stop model</button>
+            </div>
+          </div>
+          <div class="os-row">
+            <div class="os-label">Voice</div>
+            <div class="os-info" id="os-voice">–</div>
+            <div class="os-btns">
+              <button class="ghost small" id="os-change-voice">Change voice</button>
+            </div>
+          </div>
+          <div class="os-row">
+            <div class="os-label">Stray processes</div>
+            <div class="os-info" id="os-leftovers">–</div>
+            <div class="os-btns">
+              <button class="ghost small" id="os-cleanup" disabled title="Stops old copies of the server or model that nothing owns. Terminal: kill &lt;pid&gt; (kill -9 if it won't stop)">Stop strays</button>
+              <button class="ghost small" id="os-check" title="Lists what's running and on which port. Terminal: lsof -nP -iTCP -sTCP:LISTEN | grep -E &quot;:8770|:8765&quot;">Check</button>
+            </div>
+          </div>
         </div>
-        <p class="hint">Starting takes about 3 minutes while the models load.</p>
+        <div class="os-head">
+          <h3>System messages <small>with the Terminal command each one stands in for</small></h3>
+          <button class="ghost small" id="os-copy">Copy</button>
+        </div>
+        <ol class="os-feed" id="os-feed" aria-live="polite"></ol>
+        <div class="os-head"><h3>Relay race <small>where the time goes in each reply</small></h3></div>
+        <div class="relay">
+          <ol class="stages" id="stages">
+            <li data-stage="listening" title="Is someone talking?"><span class="node"></span><b>Listen</b><em class="time">–</em><small hidden></small></li>
+            <li data-stage="turn" title="Finished, or just a pause?"><span class="node"></span><b>Turn</b><em class="time">–</em><small hidden>Finished, or just a pause?</small></li>
+            <li data-stage="stt" title="Speech → text"><span class="node"></span><b>Hear</b><em class="time">–</em><small hidden></small></li>
+            <li data-stage="thinking" title="The language model replies"><span class="node"></span><b>Think</b><em class="time">–</em><small hidden></small></li>
+            <li data-stage="voice" title="Text → voice"><span class="node"></span><b>Speak</b><em class="time">–</em><small hidden></small></li>
+          </ol>
+  <div class="headline" title="End of your speech → first sound"><span>Reply in</span><strong id="total">–</strong></div>
+        </div>
       </div>
 
       <div role="tabpanel" id="panel-voice" aria-labelledby="tab-voice" hidden>
@@ -126,6 +161,19 @@
           </table>
         </div>
       </div>
+      <div role="tabpanel" id="panel-help" aria-labelledby="tab-help" hidden>
+        <h3 class="help-h">Manual controls</h3>
+        <p class="hint">Drive Simon with the keyboard. Works from anywhere on the page.</p>
+        <table class="keys">
+          <tr><td><kbd>↑</kbd> or <kbd>W</kbd></td><td>Walk forward</td></tr>
+          <tr><td><kbd>↓</kbd> or <kbd>S</kbd></td><td>Walk back</td></tr>
+          <tr><td><kbd>←</kbd> or <kbd>A</kbd></td><td>Turn left</td></tr>
+          <tr><td><kbd>→</kbd> or <kbd>D</kbd></td><td>Turn right</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Sit / stand</td></tr>
+          <tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>Kick left / right</td></tr>
+          <tr><td><kbd>M</kbd></td><td>Skates on / off <button class="ghost small" id="skates" aria-pressed="false">Skates</button></td></tr>
+        </table>
+      </div>
     </section>
 
     <!-- Column 2: conversation / inspector / raw log, with the talk button always visible -->
@@ -139,7 +187,7 @@
       <div role="tabpanel" id="panel-convo" class="side-panel" aria-labelledby="tab-convo">
         <div class="row tight panel-tools"><button class="ghost small" id="clear-chat">Clear</button></div>
         <div class="chat" id="chat" aria-live="polite">
-        <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
+        <p class="empty" id="chat-empty">When the status is READY, tap the button below and say hello.</p>
       </div>
       </div>
 
