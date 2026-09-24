@@ -87,7 +87,9 @@ async function doTurn(rl, direction, degrees) {
   const rate = rl.velLimits?.[2] ?? 1;
   let prev = rl.yaw, turned = 0;
   const t0 = performance.now(), maxMs = (target / rate) * 1000 * 2 + 2000;
-  rl.setTwist(0, 0, sign * rate);
+  // The walking policy won't turn from a standstill (measured: ~0° with a pure
+  // turn command), but turns well while creeping forward, like arrow-up + arrow-left/right.
+  rl.setTwist(0.12, 0, sign * rate);
   trace("turn: turning", snapshot(rl));
   // Keep turning until we've rotated far enough. Count signed progress in the
   // turn direction, so the waddle's side-to-side wiggle cancels out.
@@ -115,13 +117,22 @@ async function doStep(rl, direction, steps) {
   const yaw = rl.yaw;
   const fwdX = Math.cos(yaw), fwdY = Math.sin(yaw);
   const along = () => { const [x, y] = pos(rl); return (x - x0) * fwdX + (y - y0) * fwdY; };
-  // Same speed as the arrow keys: the walking policy ignores gentler commands
-  // (at 0.15 m/s it shuffled ~0.5 cm and stopped).
+  // Forward: same speed as the arrow keys (gentler commands are ignored).
+  // Backward: the policy won't back up in a straight line from a standstill
+  // (measured: 0 cm), but does if the turn command zig-zags left/right every
+  // half second, like alternating arrow-down + left and arrow-down + right
+  // (measured: 28.6 cm back, 6° off course, in 3 s).
   const [fwd, bwd] = rl.velLimits ?? [0.25, -0.2];
-  rl.setTwist(back ? bwd : fwd, 0, 0);
+  let zig = 1, lastZig = performance.now();
+  const drive = () => {
+    if (back && performance.now() - lastZig > 500) { zig = -zig; lastZig = performance.now(); }
+    rl.setTwist(back ? bwd : fwd, 0, back ? zig : 0);
+  };
+  drive();
   trace("step: moving", snapshot(rl));
   let lastTrace = performance.now();
   await until(() => {
+    drive();
     if (performance.now() - lastTrace > 500) {
       lastTrace = performance.now();
       trace("step: still moving", snapshot(rl, { moved_cm: +(along() * 100).toFixed(1) }));
