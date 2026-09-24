@@ -46,7 +46,8 @@ S2S_DIR = Path(os.environ.get("S2S_DIR", Path.home() / "Documents/Development/sp
 SIM_DIST = Path(os.environ.get("SIM_DIST", Path.home() / "Documents/Development/microduck-simulator/app/dist"))
 HF_CACHE = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
 
-STATE_FILE = HERE / ".agent-state.json"  # which model to bring back after a lab restart
+STATE_FILE = HERE / ".agent-state.json"
+LOG_DIR = HERE / "logs"  # one log file per agent run, kept so crashes can be diagnosed  # which model to bring back after a lab restart
 
 LAB_PORT = 8770
 AGENT_PORT = 8765
@@ -163,6 +164,8 @@ class Agent:
             ]
             self.model = model_id
             self.log_tail.clear()
+            LOG_DIR.mkdir(exist_ok=True)
+            self.log_file = open(LOG_DIR / time.strftime("agent-%Y%m%d-%H%M%S.log"), "a", buffering=1)
             self.proc = subprocess.Popen(
                 cmd, cwd=S2S_DIR, env=env, text=True, bufsize=1,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -189,7 +192,10 @@ class Agent:
 
     def _read_log(self, proc: subprocess.Popen) -> None:
         assert proc.stdout is not None
+        log_file = getattr(self, "log_file", None)
         for raw in proc.stdout:
+            if log_file:
+                log_file.write(raw)
             line = raw.rstrip()
             if not line or "nltk_data" in line or "httpx - INFO" in line:
                 continue
@@ -202,6 +208,9 @@ class Agent:
                 if m:
                     self.publish({"type": "stage", "stage": name, **(extract(m) if extract else {})})
         # The process ended. If we didn't stop it on purpose, say why.
+        code = proc.wait()
+        if log_file:
+            log_file.write(f"\n[duck-lab] agent exited with code {code}\n")
         if proc is self.proc:
             tail = "\n".join(list(self.log_tail)[-8:])
             self.set_status("error", f"The agent stopped unexpectedly.\n{tail}")

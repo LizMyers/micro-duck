@@ -8,3 +8,4 @@ microduck-press-kit/
 lab/prompts/*.wav
 lab/moves/*/policy.onnx
 lab/.agent-state.json
+lab/logs/
