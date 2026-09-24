@@ -38,6 +38,8 @@ export function judge(says, seen, wrong = null) {
   if (says && seen) return { point: true, text: "Nice!" };
   if (says && wrong) return { point: false, text: `Wrong move: that was ${LABEL[wrong]}!`, wrong };
   if (says && !seen) return { point: false, text: "Too slow!" };
+  // Traps are strict (Liz, 2026-09-24): any clear move when Simon didn't say it is out, not just that move.
+  if (!says && wrong) return { point: false, text: `Simon didn't say! (You did ${LABEL[wrong]}.)`, wrong };
   if (!says && seen) return { point: false, text: "Simon didn't say!" };
   return { point: true, text: "Good: Simon didn't say!" };
 }
@@ -164,6 +166,7 @@ export class SimonSaysGame {
     while (this.running && performance.now() < deadline) {
       if (tracker.held(cmd.pose, HOLD)) { seen = true; if (!cmd.says) break; }
       if (seen && cmd.says) break;
+      if (wrong && !cmd.says) break;   // strict traps: any move is out
       wrong ??= others.find((p) => tracker.held(p, HOLD)) ?? null;
       const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
       $("ss-timer").style.width = `${(left / this.window) * 100}%`;
@@ -184,7 +187,7 @@ export class SimonSaysGame {
       // Simon gloats (the end of the game is spoken in start()).
       // What happened, for Simon to gloat about in his own words (a new sentence every time).
       this.outLine = !cmd.says
-        ? `The player did "${COMMANDS[cmd.pose]}", but you never said "Simon says". Gloat that you didn't say Simon says, so you win.`
+        ? `You said "${line(cmd)}" without "Simon says", and the player moved (they did ${seen ? LABEL[cmd.pose] : LABEL[r.wrong]}). Gloat that you didn't say Simon says, so you win.`
         : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. Gloat that they did the wrong move, so you win.`
         : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. Gloat that they were too slow, so you win.`;
     }

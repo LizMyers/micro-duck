@@ -41,3 +41,10 @@ test("the other arm is 'wrong move', not 'too slow'", () => {
 test("both arms on a single-arm command is a wrong move", () => {
   assert.match(judge(true, false, "both_arms_up").text, /Wrong move: that was both arms/);
 });
+
+test("strict traps: any move on a trap is out, not just that move", () => {
+  const r = judge(false, false, "look_right");
+  assert.equal(r.point, false);
+  assert.match(r.text, /Simon didn't say! \(You did look right/);
+  assert.equal(judge(false, false).point, true);   // stayed still: safe
+});
