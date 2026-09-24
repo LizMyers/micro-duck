@@ -737,8 +737,8 @@ const cam = {
 for (const id of POSE_IDS) {
   const li = document.createElement("li");
   li.dataset.pose = id;
-  li.textContent = POSE_LABELS[id].replace(/^(Raise|Touch|Cover|Flap) (your )?/i, "").replace(/^./, (c) => c.toUpperCase());
-  li.title = POSE_LABELS[id];
+  // Each chip shows the live measurement next to its name, so thresholds can be tuned on a real person.
+  li.innerHTML = `${POSE_LABELS[id]} <span class="num">–</span>`;
   cam.chips.append(li);
 }
 
@@ -758,11 +758,14 @@ async function startCamera() {
   cam.btn.setAttribute("aria-pressed", "true");
   inspector.note("📷 camera on (video stays in this browser)");
   cam.status.textContent = "Stand normally, then Calibrate";
-  // Calibrate automatically once a body is in view (needed for "crouch").
+  // Calibrate automatically once a body is in view: every check compares you with this stance.
   setTimeout(() => { if (cam.on && !cam.calibrated) calibrate(); }, 2500);
-  cam.unsubscribe = cam.tracker.onFrame(() => {
+  cam.unsubscribe = cam.tracker.onFrame(({ poses }) => {
     for (const li of cam.chips.children) {
       const id = li.dataset.pose;
+      const p = poses[id];
+      li.querySelector(".num").textContent = p.value == null ? "–" : p.value.toFixed(2);
+      li.title = `${POSE_LABELS[id]}: ${p.reason}`;
       const on = cam.tracker.held(id, 300);
       li.classList.toggle("on", on);
       if (on && !cam.held.has(id)) { cam.held.add(id); inspector.note(`🧍 you: ${POSE_LABELS[id]}`); }
