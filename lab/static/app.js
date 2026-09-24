@@ -139,9 +139,7 @@ function savePrefs() {
   try {
     localStorage.setItem("duck-lab", JSON.stringify({
       model: ui.model.value, voice: ui.voice.value, preset: ui.preset.value,
-      instructions: ui.instructions.value + BODY_RULES,
-      tools: TOOLS,
-      tool_choice: "auto", mute: ui.muteWhileSpeaking.checked,
+      instructions: ui.instructions.value, mute: ui.muteWhileSpeaking.checked,
     }));
   } catch {}
 }
@@ -153,7 +151,8 @@ function restorePrefs() {
     if (p.model) ui.model.value = p.model;
     if (p.voice) ui.voice.value = p.voice;
     if (p.preset) ui.preset.value = p.preset;
-    if (p.instructions) ui.instructions.value = p.instructions;
+    // Earlier versions accidentally saved the body rules into the personality.
+    if (p.instructions) ui.instructions.value = p.instructions.split("\n\nYou have a small robot duck body")[0];
     if (typeof p.mute === "boolean") ui.muteWhileSpeaking.checked = p.mute;
   } catch {}
 }
@@ -297,7 +296,9 @@ function sessionUpdate() {
     type: "session.update",
     session: {
       type: "realtime",
-      instructions: ui.instructions.value,
+      instructions: ui.instructions.value + BODY_RULES,
+      tools: TOOLS,
+      tool_choice: "auto",
       audio: {
         input: {
           format: { type: "audio/pcm", rate: RATE },
@@ -315,7 +316,9 @@ function connect() {
   state.ws = ws;
   ws.onopen = () => {
     inspector.note(`Connected to the agent at ${state.options.agent_url}`);
-    ws.send(JSON.stringify(sessionUpdate()));
+    const settings = sessionUpdate();
+    ws.send(JSON.stringify(settings));
+    inspector.message("out", settings);
     ui.talk.disabled = false;
     ui.runTests.disabled = false;
   };
