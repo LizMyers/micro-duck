@@ -33,12 +33,21 @@ export function line({ pose, says }) {
 }
 
 // The rules: do it when Simon says, don't when he doesn't.
-export function judge(says, seen) {
+// `wrong` = a different move the player made instead (e.g. the other arm), so the message is fair.
+export function judge(says, seen, wrong = null) {
   if (says && seen) return { point: true, text: "Nice!" };
+  if (says && wrong) return { point: false, text: `Wrong move: that was ${LABEL[wrong]}!`, wrong };
   if (says && !seen) return { point: false, text: "Too slow!" };
   if (!says && seen) return { point: false, text: "Simon didn't say!" };
   return { point: true, text: "Good: Simon didn't say!" };
 }
+
+// How the game names each move when it tells you what you did instead.
+const LABEL = {
+  look_up: "look up", look_down: "look down", look_left: "look left", look_right: "look right",
+  turn_left: "turn left", turn_right: "turn right",
+  left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
+};
 
 const MIRROR = { look_up: "up", look_down: "down", look_left: "right", look_right: "left" };
 const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right", "left_arm_up", "right_arm_up"];
@@ -125,28 +134,35 @@ export class SimonSaysGame {
 
     // The judging window, from when Simon starts speaking.
     const t0 = performance.now();
-    let seen = false;
+    let seen = false, wrong = null;
+    // "Both arms" also lights each single arm, so a single-arm command ignores it, and vice versa.
+    const others = MOVING.filter((p) => p !== cmd.pose && !(cmd.pose === "both_arms_up" && p.endsWith("_arm_up")));
     while (this.running && performance.now() - t0 < this.window) {
       if (tracker.held(cmd.pose, HOLD)) { seen = true; if (!cmd.says) break; }
       if (seen && cmd.says) break;
-      $("ss-timer").style.width = `${100 - ((performance.now() - t0) / this.window) * 100}%`;
+      wrong ??= others.find((p) => tracker.held(p, HOLD) && !(p.endsWith("_arm_up") && tracker.held("both_arms_up", HOLD))) ?? null;
+      const left = Math.max(0, this.window - (performance.now() - t0));
+      $("ss-timer").style.width = `${(left / this.window) * 100}%`;
+      $("ss-seconds").textContent = (left / 1000).toFixed(1);
       await sleep(50);
     }
     $("ss-timer").style.width = "0%";
+    $("ss-seconds").textContent = "";
     if (demo) this.app.lookAt(null);
     if (!this.running) return;
 
-    const r = judge(cmd.says, seen);
+    const r = judge(cmd.says, seen, seen ? null : wrong);
     if (r.point) {
       this.score++;
       if (this.score % 2 === 0) this.window = Math.max(MIN_WINDOW, Math.round(this.window * 0.9));
     } else {
       this.out = true;
       // Simon gloats (the end of the game is spoken in start()).
-      this.outLine = cmd.says ? "Too slow! Ha ha, I win!" : "Ha! Simon didn't say! I win!";
+      this.outLine = !cmd.says ? "Ha! Simon didn't say! I win!"
+        : r.wrong ? "Wrong move! Ha ha, I win!" : "Too slow! Ha ha, I win!";
     }
-    this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : "didn't move"}`);
-    this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, score: this.score, round: this.round });
+    this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
+    this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say out loud that the move was registered, before the next command.
     if (r.point && this.round < ROUNDS) await this.speak("OK!");
   }
