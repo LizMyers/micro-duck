@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <div class="ram-warning" id="ram-warning" role="alert" hidden>
+    <span id="ram-warning-text">RAM running low.</span>
+    <button class="ghost small" id="ram-warning-show">Show Mac OS</button>
+    <button class="ghost small" id="ram-warning-close" aria-label="Dismiss">Dismiss</button>
+  </div>
   <header class="top" hidden>
     <div class="brand">
       <span class="logo" aria-hidden="true">🦆</span>
@@ -58,12 +63,12 @@
       </dl>
     </section>
 
-    <!-- Column 1, row 2: settings and tests -->
-    <section class="card controls" aria-label="Settings and tests">
+    <!-- Column 1, row 2: Simon OS, voice, Mac OS, help -->
+    <section class="card controls" aria-label="Settings">
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-os" aria-selected="true" aria-controls="panel-os">Simon OS</button>
         <button role="tab" id="tab-voice" aria-selected="false" aria-controls="panel-voice">Voice &amp; personality</button>
-        <button role="tab" id="tab-tests" aria-selected="false" aria-controls="panel-tests">Tests</button>
+        <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Mac OS</button>
         <button role="tab" id="tab-help" aria-selected="false" aria-controls="panel-help">Help</button>
       </div>
       <div role="tabpanel" id="panel-os" class="os" aria-labelledby="tab-os">
@@ -150,18 +155,20 @@
         </div>
       </div>
 
-      <div role="tabpanel" id="panel-tests" aria-labelledby="tab-tests" hidden>
-        <p class="hint">Plays recorded questions into the agent, so every run is the same and you can compare settings.</p>
-        <div class="row">
-          <button class="primary" id="run-tests" disabled>▶ Run test questions</button>
+      <div role="tabpanel" id="panel-mac" class="mac" aria-labelledby="tab-mac" hidden>
+        <div class="mac-summary" id="mac-summary" data-pressure="normal">
+          <div class="os-label">Memory</div>
+          <strong id="mac-pressure">–</strong>
+          <small id="mac-detail">Measuring…</small>
         </div>
-        <div class="table-wrap">
-          <table class="results" id="results" hidden>
-            <thead><tr><th>#</th><th>Asked</th><th>Heard</th><th>Reply</th><th>Time</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="ram-bar" id="ram-bar" aria-hidden="true"><span id="ram-used"></span></div>
+        <p class="hint" id="ram-text">–</p>
+        <ul class="mem-list" id="mem-list" aria-label="Memory used by each part"></ul>
+        <p class="hint">Numbers are each program's real memory use, the same as Activity Monitor's Memory column.
+          They can add up to more than the Mac's RAM, because macOS compresses memory and moves some to disk (swap).
+          Updates every 5 seconds.</p>
       </div>
+
       <div role="tabpanel" id="panel-help" aria-labelledby="tab-help" hidden>
         <h3 class="help-h">Manual controls</h3>
         <p class="hint">Drive Simon with the keyboard. Works from anywhere on the page.</p>
