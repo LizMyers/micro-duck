@@ -70,6 +70,14 @@ export class SimonSaysGame {
     setInterval(() => this.showReady(), 1000);
   }
 
+  // "I want a rematch!": start a game from a voice command (shows the game tab). False if already playing.
+  startByVoice() {
+    if (this.running || this.app.ready()) return false;
+    document.getElementById("tab-game").click();
+    setTimeout(() => this.start(), 0);
+    return true;
+  }
+
   showReady() {
     if (this.running) return;
     const problem = this.app.ready();
