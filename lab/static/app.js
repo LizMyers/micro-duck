@@ -564,7 +564,7 @@ function sayLine(text, { improvise = false } = {}) {
   whenIdle(() => {
     // Claim the next reply only once any earlier one has finished.
     state.line = {
-      text, chunks: [], samples: 0, cut: false, max: improvise ? FREE_MAX : LINE_MAX, improvise,
+      text, chunks: [], samples: 0, cut: false, max: improvise ? FREE_MAX : Math.max(LINE_MAX, text.split(/\s+/).length * 0.55), improvise,   // longer lines get longer
       onAudio: () => { clearTimeout(timer); startedResolve(true); },
       onDone: (status) => {
         clearTimeout(timer);
