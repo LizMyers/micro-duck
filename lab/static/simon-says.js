@@ -51,6 +51,11 @@ const LABEL = {
   left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
 };
 
+// A different mood each time Simon loses, so his congratulations don't repeat word for word
+// (the same prompt tends to get the same sentence).
+const MOODS = ["dramatic, over-the-top", "sulky but fair", "sporting and generous", "sarcastic",
+  "grudging", "astonished", "theatrical, like a bad actor", "suspicious (you must have cheated!)"];
+
 // Quick acknowledgements (exact, so they're cached and instant after the first time).
 const OKS = ["OK!", "Got it!", "Nice one!", "Good!"];
 
@@ -119,8 +124,10 @@ export class SimonSaysGame {
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
+      const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
+      this.app.note(`🎭 Simon's mood for losing: ${mood}`);
       await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
-        "Congratulate them, a little grudgingly, and say clearly that they win.", { improvise: true });
+        `Congratulate them in a ${mood} way, and say clearly that they win.`, { improvise: true });
       await this.speak("You win!");
       await this.speak(tally);
     }
