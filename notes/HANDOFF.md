@@ -115,9 +115,26 @@ Other candidates: `notes/research/upstream-candidates.md` (Gemma end-of-turn and
 Change only what she names; ask one short question when a request could mean two things; plain labels, no
 nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over the file.
 
+### Late additions (2026-09-24, after the first handoff)
+- Game vocabulary is now **9 desk-friendly commands**: look up/down/left/right, turn left/right,
+  raise left/right/both arms. Step/lean and sit/stand were removed from the game **and** the camera checks
+  (Liz: standing up and stepping take too long; "take a step" then "too slow" felt unfair).
+- The move clock now starts when Simon **finishes** the command (3 s), not when he starts (log showed a
+  1.3 s command left only ~2.4 s). Big seconds countdown + timer bar in the duck colour.
+- Wrong move is named ("Wrong move: that was your left arm!") instead of "Too slow".
+- Turn check uses shoulder width only (looking up used to fake a turn).
+- **Scripted vs improvised lines:** commands stay exact (judged, cached); reactions (gloat, congratulate) are
+  improvised by the model from a description of what happened, so every game sounds different. OKs rotate.
+  Simon is told not to make laughing sounds: Qwen3-TTS turned "Ha!" into a laugh that swallowed the words.
+  Good tutorial point: script where words must be exact, improvise where variety adds charm.
+- **Arms verified on Liz:** left/right are the right way round.
+
 ### Open questions for Liz
-- "Take a step forward/back" → **"lean forward/back"** for desk play, or drop them?
-- Take **Sit down** off the chips too (the game doesn't use it)?
+- **Arms: strict or lenient?** Liz noticed that raising both arms also lights Left arm up and Right arm up
+  (by design: "both" counts as each). So "raise your left arm" + both arms currently counts as correct.
+  Proposed: single-arm checks require the other arm down; raising both on a single-arm command becomes
+  "Wrong move: that was both arms!". Liz to decide.
+- Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
 
 ## Plan for next session (in order, one at a time)
