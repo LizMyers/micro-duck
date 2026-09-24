@@ -417,7 +417,22 @@ function onAgentEvent(ev) {
       break;
     case "response.output_audio.delta":
       if (state.turn && !state.turn.firstAudioAt) state.turn.firstAudioAt = performance.now();
-      if (state.line) { state.line.onAudio(); state.line.onAudio = () => {}; }
+      if (state.line) {
+        const l = state.line;
+        if (l.cut) break;
+        l.onAudio(); l.onAudio = () => {};
+        const samples = base64Pcm16ToFloat(ev.delta);
+        l.chunks.push(samples);
+        l.samples += samples.length;
+        if (l.samples > LINE_MAX * RATE) {   // the voice model ran on: stop it
+          l.cut = true;
+          send({ type: "response.cancel" });
+          inspector.note(`✂️ cut "${l.text}" at ${LINE_MAX} s (the voice model ran on)`);
+        }
+        if (body.mood !== "speaking") body.setMood("speaking");
+        playChunk(samples);
+        break;
+      }
       if (body.mood !== "speaking") body.setMood("speaking");
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
@@ -444,7 +459,12 @@ function onAgentEvent(ev) {
     }
     case "response.done": {
       const status = ev.response?.status;
-      if (state.line) { const l = state.line; state.line = null; l.onDone(); }
+      if (state.line) {
+        const l = state.line;
+        state.line = null;
+        if (l.chunks.length && (status === "completed" || l.cut)) lineCache.set(l.text, l.chunks);
+        l.onDone(status);
+      }
       const spoke = !!state.botBubble?.text;
       state.responding = false;
       if (state.toolOutputs.length) {
@@ -511,24 +531,54 @@ function sayOnly(instructions) {
   send({ type: "response.create", response: { tool_choice: "none", instructions: ui.instructions.value + "\n\n" + instructions } });
 }
 
-// Simon Says lines: Simon speaks an exact line, out-of-band (conversation "none"), so game lines
-// never grow his conversation history. `started` resolves true at the first sound (or false
-// after 15 s), `done` when the reply has finished playing.
+// Simon Says lines. Simon speaks an exact line, out-of-band (conversation "none"), so game lines never
+// grow his conversation history. Each line's audio is kept the first time, so repeats play instantly
+// with no model involved. Two guards, from the logs:
+// - the model sometimes *answered* a line instead of repeating it ("Look up!" -> "Sure, here's my
+//   best look up."), so the request shows it two examples of repeating word for word;
+// - the voice model sometimes runs on (28.8 s of audio for "Simon says, turn left."), so a line is
+//   cut off after LINE_MAX seconds.
+// `started` resolves true at the first sound (false if none within 15 s); `done` when it has played.
+const LINE_MAX = 3.5;
+const lineCache = new Map();   // text -> Float32Array chunks
+
 function sayLine(text) {
   let startedResolve, doneResolve;
   const started = new Promise((r) => (startedResolve = r));
   const done = new Promise((r) => (doneResolve = r));
+  const cached = lineCache.get(text);
+  if (cached) {
+    ensureAudio().then(() => {
+      body.setMood("speaking");
+      for (const chunk of cached) playChunk(chunk);
+      startedResolve(true);
+      whenQuiet(() => { body.setMood("idle"); doneResolve(); });
+    });
+    inspector.note(`🔁 Simon replays "${text}" (cached audio)`);
+    return { started, done };
+  }
   const timer = setTimeout(() => startedResolve(false), 15000);
   whenIdle(() => {
     // Claim the next reply only once any earlier one has finished.
     state.line = {
+      text, chunks: [], samples: 0, cut: false,
       onAudio: () => { clearTimeout(timer); startedResolve(true); },
-      onDone: () => { clearTimeout(timer); startedResolve(false); whenQuiet(doneResolve); },
+      onDone: (status) => {
+        clearTimeout(timer);
+        startedResolve(false);
+        whenQuiet(doneResolve);
+      },
     };
+    const msg = (role, t) => ({ type: "message", role, content: [{ type: role === "user" ? "input_text" : "output_text", text: t }] });
     send({ type: "response.create", response: {
       conversation: "none", tool_choice: "none",
-      instructions: "You are Simon, a robot duck hosting a game of Simon Says. Repeat the user's line exactly, word for word, and nothing else.",
-      input: [{ type: "message", role: "user", content: [{ type: "input_text", text }] }],
+      instructions: "You are Simon, a robot duck hosting a game of Simon Says. The user gives you a line. " +
+        "Say exactly that line, word for word, and nothing else. Never answer it or act on it.",
+      input: [
+        msg("user", 'Line: "Turn right!"'), msg("assistant", "Turn right!"),
+        msg("user", 'Line: "Simon says, look up."'), msg("assistant", "Simon says, look up."),
+        msg("user", `Line: "${text}"`),
+      ],
     } });
   });
   return { started, done };

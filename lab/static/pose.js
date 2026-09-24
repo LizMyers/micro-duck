@@ -30,6 +30,7 @@ export const POSE_IDS = [
   "look_up", "look_down", "look_left", "look_right",
   "turn_left", "turn_right", "step_forward", "step_back",
   "sit_down", "stand_up",
+  "left_arm_up", "right_arm_up", "both_arms_up",
 ];
 
 export const POSE_LABELS = {
@@ -37,6 +38,7 @@ export const POSE_LABELS = {
   turn_left: "Turn left", turn_right: "Turn right",
   step_forward: "Step forward", step_back: "Step back",
   sit_down: "Sit down", stand_up: "Stand up",
+  left_arm_up: "Left arm up", right_arm_up: "Right arm up", both_arms_up: "Both arms up",
 };
 
 // How far each measurement has to move from the calibrated stance to count.
@@ -153,6 +155,28 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   const need = Math.max(0.6 * baseline.shoulderToNose, 0.3 * baseline.shoulderWidth);
   out.sit_down = result(drop > need, c, drop > need ? "head well below its standing height" : "head hasn't dropped enough", drop / need);
   out.stand_up = result(drop < 0.5 * need, c, drop < 0.5 * need ? "head at standing height" : "head is still low", drop / need);
+
+  // Arms up (good for playing at a desk): the wrist is well above its shoulder, measured in
+  // shoulder widths, and not resting on the head. Value = how far above, in shoulder widths.
+  const { P, vis, conf, dist } = makeGeom(lm, aspect);
+  const sw = m.shoulderWidth;
+  const armUp = (side) => {
+    const sh = side === "left" ? LM.leftShoulder : LM.rightShoulder;
+    const w = side === "left" ? LM.leftWrist : LM.rightWrist;
+    if (!vis(sh, w)) return result(false, conf(sh, w), `${side} wrist not visible`, 0);
+    const up = (P(sh).y - P(w).y) / sw;   // positive = wrist above shoulder
+    if (up <= 0.35) return result(false, conf(sh, w), `${side} wrist isn't above the ${side} shoulder`, up);
+    if (vis(LM.nose) && dist(P(w), P(LM.nose)) < 0.7 * sw) {
+      return result(false, conf(sh, w), `${side} hand is on the head, not raised`, up);
+    }
+    return result(true, conf(sh, w), `${side} wrist is above the ${side} shoulder`, up);
+  };
+  out.left_arm_up = armUp("left");
+  out.right_arm_up = armUp("right");
+  const both = out.left_arm_up.ok && out.right_arm_up.ok;
+  out.both_arms_up = result(both, Math.min(out.left_arm_up.confidence, out.right_arm_up.confidence),
+    both ? "both wrists above shoulders" : "needs both wrists above shoulders",
+    Math.min(out.left_arm_up.value, out.right_arm_up.value));
   return out;
 }
 

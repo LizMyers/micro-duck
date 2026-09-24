@@ -11,6 +11,8 @@ export const COMMANDS = {
   look_up: "look up", look_down: "look down", look_left: "look left", look_right: "look right",
   turn_left: "turn left", turn_right: "turn right",
   step_forward: "take a step forward", step_back: "take a step back",
+  // Arms are easy at a desk. Simon has no arms, so he calls these but can't demonstrate them.
+  left_arm_up: "raise your left arm", right_arm_up: "raise your right arm", both_arms_up: "raise both arms",
 };
 
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
@@ -39,7 +41,8 @@ export function judge(says, seen) {
 }
 
 const MIRROR = { look_up: "up", look_down: "down", look_left: "right", look_right: "left" };
-const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right", "step_forward", "step_back"];
+const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right", "step_forward", "step_back",
+  "left_arm_up", "right_arm_up"];
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -137,7 +140,8 @@ export class SimonSaysGame {
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : "didn't move"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, score: this.score, lives: this.lives });
-    await sleep(1200);
+    // Say out loud that the move was registered, before the next command.
+    await this.speak(r.point ? "OK!" : cmd.says ? "Oops, too slow!" : "Oops, Simon didn't say!");
   }
 
   render(big, small) {
