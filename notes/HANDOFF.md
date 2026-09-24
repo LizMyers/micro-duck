@@ -139,13 +139,14 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 
 - **Voice rematch:** after a game Liz said "I want a rematch" and Simon bowed ("Sure, here's my best bow").
   Now Simon has a `play_simon_says` tool: "rematch" / "let's play again" starts a game hands-free.
+- **Traps are strict (Liz decided):** any clear move during a trap is out ("Simon didn't say! (You did look
+  right.)"), not just the called move. Prompted by round 3 of her log, where looking right on "Turn right!" survived.
 - **All-time scoreboard** (flip cards, localStorage) and a fixed spoken result line after Simon's improvised one.
 
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
-- **Traps: strict or lenient?** Round 3 "Turn right!" (trap): Liz looked right and survived, because only the
-  exact move counts. Strict = any clear move during a trap is out. Currently lenient.
+
 
 ## Plan for next session (in order, one at a time)
 1. **Play-test Simon Says** with Liz; read the Inspector/logs: which commands judge well, which lines misbehave.
