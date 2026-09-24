@@ -36,6 +36,7 @@ export class DuckBody {
     this.buf = null;
     this.timer = null;
     this.jawOverride = null;   // set a number to hold the beak open (for tuning)
+    this.forwardKeys();
     requestAnimationFrame(() => this.tick());
     // Once the simulator has booted and the entrance has played, face the duck.
     this.iframe.addEventListener("load", () =>
@@ -62,6 +63,25 @@ export class DuckBody {
     rl.camera.lookAt(rl.controls.target);
     rl.controls.update();
     return true;
+  }
+
+  // Keyboard driving from anywhere on the page: forward the simulator's keys
+  // into its frame (it listens on its own window), unless you're typing.
+  forwardKeys() {
+    const KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+      "KeyW", "KeyA", "KeyS", "KeyD", "KeyR", "KeyQ", "KeyE"]);
+    const typing = (el) => el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" ||
+      el.tagName === "SELECT" || el.isContentEditable);
+    const pass = (type) => (e) => {
+      if (!KEYS.has(e.code) || typing(document.activeElement) || e.metaKey || e.ctrlKey) return;
+      const w = this.iframe.contentWindow;
+      if (!w) return;
+      e.preventDefault();             // arrows would otherwise scroll the page
+      w.dispatchEvent(new w.KeyboardEvent(type, { code: e.code, key: e.key, repeat: e.repeat }));
+      if (type === "keydown") this.onKey?.(e.code);
+    };
+    window.addEventListener("keydown", pass("keydown"));
+    window.addEventListener("keyup", pass("keyup"));
   }
 
   // Colourways of the real robot: "classic" (Cream), "charcoal" (Graphite),
