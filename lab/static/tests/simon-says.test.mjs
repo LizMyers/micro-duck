@@ -37,3 +37,7 @@ test("the other arm is 'wrong move', not 'too slow'", () => {
   assert.match(r.text, /Wrong move: that was your left arm/);
   assert.equal(judge(true, false).text, "Too slow!");
 });
+
+test("both arms on a single-arm command is a wrong move", () => {
+  assert.match(judge(true, false, "both_arms_up").text, /Wrong move: that was both arms/);
+});

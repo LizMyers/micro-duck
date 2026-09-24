@@ -164,7 +164,7 @@ test("left arm up", () => {
 test("both arms up", () => {
   const { lm, set, base } = neutral();
   set(LM.leftWrist, 0.62, 0.2); set(LM.rightWrist, 0.38, 0.2);
-  only(check(lm, base), "left_arm_up", "right_arm_up", "both_arms_up");
+  only(check(lm, base), "both_arms_up");   // strict: not also left and right
 });
 
 test("a hand resting on the head is not a raised arm", () => {

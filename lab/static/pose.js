@@ -156,12 +156,14 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
     }
     return result(true, conf(sh, w), `${side} wrist is above the ${side} shoulder`, up);
   };
-  out.left_arm_up = armUp("left");
-  out.right_arm_up = armUp("right");
-  const both = out.left_arm_up.ok && out.right_arm_up.ok;
-  out.both_arms_up = result(both, Math.min(out.left_arm_up.confidence, out.right_arm_up.confidence),
-    both ? "both wrists above shoulders" : "needs both wrists above shoulders",
-    Math.min(out.left_arm_up.value, out.right_arm_up.value));
+  // Strict (Liz, 2026-09-24): one arm means ONLY that arm. Raising both lights "Both arms up" alone.
+  const left = armUp("left"), right = armUp("right");
+  const both = left.ok && right.ok;
+  const only = (a, otherName) => both ? result(false, a.confidence, `both arms are up, not just ${otherName}`, a.value) : a;
+  out.left_arm_up = only(left, "the left");
+  out.right_arm_up = only(right, "the right");
+  out.both_arms_up = result(both, Math.min(left.confidence, right.confidence),
+    both ? "both wrists above shoulders" : "needs both wrists above shoulders", Math.min(left.value, right.value));
   return out;
 }
 
