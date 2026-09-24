@@ -4,7 +4,7 @@
 // feed: 33 body points (nose, eyes, shoulders, elbows, wrists, hips, ...)
 // about 30 times a second. No video ever leaves this page.
 //
-// The rules that decide "is this person raising their right arm?" live in
+// The rules that decide "is this person looking to their left?" live in
 // evaluatePoseDetailed(), a pure function of the landmarks, so they can be
 // unit-tested without a camera (tests/pose-rules.test.mjs).
 
@@ -18,24 +18,34 @@ const MODEL_URL =
 // MediaPipe's landmark numbers. Left/right are the PERSON's own left/right,
 // whatever the mirrored video looks like.
 export const LM = {
-  nose: 0, leftEye: 2, rightEye: 5,
+  nose: 0, leftEye: 2, rightEye: 5, leftEar: 7, rightEar: 8,
   leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
   leftWrist: 15, rightWrist: 16, leftIndex: 19, rightIndex: 20,
   leftHip: 23, rightHip: 24,
 };
 
+// Simon Says v1 vocabulary (notes/ideas.md). "Left" and "right" are always the
+// PLAYER's own left and right.
 export const POSE_IDS = [
-  "right_arm_up", "left_arm_up", "both_arms_up", "wings", "touch_head", "cover_eyes", "crouch",
+  "look_up", "look_down", "look_left", "look_right",
+  "turn_left", "turn_right", "step_forward", "step_back",
+  "sit_down", "stand_up",
 ];
 
 export const POSE_LABELS = {
-  right_arm_up: "Raise your right arm",
-  left_arm_up: "Raise your left arm",
-  both_arms_up: "Raise both arms",
-  wings: "Flap your wings",
-  touch_head: "Touch your head",
-  cover_eyes: "Cover your eyes",
-  crouch: "Crouch down",
+  look_up: "Look up", look_down: "Look down", look_left: "Look left", look_right: "Look right",
+  turn_left: "Turn left", turn_right: "Turn right",
+  step_forward: "Step forward", step_back: "Step back",
+  sit_down: "Sit down", stand_up: "Stand up",
+};
+
+// How far each measurement has to move from the calibrated stance to count.
+// First guesses from geometry; tune them live on a real person (the chips show the numbers).
+export const THRESHOLDS = {
+  look: 0.2,       // head turn: nose offset from the ear midpoint, in ear-widths
+  pitch: 0.15,     // head tilt: nose height relative to the ears, in ear-widths
+  turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width (for the same size)
+  step: 0.12,      // step: body looks 12% bigger or smaller than at calibration
 };
 
 const VISIBLE = 0.5;
@@ -43,131 +53,106 @@ const VISIBLE = 0.5;
 // Skeleton lines drawn over the video.
 const BONES = [
   [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24],
-  [15, 19], [16, 20], [0, 2], [0, 5],
+  [15, 19], [16, 20], [0, 2], [0, 5], [2, 7], [5, 8],
 ];
 
 // ---------- The rules (pure functions) ------------------------------------------------------
 
 // Landmarks are normalised to the image (x: 0..1 of width, y: 0..1 of height,
 // y grows downward). `aspect` = width / height, so distances are measured in
-// the same units both ways.
+// the same units both ways. The image is NOT mirrored here: a player facing the
+// camera has their LEFT shoulder on the RIGHT of the image (larger x).
 function makeGeom(lm, aspect) {
-  const P = (i) => ({ x: lm[i].x * aspect, y: lm[i].y });
+  const P = (i) => ({ x: lm[i].x * aspect, y: lm[i].y, z: lm[i].z ?? 0 });
   const vis = (...ids) => ids.every((i) => lm[i] && (lm[i].visibility ?? 1) > VISIBLE);
   const conf = (...ids) => Math.min(...ids.map((i) => (lm[i] ? lm[i].visibility ?? 1 : 0)));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   return { P, vis, conf, dist };
 }
 
-function result(ok, confidence, reason) {
-  return { ok: !!ok, confidence: Math.max(0, Math.min(1, confidence)), reason };
+// The measurements every rule uses, from one frame. Null if head and shoulders aren't in view.
+// Ears are always estimated by the model (even when hidden by hair), so we don't insist they're visible.
+export function measure(lm, aspect = 4 / 3) {
+  if (!lm || lm.length < 25) return null;
+  const { P, vis, conf, dist } = makeGeom(lm, aspect);
+  if (!vis(LM.nose, LM.leftShoulder, LM.rightShoulder)) return null;
+  const nose = P(LM.nose), le = P(LM.leftEar), re = P(LM.rightEar);
+  const ls = P(LM.leftShoulder), rs = P(LM.rightShoulder);
+  const earMid = { x: (le.x + re.x) / 2, y: (le.y + re.y) / 2 };
+  const earWidth = Math.max(dist(le, re), 1e-6);
+  return {
+    conf: conf(LM.nose, LM.leftShoulder, LM.rightShoulder),
+    noseY: nose.y,
+    // Head turn: + when the nose points to the player's LEFT (image right).
+    yaw: (nose.x - earMid.x) / earWidth,
+    // Head tilt: + when looking up (nose rises relative to the ears).
+    pitch: (earMid.y - nose.y) / earWidth,
+    shoulderWidth: dist(ls, rs),
+    // Vertical shoulders-to-nose distance: shrinks when you step back, but not when you turn.
+    shoulderToNose: (ls.y + rs.y) / 2 - nose.y,
+    // Body turn direction: + when the right shoulder is nearer the camera (turned to the player's LEFT).
+    shoulderDepth: ls.z - rs.z,
+  };
 }
 
-// Returns { poseId: {ok, confidence, reason} } for every pose.
-// `baseline` (from calibrate()) is only needed for crouch.
+function result(ok, confidence, reason, value = null) {
+  return { ok: !!ok, confidence: Math.max(0, Math.min(1, confidence)), reason, value };
+}
+
+// Returns { poseId: {ok, confidence, reason, value} } for every pose.
+// Every v1 rule compares you with your calibrated stance (`baseline`, from calibrate()).
 export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   const out = {};
-  if (!lm || lm.length < 25) {
+  const m = measure(lm, aspect);
+  if (!m) {
     for (const id of POSE_IDS) out[id] = result(false, 0, "no person in view");
     return out;
   }
-  const { P, vis, conf, dist } = makeGeom(lm, aspect);
-  const shouldersSeen = vis(LM.leftShoulder, LM.rightShoulder);
-  const ls = P(LM.leftShoulder), rs = P(LM.rightShoulder);
-  // Shoulder width is our ruler, so the rules work near or far from the camera.
-  const sw = shouldersSeen ? dist(ls, rs) : baseline?.shoulderWidth ?? 0;
-  const midX = (ls.x + rs.x) / 2;
-  const shoulderY = (ls.y + rs.y) / 2;
-
-  const armUp = (side) => {
-    const s = side === "left" ? LM.leftShoulder : LM.rightShoulder;
-    const w = side === "left" ? LM.leftWrist : LM.rightWrist;
-    if (!vis(s, w) || !sw) return result(false, conf(s, w), `${side} wrist or shoulder not visible`);
-    const up = P(s).y - P(w).y; // positive = wrist above shoulder
-    if (up <= 0.35 * sw) return result(false, conf(s, w), `${side} wrist isn't above the ${side} shoulder`);
-    // A hand resting on the head is "touch your head", not a raised arm.
-    if (vis(LM.nose) && dist(P(w), P(LM.nose)) < 0.7 * sw) {
-      return result(false, conf(s, w), `${side} hand is on the head, not raised`);
-    }
-    return result(true, conf(s, w), `${side} wrist is above the ${side} shoulder`);
-  };
-
-  const right = armUp("right");
-  const left = armUp("left");
-  out.right_arm_up = right;
-  out.left_arm_up = left;
-  out.both_arms_up = right.ok && left.ok
-    ? result(true, Math.min(right.confidence, left.confidence), "both wrists above shoulders")
-    : result(false, Math.min(right.confidence, left.confidence), "needs both wrists above shoulders");
-
-  // Wings: both wrists out wide at about shoulder height, each on its own side.
-  {
-    const ids = [LM.leftShoulder, LM.rightShoulder, LM.leftWrist, LM.rightWrist];
-    if (!vis(...ids) || !sw) {
-      out.wings = result(false, conf(...ids), "wrists or shoulders not visible");
-    } else {
-      const wide = (w, s) => {
-        const pw = P(w), ps = P(s);
-        const sameSide = Math.sign(pw.x - midX) === Math.sign(ps.x - midX);
-        return sameSide && Math.abs(pw.x - midX) > 1.2 * sw && Math.abs(pw.y - shoulderY) < 0.6 * sw;
-      };
-      const ok = wide(LM.leftWrist, LM.leftShoulder) && wide(LM.rightWrist, LM.rightShoulder);
-      out.wings = result(ok, conf(...ids), ok ? "arms out wide like wings" : "arms aren't out wide at shoulder height");
-    }
+  if (!baseline) {
+    for (const id of POSE_IDS) out[id] = result(false, 0, "needs calibrating first");
+    return out;
   }
+  const T = THRESHOLDS;
+  const c = m.conf;
 
-  // A hand point: the index fingertip if seen, else the wrist.
-  const hand = (side) => {
-    const idx = side === "left" ? LM.leftIndex : LM.rightIndex;
-    const w = side === "left" ? LM.leftWrist : LM.rightWrist;
-    if (vis(idx)) return { p: P(idx), c: conf(idx) };
-    if (vis(w)) return { p: P(w), c: conf(w) };
-    return null;
-  };
-  // Eye positions are still estimated when the eyes are covered, so we don't
-  // insist the eyes themselves are "visible" (that's the point of covering them).
-  const eyeMid = { x: (P(LM.leftEye).x + P(LM.rightEye).x) / 2, y: (P(LM.leftEye).y + P(LM.rightEye).y) / 2 };
+  // Size compared with calibration, two ways: height (shoulders to nose) and width (shoulders).
+  const size = m.shoulderToNose / baseline.shoulderToNose;
+  const width = m.shoulderWidth / baseline.shoulderWidth;
+  const turnRatio = width / size;   // < 1 when the shoulders narrow more than the body shrinks: a turn
+  const turned = turnRatio < T.turned;
 
-  // Touch your head: a hand above the eye line, close to the head.
-  {
-    if (!vis(LM.nose) || !sw) {
-      out.touch_head = result(false, conf(LM.nose), "face not visible");
-    } else {
-      const nose = P(LM.nose);
-      const hits = ["left", "right"].map(hand).filter(Boolean)
-        .filter((h) => h.p.y < eyeMid.y - 0.1 * sw && dist(h.p, nose) < 0.8 * sw);
-      out.touch_head = hits.length
-        ? result(true, Math.max(...hits.map((h) => h.c)), "a hand is on top of the head")
-        : result(false, conf(LM.nose), "no hand on the head");
-    }
-  }
+  // Look left / right: the head turns but the body doesn't.
+  const yaw = m.yaw - baseline.yaw;
+  out.look_left = turned ? result(false, c, "whole body turned, not just the head", yaw)
+    : result(yaw > T.look, c, yaw > T.look ? "head turned to your left" : "head not turned left", yaw);
+  out.look_right = turned ? result(false, c, "whole body turned, not just the head", yaw)
+    : result(yaw < -T.look, c, yaw < -T.look ? "head turned to your right" : "head not turned right", yaw);
 
-  // Cover your eyes: both hands over the eyes.
-  {
-    const l = hand("left"), r = hand("right");
-    if (!l || !r || !sw) {
-      out.cover_eyes = result(false, 0, "hands not visible");
-    } else {
-      const near = (h) => dist(h.p, eyeMid) < 0.6 * sw;
-      const ok = near(l) && near(r);
-      out.cover_eyes = result(ok, Math.min(l.c, r.c), ok ? "both hands over the eyes" : "hands aren't over the eyes");
-    }
-  }
+  // Look up / down.
+  const pitch = m.pitch - baseline.pitch;
+  out.look_up = result(pitch > T.pitch, c, pitch > T.pitch ? "head tilted up" : "head not tilted up", pitch);
+  out.look_down = result(pitch < -T.pitch, c, pitch < -T.pitch ? "head tilted down" : "head not tilted down", pitch);
 
-  // Crouch: the head has dropped well below where it was when calibrated.
-  {
-    if (!baseline) {
-      out.crouch = result(false, 0, "needs calibrating first");
-    } else if (!vis(LM.nose)) {
-      out.crouch = result(false, conf(LM.nose), "face not visible");
-    } else {
-      const drop = P(LM.nose).y - baseline.noseY;
-      const need = Math.max(0.6 * baseline.shoulderToNose, 0.3 * baseline.shoulderWidth);
-      out.crouch = drop > need
-        ? result(true, conf(LM.nose), "head is well below its standing height")
-        : result(false, conf(LM.nose), "head hasn't dropped enough");
-    }
-  }
+  // Turn left / right: shoulders look narrow for your size; the nearer shoulder says which way.
+  // If depth is unclear, the direction the head points decides.
+  const dir = Math.abs(m.shoulderDepth) > 0.05 ? Math.sign(m.shoulderDepth) : Math.sign(yaw);
+  out.turn_left = result(turned && dir > 0, c, turned ? (dir > 0 ? "body turned to your left" : "turned, but to your right")
+    : "shoulders still face the camera", turnRatio);
+  out.turn_right = result(turned && dir < 0, c, turned ? (dir < 0 ? "body turned to your right" : "turned, but to your left")
+    : "shoulders still face the camera", turnRatio);
+
+  // Step forward / back: you look bigger or smaller, in height AND width (so a turn doesn't count).
+  const bigger = size > 1 + T.step && width > 1 + T.step;
+  const smaller = size < 1 - T.step && width < 1 - T.step && !turned;
+  out.step_forward = result(bigger, c, bigger ? "closer to the camera than at calibration" : "not closer", size);
+  out.step_back = result(smaller, c, smaller ? "further from the camera than at calibration" : "not further away", size);
+
+  // Sit down: the head drops well below its standing height (was "crouch").
+  // Stand up: the head is back up near its standing height.
+  const drop = m.noseY - baseline.noseY;
+  const need = Math.max(0.6 * baseline.shoulderToNose, 0.3 * baseline.shoulderWidth);
+  out.sit_down = result(drop > need, c, drop > need ? "head well below its standing height" : "head hasn't dropped enough", drop / need);
+  out.stand_up = result(drop < 0.5 * need, c, drop < 0.5 * need ? "head at standing height" : "head is still low", drop / need);
   return out;
 }
 
@@ -177,17 +162,12 @@ export function evaluatePose(lm, baseline = null, aspect = 4 / 3) {
   return Object.fromEntries(Object.entries(d).map(([k, v]) => [k, v.ok]));
 }
 
-// Neutral stance, used by relative checks (crouch). Null if not enough is visible.
+// Your normal stance: stand facing the camera, looking straight ahead. Null if not enough is visible.
 export function baselineFrom(lm, aspect = 4 / 3) {
-  if (!lm) return null;
-  const { P, vis, dist } = makeGeom(lm, aspect);
-  if (!vis(LM.nose, LM.leftShoulder, LM.rightShoulder)) return null;
-  const ls = P(LM.leftShoulder), rs = P(LM.rightShoulder), nose = P(LM.nose);
-  return {
-    noseY: nose.y,
-    shoulderWidth: dist(ls, rs),
-    shoulderToNose: (ls.y + rs.y) / 2 - nose.y,
-  };
+  const m = measure(lm, aspect);
+  if (!m) return null;
+  const { conf, ...base } = m;
+  return base;
 }
 
 // ---------- The tracker (camera + model + drawing) ------------------------------------------

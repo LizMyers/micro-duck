@@ -71,7 +71,7 @@ button, select, textarea, input { font: inherit; color: inherit; }
 .sub { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
 
 
-main { max-width: 1700px; margin: 0 auto; padding: 8px 16px 24px; }
+main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
 /* Column 1: duck on top, controls below. Column 2: one tall tabbed panel. */
 .layout {
   display: grid; gap: 16px;
@@ -83,7 +83,7 @@ main { max-width: 1700px; margin: 0 auto; padding: 8px 16px 24px; }
 .controls { grid-area: controls; }
 .side {
   grid-area: side; display: flex; flex-direction: column; min-height: 0;
-  height: calc(100vh - 100px); position: sticky; top: 12px;
+  height: calc(100vh - 32px); position: sticky; top: 16px;
 }
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; grid-template-areas: "duck" "side" "controls"; }
@@ -311,6 +311,7 @@ kbd {
   font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgb(0 0 0 / 55%); color: rgb(255 255 255 / 70%);
   transition: background .15s, color .15s;
 }
+.pose-chips li .num { font-family: var(--mono); font-size: 10px; opacity: .7; margin-left: 2px; }
 .pose-chips li.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .pose-chips li.off-limits { text-decoration: line-through; opacity: .5; }
 #camera[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
