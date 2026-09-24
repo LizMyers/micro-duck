@@ -257,14 +257,14 @@ function half(cls, value) {
 }
 
 function setCard(card, value) {
-  card.replaceChildren(half("top", value), half("bottom", value));
+  card.replaceChildren(half("upper", value), half("lower", value));
 }
 
 // Split-flap: the new number appears behind the top half, the old top half folds down on the hinge,
 // and lands as the new bottom half.
 function flip(card, from, to) {
-  card.replaceChildren(half("top", to), half("bottom", from));
-  const flapTop = half("top flap", from), flapBottom = half("bottom flap", to);
+  card.replaceChildren(half("upper", to), half("lower", from));
+  const flapTop = half("upper flap", from), flapBottom = half("lower flap", to);
   card.append(flapTop, flapBottom);
   flapBottom.style.transform = "rotateX(90deg)";
   const fold = { duration: 220, fill: "forwards" };

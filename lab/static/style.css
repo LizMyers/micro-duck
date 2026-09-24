@@ -466,8 +466,8 @@ kbd {
   display: block; height: 76px; font: 600 48px/76px var(--mono); text-align: center;
   letter-spacing: 0; text-transform: none; color: inherit;
 }
-.ss-card .top { top: 0; border-radius: 8px 8px 0 0; border-bottom: 1px solid rgb(0 0 0 / 30%); }
-.ss-card .bottom { bottom: 0; border-radius: 0 0 8px 8px; filter: brightness(.9); }
-.ss-card .bottom b { margin-top: -38px; }      /* show the lower half of the number */
-.ss-card .top.flap { transform-origin: 50% 100%; z-index: 2; }   /* hinged at the middle */
-.ss-card .bottom.flap { transform-origin: 50% 0; z-index: 2; }
+.ss-card .upper { top: 0; border-radius: 8px 8px 0 0; border-bottom: 1px solid rgb(0 0 0 / 30%); }
+.ss-card .lower { bottom: 0; border-radius: 0 0 8px 8px; filter: brightness(.9); }
+.ss-card .lower b { margin-top: -38px; }      /* show the lower half of the number */
+.ss-card .upper.flap { transform-origin: 50% 100%; z-index: 2; }   /* hinged at the middle */
+.ss-card .lower.flap { transform-origin: 50% 0; z-index: 2; }
