@@ -146,8 +146,13 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 2. **Tune camera thresholds on Liz** (chips show the numbers; compare with `THRESHOLDS` in `pose.js`).
 3. **Hand model: hold up 1–5 fingers** (MediaPipe HandLandmarker, 21 points/hand; ~1 h + tuning; watch CPU/RAM).
    Simon can call finger commands but can't demonstrate them.
-4. Maybe: pre-warm all game lines at game start, so the first game is as fast as later ones.
-5. **Package and apply** (unchanged): video of Liz playing (Inspector visible), README, make public, push the
+4. **Simon walks to his spot at game start** (Liz's idea): from wherever he is, turn towards the centre, walk
+   there (measured moves + `rl.data.qpos` position/heading), check, then turn to face the front. Level 1 is done
+   (Start game swings the sim camera in front of him, head level, via `faceCamera`). This is also the right
+   design for a real Microduck, where the camera can't move, so the robot must.
+5. "Look at Simon: 3… 2… 1…" calibration countdown (see late additions).
+6. Maybe: pre-warm all game lines at game start, so the first game is as fast as later ones.
+7. **Package and apply** (unchanged): video of Liz playing (Inspector visible), README, make public, push the
    `tool-call-positional-args` branch to Liz's fork, apply (first answer starts "GPU-poor and proud 🤗").
 
 **Later / tutorial finale:** multiplayer Simon Says via the sim's ghost channel; creature voice; HF Space.
