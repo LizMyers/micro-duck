@@ -45,9 +45,9 @@
   color-scheme: dark;
 }
 
-/* Duck colourways (Simon OS → Colour). These follow the duck: the page background and the light
-   shades behind things (beak bar track, Idle chip, dropdowns), Tap to talk, the RAM banner, the game
-   timer, the tab underline, and Simon's beak bar and head dot. Swatches from the simulator and Pollen's press kit. */
+/* Duck colourways (Simon OS → Colour). The whole page follows the duck: background, light shades,
+   highlights, Tap to talk, the RAM banner, the game timer, the tabs, and Simon's beak bar and head dot.
+   Cream is the original orange look. Swatches from the simulator and Pollen's press kit. */
 :root { --duck: #f08a24; --duck-ink: #ffffff; --duck-bg: #fbf5ea; }                       /* Cream */
 :root[data-duck="blue"] { --duck: #4a8bbf; --duck-ink: #ffffff; --duck-bg: #eaf3f9; }     /* Sky */
 :root[data-duck="purple"] { --duck: #8468bd; --duck-ink: #ffffff; --duck-bg: #f2eefa; }   /* Lavender */
@@ -72,6 +72,20 @@
 :root[data-theme="dark"][data-duck="blue"] { --bg: #1a2127; --surface-2: #2a343b; --line: #33414a; }
 :root[data-theme="dark"][data-duck="purple"] { --bg: #1d1a24; --surface-2: #312c3b; --line: #3c3647; }
 :root[data-theme="dark"][data-duck="charcoal"] { --bg: #1c1c1d; --surface-2: #2e2e31; --line: #38383c; }
+/* Highlights (Speaking chip, lit pose chips, Camera on, camera border, your chat bubbles, the active
+   relay stage) use the duck colour too. [data-duck] is always set, and this comes after the dark rules. */
+:root[data-duck] { --accent: var(--duck); --accent-ink: var(--duck-ink); --active: var(--duck); }
+:root[data-duck="blue"] { --accent-soft: #dcecf6; }
+:root[data-duck="purple"] { --accent-soft: #ece5f6; }
+:root[data-duck="charcoal"] { --accent-soft: #e7e6e3; }
+@media (prefers-color-scheme: dark) {
+  :root[data-duck="blue"]:not([data-theme="light"]) { --accent-soft: #223544; }
+  :root[data-duck="purple"]:not([data-theme="light"]) { --accent-soft: #342b45; }
+  :root[data-duck="charcoal"]:not([data-theme="light"]) { --accent-soft: #3a3936; }
+}
+:root[data-theme="dark"][data-duck="blue"] { --accent-soft: #223544; }
+:root[data-theme="dark"][data-duck="purple"] { --accent-soft: #342b45; }
+:root[data-theme="dark"][data-duck="charcoal"] { --accent-soft: #3a3936; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
