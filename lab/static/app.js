@@ -33,7 +33,10 @@ const BODY_RULES =
   "sit_down, stand_up, step_forward, step_back, turn_left, turn_right, bow, kick_left_leg, " +
   "kick_right_leg, skates_on, skates_off. Whenever someone asks you to move (sit, stand, step, walk, " +
   "turn, spin, bow, kick, lift a leg, skate), you MUST call the matching tool. " +
-  "Never just say you are doing it. Keep what you say about it to a few words.";
+  "Never just say you are doing it. Keep what you say about it to a few words. " +
+  // Small models happily claim to see. Simon can't: the webcam referee runs separately in the page.
+  "You cannot see: you have no eyes or camera. A separate camera referee judges the players' moves; " +
+  "you only hear what people say. If asked what you can see, say you can't see.";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -216,10 +219,26 @@ function onAgentStatus(ev) {
   if (ev.status !== "ready") disconnect();
 }
 
+// The model's raw log, made scannable: keep the time and the message, drop the date and the
+// long module name (it's in the tooltip), and colour warnings and errors.
+// "2026-09-24 11:29:44,912 - [pipeline 0] speech_to_speech.api...response - INFO - Response done"
+const LOG_LINE = /^\d{4}-\d\d-\d\d (\d\d:\d\d:\d\d),\d+ - (?:\[pipeline \d+\] )?(\S+) - (DEBUG|INFO|WARNING|ERROR|CRITICAL) - (.*)$/;
+
 function appendLog(line) {
   const atBottom = ui.log.scrollTop + ui.log.clientHeight >= ui.log.scrollHeight - 20;
-  ui.log.textContent += line.replace(/^\d{4}-\d\d-\d\d /, "") + "\n";
-  if (ui.log.textContent.length > 60000) ui.log.textContent = ui.log.textContent.slice(-40000);
+  const row = document.createElement("div");
+  const m = LOG_LINE.exec(line);
+  if (m) {
+    const [, time, module, level, msg] = m;
+    row.textContent = `${time} ${msg}`;
+    row.title = `${level} · ${module}`;
+    row.dataset.level = level.toLowerCase();
+  } else {
+    row.textContent = line;
+    if (/Traceback|Error\b|Exception/.test(line)) row.dataset.level = "error";
+  }
+  ui.log.append(row);
+  while (ui.log.childElementCount > 1500) ui.log.firstChild.remove();
   if (atBottom) ui.log.scrollTop = ui.log.scrollHeight;
 }
 

@@ -75,7 +75,7 @@ one home, and nothing is hidden: every process, port, command and timing is stil
 | Log | Written by | Where |
 |---|---|---|
 | Lab log | The server | Your Terminal, plus `lab/logs/lab.log` (written by the server itself) |
-| Agent log | speech-to-speech | `lab/logs/agent-<date>-<time>.log`, also the page's **Agent log** tab |
+| Model log | speech-to-speech | `lab/logs/agent-<date>-<time>.log`, also the page's **Model log (raw)** tab (time + message; hover for level and module; warnings amber, errors red) |
 
 ## Is it running? (handy checks)
 ```
