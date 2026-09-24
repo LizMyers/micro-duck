@@ -262,3 +262,7 @@ kbd {
   font: 11px/1.6 var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
   background: var(--surface);
 }
+
+.duck-actions { display: flex; align-items: center; gap: 8px; }
+#skates[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+#skates:disabled { opacity: .5; }

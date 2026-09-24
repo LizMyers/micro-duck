@@ -6,7 +6,7 @@
 // Timings for each stage come from the lab server, which reads the agent's log.
 
 import { DuckBody } from "/static/duck-body.js";
-import { TOOLS, runTool, TOOL_LABELS } from "/static/duck-tools.js";
+import { TOOLS, runTool, TOOL_LABELS, perform } from "/static/duck-tools.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -22,6 +22,15 @@ const PRESETS = {
     "You are Microduck, a small, cheerful robot duck. You are curious, a little mischievous, " +
     "and easily delighted. Keep replies to one short sentence. No lists, markdown or emoji.",
 };
+
+// Added to every personality: small models happily *say* "I'm sitting!" without
+// actually calling the tool, so we spell out that they have a body to move.
+const BODY_RULES =
+  "\n\nYou have a small robot duck body you can really move with your tools: " +
+  "sit_down, stand_up, step_forward, step_back, turn_left, turn_right, bow, kick_left_leg, " +
+  "kick_right_leg, skates_on, skates_off. Whenever someone asks you to move (sit, stand, step, walk, " +
+  "turn, spin, bow, kick, lift a leg, skate), you MUST call the matching tool. " +
+  "Never just say you are doing it. Keep what you say about it to a few words.";
 
 const $ = (id) => document.getElementById(id);
 const ui = {
@@ -127,7 +136,7 @@ function savePrefs() {
   try {
     localStorage.setItem("duck-lab", JSON.stringify({
       model: ui.model.value, voice: ui.voice.value, preset: ui.preset.value,
-      instructions: ui.instructions.value,
+      instructions: ui.instructions.value + BODY_RULES,
       tools: TOOLS,
       tool_choice: "auto", mute: ui.muteWhileSpeaking.checked,
     }));
@@ -657,6 +666,21 @@ for (const tab of document.querySelectorAll('[role="tab"]')) {
     }
   };
 }
+
+// Skates toggle: mirrors the duck's actual state, however it was switched.
+const skatesBtn = $("skates");
+skatesBtn.onclick = async () => {
+  const rl = body.rl;
+  if (!rl) return;
+  skatesBtn.disabled = true;
+  try { await perform(rl, rl.loco === "rollers" ? "skates_off" : "skates_on"); }
+  catch (e) { toast(`Skates: ${e.message}`); }
+  finally { skatesBtn.disabled = false; }
+};
+setInterval(() => {
+  const on = body.rl?.loco === "rollers";
+  skatesBtn.setAttribute("aria-pressed", String(on));
+}, 300);
 
 ui.model.onchange = () => { showModelNote(); savePrefs(); };
 ui.start.onclick = startAgent;
