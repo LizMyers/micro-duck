@@ -7,11 +7,57 @@
 <div hidden><span id="m"></span><span id="w"></span><span id="b"></span><span id="n"></span><span id="d"></span><span id="t"></span></div>
 <script type="module">
 import { DuckBody } from "/static/duck-body.js";
+import { perform } from "/static/duck-tools.js";
 const $ = (id) => document.getElementById(id);
 const body = new DuckBody({ iframe: $("sim"), moodEl: $("m"), whyEl: $("w"), beakBar: $("b"), beakNum: $("n"), headDot: $("d"), headText: $("t") });
 const p = new URLSearchParams(location.search);
+const errs = document.createElement("pre"); errs.id = "errlog"; document.body.append(errs);
+$("sim").addEventListener("load", () => {
+  const w = $("sim").contentWindow;
+  w.addEventListener("error", (e) => { errs.textContent += `ERR ${e.message}\n`; });
+  w.addEventListener("unhandledrejection", (e) => { errs.textContent += `REJ ${e.reason?.message || e.reason}\n`; });
+  const ce = w.console.error.bind(w.console);
+  w.console.error = (...a) => { errs.textContent += `CE ${a.map(String).join(" ").slice(0, 200)}\n`; ce(...a); };
+});
+if (p.get("diag")) body.whenReady((rl) => {
+  const t0 = performance.now();
+  const iv = setInterval(() => {
+    const t = ((performance.now() - t0) / 1000).toFixed(1);
+    errs.textContent += `${t}s locked=${rl.inputLocked} respawn=${rl.respawnActive} menu=${body.iframe.contentWindow.__store?.getState().menuOpen} entered=${body.iframe.contentWindow.__store?.getState().entered} boot=${body.iframe.contentWindow.__store?.getState().bootDone}\n`;
+    if (t > 6 && rl.inputLocked && !window._kick) { window._kick = 1; rl.entrance.start(); errs.textContent += "manual entrance.start()\n"; }
+    if (t > 12) clearInterval(iv);
+  }, 1000);
+});
+if (p.get("spin")) body.whenReady((rl) => setTimeout(async () => {
+  const wz = +p.get("spin"); const t0 = performance.now();
+  while (rl.inputLocked) await new Promise((r) => setTimeout(r, 100));
+  rl.setTwist(0, 0, wz);
+  for (let i = 0; i < 12; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    const c = rl.controller.getCommand();
+    errs.textContent += `${((performance.now()-t0)/1000).toFixed(1)}s yaw=${(rl.yaw*180/Math.PI).toFixed(0)} cmd=[${Array.from(c).map(v=>v.toFixed(2))}] mode=${rl.mode} src=${rl.controller.sources?.map(s=>s.id+(s.isActive()?'*':'')).join(',')}\n`;
+  }
+  rl.setTwist(0, 0, 0);
+}, 4000));
 body.whenReady(() => setTimeout(() => {
   body.setMood(p.get("mood") || "idle");
   if (p.get("jaw")) body.jawOverride = +p.get("jaw");
+  // ?moves=bow,turn:right:90 performs moves in order and logs posture changes.
+  if (p.get("moves")) {
+    const log = document.createElement("pre"); log.id = "movelog"; document.body.append(log);
+    const t0 = performance.now(); let last = "";
+    const note = (m) => { log.textContent += `${((performance.now() - t0) / 1000).toFixed(1)}s ${m}\n`; };
+    setInterval(() => { const m = `${body.rl.mode} locked=${body.rl.inputLocked} trick=${body.rl.customPolicy?.slot}`; if (m !== last) { note(m); last = m; } }, 50);
+    (async () => {
+      for (const spec of p.get("moves").split(",")) {
+        const [name, a, b] = spec.split(":");
+        const args = name === "turn" ? { direction: a, degrees: +b } : name === "step" ? { direction: a, steps: +b || 1 } : { side: a };
+        const y0 = body.rl.yaw;
+        try { const r = await perform(body.rl, name, args); note(`done ${spec} ${JSON.stringify(r || {})} (yaw change ${(((body.rl.yaw - y0) * 180 / Math.PI + 540) % 360 - 180).toFixed(0)}°)`); }
+        catch (e) { note(`FAILED ${spec}: ${e.message}`); }
+      }
+      note("ALL DONE");
+    })();
+  }
 }, 3000));
 </script></body></html>

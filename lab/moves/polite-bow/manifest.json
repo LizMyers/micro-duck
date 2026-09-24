@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "model_api": 1,
+  "name": "polite-bow",
+  "kind": "episodic",
+  "obs_len": 61,
+  "action_len": 14,
+  "action_scale": 1.0,
+  "entry_pose": "standing",
+  "duration_s": 4.0,
+  "description": "Small, gentle bow with head and body lowering, returning to standing. Policy by fffiloni (Hub: fffiloni/microduck-polite-bow-b1d864); manifest written by Duck Lab because the repo ships none.",
+  "robot": { "model": "microduck" }
+}

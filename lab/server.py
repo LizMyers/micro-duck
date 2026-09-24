@@ -35,10 +35,18 @@ from pydantic import BaseModel
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
 PROMPTS = HERE / "prompts"
+MOVES = HERE / "moves"
+# Community-trained Microduck moves we host locally (policy downloaded on start;
+# the manifest is ours because the Hub repo doesn't include one).
+MOVE_SOURCES = {
+    "polite-bow": "https://huggingface.co/fffiloni/microduck-polite-bow-b1d864/resolve/main/policy.onnx",
+}
 S2S_DIR = Path(os.environ.get("S2S_DIR", Path.home() / "Documents/Development/speech-to-speech"))
 # Pollen's Microduck browser simulator, built with VITE_BASE=/sim/ (see notes/02).
 SIM_DIST = Path(os.environ.get("SIM_DIST", Path.home() / "Documents/Development/microduck-simulator/app/dist"))
 HF_CACHE = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache/huggingface/hub"))
+
+STATE_FILE = HERE / ".agent-state.json"  # which model to bring back after a lab restart
 
 LAB_PORT = 8770
 AGENT_PORT = 8765
@@ -89,6 +97,21 @@ def is_cached(model_id: str) -> bool:
     return (HF_CACHE / f"models--{model_id.replace('/', '--')}").exists()
 
 
+def free_agent_port() -> None:
+    """Stop a leftover agent (e.g. orphaned by a hard lab restart) holding our port."""
+    try:
+        pids = subprocess.run(["lsof", "-t", f"-iTCP:{AGENT_PORT}", "-sTCP:LISTEN"],
+                              capture_output=True, text=True).stdout.split()
+    except OSError:
+        return
+    for pid in pids:
+        cmd = subprocess.run(["ps", "-o", "command=", "-p", pid], capture_output=True, text=True).stdout
+        if "speech-to-speech" in cmd:
+            subprocess.run(["kill", pid])
+    if pids:
+        time.sleep(2)
+
+
 class Agent:
     """Owns the speech-to-speech child process and fans its events out to the page."""
 
@@ -120,6 +143,7 @@ class Agent:
     def start(self, model_id: str) -> None:
         with self.lock:
             self._stop_locked()
+            free_agent_port()
             python = S2S_DIR / ".venv/bin/python"
             if not python.exists():
                 raise HTTPException(500, f"speech-to-speech not installed at {S2S_DIR}")
@@ -143,12 +167,15 @@ class Agent:
                 cmd, cwd=S2S_DIR, env=env, text=True, bufsize=1,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             )
+            STATE_FILE.write_text(json.dumps({"model": model_id}))
             self.set_status("starting")
             threading.Thread(target=self._read_log, args=(self.proc,), daemon=True).start()
 
-    def stop(self) -> None:
+    def stop(self, forget: bool = True) -> None:
         with self.lock:
             self._stop_locked()
+        if forget:
+            STATE_FILE.unlink(missing_ok=True)
         self.set_status("stopped")
 
     def _stop_locked(self) -> None:
@@ -188,11 +215,19 @@ app = FastAPI(title="Duck Lab")
 async def _startup() -> None:
     agent.loop = asyncio.get_running_loop()
     await asyncio.to_thread(make_test_prompts)
+    await asyncio.to_thread(fetch_moves)
+    # If the agent was running when the lab last shut down, bring it back.
+    try:
+        last = json.loads(STATE_FILE.read_text()).get("model")
+    except (OSError, ValueError):
+        last = None
+    if last in {m["id"] for m in MODELS}:
+        await asyncio.to_thread(agent.start, last)
 
 
 @app.on_event("shutdown")
 def _shutdown() -> None:
-    agent.stop()
+    agent.stop(forget=False)
 
 
 def make_test_prompts() -> None:
@@ -205,6 +240,18 @@ def make_test_prompts() -> None:
                 ["say", "-o", str(out), "--file-format=WAVE", "--data-format=LEI16@24000", text],
                 check=True,
             )
+
+
+def fetch_moves() -> None:
+    import urllib.request
+    for name, url in MOVE_SOURCES.items():
+        out = MOVES / name / "policy.onnx"
+        if out.exists():
+            continue
+        try:
+            urllib.request.urlretrieve(url, out)
+        except Exception as e:  # the lab still works without the move
+            print(f"Couldn't download move {name}: {e}")
 
 
 class StartRequest(BaseModel):
@@ -263,6 +310,7 @@ async def events() -> StreamingResponse:
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+app.mount("/moves", StaticFiles(directory=MOVES), name="moves")
 app.mount("/prompts", StaticFiles(directory=PROMPTS), name="prompts")
 if SIM_DIST.exists():
     app.mount("/sim", StaticFiles(directory=SIM_DIST, html=True), name="sim")

@@ -147,6 +147,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 8px 16px 40px; }
   align-self: center; font-size: 13px; padding: 4px 12px; border-radius: 999px;
   background: var(--bg); border: 1px dashed var(--accent); color: var(--ink);
 }
+.bubble.action.failed { border-color: var(--bad); color: var(--bad); }
 .bubble.test { outline: 2px dashed var(--line); outline-offset: 2px; }
 
 .talk-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--line); }
