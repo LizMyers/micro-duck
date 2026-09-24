@@ -834,7 +834,7 @@ new SimonSaysGame({
   tracker: () => cam.tracker,
   ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY."
     : !cam.on ? "Turn the camera on (📷 Camera, above the sim)."
-    : !cam.calibrated ? "Press Calibrate while standing normally." : null,
+    : !cam.calibrated ? "Press Calibrate while facing the camera normally." : null,
   prepare: async () => { await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false); },
   sayLine,
   lookAt: (dir) => body.lookAt(dir),
