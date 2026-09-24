@@ -1,5 +1,5 @@
 diff --git a/app/src/App.jsx b/app/src/App.jsx
-index d75c6f2..7d213e9 100644
+index d75c6f2..05ce127 100644
 --- a/app/src/App.jsx
 +++ b/app/src/App.jsx
 @@ -10,7 +10,7 @@ import Hud from "./ui/Hud.jsx";
@@ -34,21 +34,26 @@ index d75c6f2..7d213e9 100644
    return (
      <>
        <GameCanvas />
-@@ -87,3 +94,12 @@ export default function App() {
+@@ -87,3 +94,17 @@ export default function App() {
      </>
    );
  }
 +
 +function EmbedStage() {
 +  useEffect(() => {
-+    const start = () => gameApi.startEntrance?.();
++    // Play the entrance, then make sure the controls are handed over (the
++    // BIOS/title flow normally does that part).
++    const start = () => {
++      gameApi.startEntrance?.();
++      setTimeout(() => window.rl?.unlockInputs?.(), 3000);
++    };
 +    if (useGame.getState().bootDone) return start();
 +    return useGame.subscribe((s) => s.bootDone, (done) => done && start());
 +  }, []);
 +  return <GameCanvas />;
 +}
 diff --git a/app/src/game/game.js b/app/src/game/game.js
-index da73538..7a6a2ab 100644
+index da73538..94be7d3 100644
 --- a/app/src/game/game.js
 +++ b/app/src/game/game.js
 @@ -513,8 +513,16 @@ async function boot({ scene, camera, renderer }) {
@@ -87,7 +92,7 @@ index da73538..7a6a2ab 100644
    }
    function syncJaw() {
      setJawOpen(rig, jawOpenNow());
-@@ -2223,6 +2233,21 @@ async function boot({ scene, camera, renderer }) {
+@@ -2223,6 +2233,23 @@ async function boot({ scene, camera, renderer }) {
      get chaseYaw() { return { follow: chaseYawFollow, smooth: chaseYawSmooth, held: chaseHeldYaw, tracking: chaseYawTracking }; },
      padOrbitStep,
      jawOpenNow,
@@ -104,6 +109,8 @@ index da73538..7a6a2ab 100644
 +    sit: () => { if (!(mode === "sitstand" && sitFlag === 1)) setMode("sit"); },
 +    stand: () => { if (mode === "sitstand") setMode("walk"); },
 +    get sitting() { return mode === "sitstand" && sitFlag === 1; },
++    // Embedded (no title menu/BIOS): hand the controls over explicitly.
++    unlockInputs: () => { inputLocked = false; controller.setLocked(false); },
 +    get velLimits() { return velLims(); },
 +    setJaw: (v) => { externalJaw = Math.max(0, Math.min(1, Number(v) || 0)); },
      step: async (n = 1) => { for (let i = 0; i < n; i++) await controlStep(); },

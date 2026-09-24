@@ -39,7 +39,10 @@ export class DuckBody {
     requestAnimationFrame(() => this.tick());
     // Once the simulator has booted and the entrance has played, face the duck.
     this.iframe.addEventListener("load", () =>
-      this.whenReady(() => setTimeout(() => this.faceCamera(), 3000)));
+      this.whenReady(() => {
+        this.setColour("blue");
+        setTimeout(() => this.faceCamera(), 3000);
+      }));
   }
 
   // Portrait camera: stop the game's chase cam (which films the duck from behind)
@@ -59,6 +62,12 @@ export class DuckBody {
     rl.camera.lookAt(rl.controls.target);
     rl.controls.update();
     return true;
+  }
+
+  // Colourways of the real robot: "classic" (Cream), "charcoal" (Graphite),
+  // "purple" (Lavender), "blue" (Sky: pale blue with orange trim).
+  setColour(name) {
+    try { this.iframe.contentWindow?.__gameApi?.setVariant?.(name); } catch {}
   }
 
   // Call once the simulator has booted and the duck has settled.

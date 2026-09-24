@@ -6,3 +6,5 @@ __pycache__/
 recordings/
 microduck-press-kit/
 lab/prompts/*.wav
+lab/moves/*/policy.onnx
+lab/.agent-state.json

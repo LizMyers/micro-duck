@@ -363,28 +363,20 @@ function onAgentEvent(ev) {
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
     case "response.function_call_arguments.done": {
-      // The model wants the duck to do something: do it now, report back later.
+      // The model wants the duck to do something. Do it, measure what really
+      // happened, and report that back once this response is finished.
       let args = {};
       try { args = JSON.parse(ev.arguments || "{}"); } catch {}
-      const result = runTool(body.rl, ev.name, args);
-      addAction(ev.name, result);
+      const chip = addAction(ev.name, args);
       if (state.botBubble) state.botBubble.acted = true;
-      state.toolOutputs.push({ call_id: ev.call_id, output: JSON.stringify(result) });
+      const result = runTool(body.rl, ev.name, args).then((r) => { finishAction(chip, r); return r; });
+      state.toolOutputs.push({ call_id: ev.call_id, result });
       break;
     }
     case "response.done": {
       const status = ev.response?.status;
       const spoke = !!state.botBubble?.text;
-      if (state.toolOutputs.length) {
-        for (const out of state.toolOutputs.splice(0)) {
-          send({ type: "conversation.item.create", item: { type: "function_call_output", ...out } });
-        }
-        // If it acted without saying anything, let it say something once.
-        if (status === "completed" && !spoke && state.followUps < 1) {
-          state.followUps++;
-          send({ type: "response.create" });
-        }
-      }
+      if (state.toolOutputs.length) reportTools(state.toolOutputs.splice(0), status, spoke);
       finishBotBubble(status === "cancelled" ? "interrupted" : null);
       if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
       state.warm = true;
@@ -415,10 +407,36 @@ function addBubble(cls) {
   return el;
 }
 
-function addAction(name, result) {
-  const el = addBubble("action");
-  el.textContent = `🦆 ${TOOL_LABELS[name] || name}` + (result.ok ? "" : ` (failed: ${result.error})`);
+function addAction(name, args) {
+  const el = addBubble("action pending");
+  el.textContent = `🦆 ${TOOL_LABELS[name] ? TOOL_LABELS[name](args) : name}…`;
   ui.chat.scrollTop = ui.chat.scrollHeight;
+  return el;
+}
+
+function finishAction(el, r) {
+  el.classList.remove("pending");
+  const facts = [];
+  if (r.moved_cm !== undefined) facts.push(`moved ${Math.abs(r.moved_cm)} cm`);
+  if (r.turned_degrees !== undefined) facts.push(`turned ${Math.abs(r.turned_degrees)}°`);
+  el.textContent = el.textContent.replace(/…$/, "") +
+    (r.ok ? ` ✓${facts.length ? ` (${facts.join(", ")})` : ""}` : ` ✗ ${r.error}`);
+  el.classList.toggle("failed", !r.ok);
+}
+
+// Tell the model what actually happened. If a move failed, or it acted without
+// saying anything, give it one chance to speak (so it can own up).
+async function reportTools(outputs, status, spoke) {
+  const results = await Promise.all(outputs.map((o) => o.result));
+  outputs.forEach((o, i) => send({
+    type: "conversation.item.create",
+    item: { type: "function_call_output", call_id: o.call_id, output: JSON.stringify(results[i]) },
+  }));
+  const failed = results.some((r) => !r.ok);
+  if (status === "completed" && (failed || !spoke) && state.followUps < 1 && !state.testing) {
+    state.followUps++;
+    send({ type: "response.create" });
+  }
 }
 
 function userBubble(id) {
