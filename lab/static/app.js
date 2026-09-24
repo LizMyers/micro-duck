@@ -895,6 +895,11 @@ new SimonSaysGame({
   // Starting a game turns the camera on and calibrates it (it calibrates itself 2.5 s after starting).
   prepare: async () => {
     await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false);
+    // The illusion that Simon sees you: wherever he has wandered, the view swings round in front of
+    // him, head level, so he's looking straight out at the player. (Next: walk him to his spot.)
+    body.setMood("idle");
+    body.lookAt(null);
+    body.faceCamera();
     if (!cam.on) await startCamera();
     for (let t = 0; t < 8000 && cam.on && !cam.calibrated; t += 200) await sleep(200);
     if (!cam.calibrated) calibrate();
