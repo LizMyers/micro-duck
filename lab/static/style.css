@@ -45,8 +45,8 @@
   color-scheme: dark;
 }
 
-/* Duck colourways (Simon OS → Colour). Only three things follow the duck: the page background,
-   the Tap to talk button and the RAM banner. Swatches from the simulator and Pollen's press kit. */
+/* Duck colourways (Simon OS → Colour). Only these follow the duck: the page background, the Tap to
+   talk button, the RAM banner, the game timer, and Simon's beak bar and head dot. Swatches from the simulator and Pollen's press kit. */
 :root { --duck: #f08a24; --duck-ink: #ffffff; --duck-bg: #fbf5ea; }                       /* Cream */
 :root[data-duck="blue"] { --duck: #4a8bbf; --duck-ink: #ffffff; --duck-bg: #eaf3f9; }     /* Sky */
 :root[data-duck="purple"] { --duck: #8468bd; --duck-ink: #ffffff; --duck-bg: #f2eefa; }   /* Lavender */
@@ -245,14 +245,14 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .body-readout dt { color: var(--ink-2); font-size: 12px; margin-bottom: 4px; }
 .body-readout dd { margin: 0; display: flex; align-items: center; gap: 8px; }
 .meter { display: inline-block; width: 90px; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-.meter span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
+.meter span { display: block; height: 100%; width: 0; background: var(--duck); transition: width 60ms linear; }
 .num { font-family: var(--mono); min-width: 3.5ch; }
 .head-dial {
   position: relative; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--line); flex: none;
 }
 .head-dial span {
   position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
-  background: var(--accent); transition: transform 200ms ease;
+  background: var(--duck); transition: transform 200ms ease;
 }
 @media (max-width: 560px) { .body-readout { grid-template-columns: 1fr 1fr; } .body-readout > div:last-child { grid-column: 1 / -1; } }
 
