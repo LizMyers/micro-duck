@@ -821,14 +821,14 @@ function setDuckColour(name) {
   document.documentElement.dataset.duck = name;
   body.colour = name;
   body.setColour(name);
-  $("duck-colour").value = name;
+  for (const d of document.querySelectorAll("#duck-colour .dot")) d.setAttribute("aria-checked", String(d.dataset.colour === name));
   try { localStorage.setItem("duck-colour", name); } catch {}
 }
 {
   let saved = "blue";
   try { saved = localStorage.getItem("duck-colour") || "blue"; } catch {}
   setDuckColour(saved);
-  $("duck-colour").onchange = (e) => setDuckColour(e.target.value);
+  for (const d of document.querySelectorAll("#duck-colour .dot")) d.onclick = () => setDuckColour(d.dataset.colour);
 }
 new SimonSaysGame({
   tracker: () => cam.tracker,

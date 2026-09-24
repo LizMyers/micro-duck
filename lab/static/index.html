@@ -115,14 +115,11 @@
           </div>
           <div class="os-row">
             <div class="os-label">Colour</div>
-            <div class="os-info os-model">
-              <select id="duck-colour" aria-label="Duck colour">
-                <option value="blue">Sky</option>
-                <option value="classic">Cream</option>
-                <option value="purple">Lavender</option>
-                <option value="charcoal">Graphite</option>
-              </select>
-              <small>The duck and the page</small>
+            <div class="os-info duck-dots" id="duck-colour" role="radiogroup" aria-label="Duck colour">
+              <button class="dot" data-colour="blue" role="radio" aria-label="Sky" style="--c:#8fc3e3"></button>
+              <button class="dot" data-colour="classic" role="radio" aria-label="Cream" style="--c:#f08a24"></button>
+              <button class="dot" data-colour="purple" role="radio" aria-label="Lavender" style="--c:#b4a4d4"></button>
+              <button class="dot" data-colour="charcoal" role="radio" aria-label="Graphite" style="--c:#2f2f33"></button>
             </div>
             <div class="os-btns"></div>
           </div>
