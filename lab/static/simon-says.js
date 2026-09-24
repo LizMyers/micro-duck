@@ -51,6 +51,8 @@ const LABEL = {
   left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
 };
 
+const TRAP_OPENERS = ["Got you!", "Ha ha!", "Gotcha!", "Tricked you!"];
+
 // A different mood each time Simon loses, so his congratulations don't repeat word for word
 // (the same prompt tends to get the same sentence).
 const MOODS = ["dramatic, over-the-top", "sulky but fair", "sporting and generous", "sarcastic",
@@ -119,7 +121,8 @@ export class SimonSaysGame {
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      await this.speak(this.outLine, { improvise: true });
+      if (this.outFixed) await this.speak(this.outFixed);
+      else await this.speak(this.outLine, { improvise: true });
       await this.speak("Simon wins!");
       await this.speak(tally);
     } else {
@@ -201,9 +204,12 @@ export class SimonSaysGame {
       // Simon gloats (the end of the game is spoken in start()).
       // What happened, for Simon to gloat about in his own words (a new sentence every time).
       // Examples steer the logic; "make up a new one" keeps the variety.
-      this.outLine = !cmd.says
-        ? `You said "${line(cmd)}" without "Simon says", and the player moved anyway (they did ${seen ? LABEL[cmd.pose] : LABEL[r.wrong]}). ` +
-          `Gloat that you tricked them. Examples: "Gotcha! I never said Simon says. I win!" / "Ooh, I didn't say Simon says! Duck wins!" / "Tricked you! No Simon says, no moving. I win!" Make up a new one like these.`
+      // Traps get a fixed sentence (Liz: the improvised ones got the logic muddled, e.g. "you stepped left
+      // on your own"), with a rotating opener for a little variety. Exact, so it's cached after first use.
+      this.outFixed = !cmd.says
+        ? `${TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)]} I didn't say Simon says, and you moved anyway. I win!`
+        : null;
+      this.outLine = !cmd.says ? null
         : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ` +
           `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! Duck wins!" Make up a new one like these.`
         : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. ` +
