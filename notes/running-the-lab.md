@@ -71,6 +71,15 @@ one home, and nothing is hidden: every process, port, command and timing is stil
 > when its output goes into a pipe instead of the screen, and the web server was set to warnings only.
 > **Fix:** every lab message is printed with `flush=True`.
 
+> ⚠️ Gotcha: "Model exited unexpectedly with code 0: it crashed" right after pressing Restart model
+> (2026-09-24 12:19). False alarm: code 0 is a clean exit. The old model's log reader checked "am I still
+> the current model?" a moment before the restart code forgot it, so a normal stop looked like a crash.
+> **Fix:** forget the process first, then stop it.
+
+> ⚠️ Gotcha: `ps` said the model used 52 MB; it really uses about 8.5 GB. MLX keeps the model weights in
+> memory shared with the GPU, which `ps`'s RSS column doesn't count. `footprint <pid>` (or Activity Monitor's
+> Memory column) does. On this 18 GB Mac, with Chrome and the sim running, macOS was using 16 GB of swap.
+
 ## Where the logs are
 | Log | Written by | Where |
 |---|---|---|

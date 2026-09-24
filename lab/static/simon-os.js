@@ -87,7 +87,7 @@ export class SimonOS {
   async restartAgent() {
     const model = this.sys?.agent.model || this.app.selectedModel();
     const running = this.status === "ready" || this.status === "starting";
-    await this.app.startAgent(model, running ? "you pressed Restart agent" : "you pressed Start agent");
+    await this.app.startAgent(model, running ? "you pressed Restart model" : "you pressed Start model");
   }
 
   async restartLab() {
