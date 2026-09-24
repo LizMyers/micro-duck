@@ -17,9 +17,8 @@ test("lines: 'Simon says' only when he says it", () => {
   assert.equal(line({ pose: "look_left", says: false }), "Look left!");
 });
 
-test("stand up only after sitting, and always next after sitting", () => {
-  for (let i = 0; i < 200; i++) assert.notEqual(nextCommand(Math.random).pose, "stand_up");
-  assert.equal(nextCommand(Math.random, { sitting: true }).pose, "stand_up");
+test("no sitting or standing (played at a desk)", () => {
+  for (let i = 0; i < 200; i++) assert.ok(!["sit_down", "stand_up"].includes(nextCommand(Math.random).pose));
 });
 
 test("never the same command twice in a row", () => {
@@ -29,5 +28,5 @@ test("never the same command twice in a row", () => {
 test("about 70% are real 'Simon says'", () => {
   assert.equal(nextCommand(seq(0.69, 0)).says, true);
   assert.equal(nextCommand(seq(0.71, 0)).says, false);
-  assert.ok(Object.keys(COMMANDS).length === 10);
+  assert.ok(Object.keys(COMMANDS).length === 8);
 });

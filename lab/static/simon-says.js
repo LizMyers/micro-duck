@@ -6,11 +6,11 @@
 // game never grows his conversation history and replies stay fast).
 
 // The v1 vocabulary (notes/ideas.md): things both Simon and the player can do, and the camera can judge.
+// Sit down / stand up are left out: the game is played sitting at a desk (Liz: standing up takes too long).
 export const COMMANDS = {
   look_up: "look up", look_down: "look down", look_left: "look left", look_right: "look right",
   turn_left: "turn left", turn_right: "turn right",
   step_forward: "take a step forward", step_back: "take a step back",
-  sit_down: "sit down", stand_up: "stand up",
 };
 
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
@@ -18,11 +18,10 @@ const START_WINDOW = 4000;   // ms to do the move, counted from when Simon start
 const MIN_WINDOW = 2000;
 const HOLD = 300;            // a pose must be held this long to count
 
-// Pick the next command. "Stand up" only makes sense after sitting, and after sitting it's always next.
-export function nextCommand(rand, { sitting = false, last = null } = {}) {
+// Pick the next command (never the same one twice in a row).
+export function nextCommand(rand, { last = null } = {}) {
   const says = rand() < SAYS_CHANCE;
-  if (sitting) return { pose: "stand_up", says };
-  const pool = Object.keys(COMMANDS).filter((p) => p !== "stand_up" && p !== last);
+  const pool = Object.keys(COMMANDS).filter((p) => p !== last);
   return { pose: pool[Math.floor(rand() * pool.length)], says };
 }
 
@@ -59,13 +58,13 @@ export class SimonSaysGame {
     if (this.running) return;
     const problem = this.app.ready();
     $("ss-start").disabled = !!problem;
-    $("ss-ready").textContent = problem || "Ready. Stand facing the camera, looking straight ahead.";
+    $("ss-ready").textContent = problem || "Ready. Face the camera, looking straight ahead.";
   }
 
   async start() {
     await this.app.prepare();
     Object.assign(this, { running: true, score: 0, streak: 0, best: 0, lives: 3, window: START_WINDOW,
-      sitting: false, last: null, round: 0 });
+      last: null, round: 0 });
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
@@ -97,7 +96,7 @@ export class SimonSaysGame {
     for (let t = 0; t < 3000 && MOVING.some((p) => tracker.held(p, HOLD)); t += 100) await sleep(100);
     if (!this.running) return;
 
-    const cmd = nextCommand(Math.random, { sitting: this.sitting, last: this.last });
+    const cmd = nextCommand(Math.random, { last: this.last });
     this.last = cmd.pose;
     this.round++;
     const text = line(cmd);
@@ -132,8 +131,6 @@ export class SimonSaysGame {
       this.streak++;
       this.best = Math.max(this.best, this.streak);
       if (this.score % 3 === 0) this.window = Math.max(MIN_WINDOW, Math.round(this.window * 0.9));
-      if (cmd.pose === "sit_down" && cmd.says) this.sitting = true;
-      if (cmd.pose === "stand_up" && cmd.says) this.sitting = false;
     } else {
       this.lives--;
       this.streak = 0;
