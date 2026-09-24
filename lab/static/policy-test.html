@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Measures how the walking policy responds to different command recipes.
+     Physics is advanced with rl.step(n) (50 Hz control steps), so results don't
+     depend on how fast the browser renders. Open: /static/policy-test.html -->
+<html><head><meta charset="utf-8"><title>Policy test</title>
+<style>html,body{margin:0;background:#111;color:#eee;font:13px monospace}iframe{border:0;width:480px;height:360px}</style></head>
+<body>
+<iframe id="sim" src="/sim/?embed=1"></iframe>
+<pre id="out">loading…</pre>
+<script type="module">
+const out = document.getElementById("out");
+const log = (s) => { out.textContent += s + "\n"; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const frame = document.getElementById("sim");
+let rl;
+while (!(rl = frame.contentWindow?.rl) || !rl.data || rl.inputLocked) await sleep(200);
+out.textContent = "";
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+// Run a recipe: a list of [vx, vy, wz, steps]. Report distance along the start
+// heading (cm) and signed turn (degrees).
+async function run(name, recipe) {
+  rl.resetSim?.();
+  rl.setTwist(0, 0, 0);
+  await rl.step(100);                       // settle 2 s
+  const q = rl.data.qpos, x0 = q[0], y0 = q[1], yaw0 = rl.yaw;
+  let prev = yaw0, turned = 0;
+  for (const [vx, vy, wz, n] of recipe) {
+    rl.setTwist(vx, vy, wz);
+    for (let i = 0; i < n; i += 5) {
+      await rl.step(5);
+      const y = rl.yaw; turned += wrap(y - prev); prev = y;
+    }
+  }
+  rl.setTwist(0, 0, 0);
+  await rl.step(50);
+  const y = rl.yaw; turned += wrap(y - prev);
+  const dx = rl.data.qpos[0] - x0, dy = rl.data.qpos[1] - y0;
+  const along = dx * Math.cos(yaw0) + dy * Math.sin(yaw0);
+  log(`${name.padEnd(42)} moved ${(along * 100).toFixed(1).padStart(6)} cm   turned ${(turned * 180 / Math.PI).toFixed(0).padStart(5)}°   mode=${rl.mode}`);
+}
+
+const S = 150; // 3 s at 50 Hz
+const K = [0.25, 0, 1, 15];               // kick-start: 0.3 s of forward + left
+const zig = (vx, n, w) => Array.from({ length: n }, (_, i) => [vx, 0, i % 2 ? -w : w, 25]);
+await run("turn right: forward 0.25 + wz -1", [[0.25, 0, -1, S]]);
+await run("turn left: forward 0.25 + wz +1", [[0.25, 0, 1, S]]);
+await run("turn right: forward 0.12 + wz -1", [[0.12, 0, -1, S]]);
+await run("back: kick, then back+right steady", [K, [-0.2, 0, -1, S]]);
+await run("back: kick, then back zig-zag ±1", [K, ...zig(-0.2, 6, 1)]);
+await run("back: kick, then back zig-zag ±0.6", [K, ...zig(-0.2, 6, 0.6)]);
+await run("back: no kick, back zig-zag ±1", zig(-0.2, 6, 1));
+log("DONE");
+</script></body></html>

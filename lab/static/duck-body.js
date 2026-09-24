@@ -72,11 +72,23 @@ export class DuckBody {
       "KeyW", "KeyA", "KeyS", "KeyD", "KeyR", "KeyQ", "KeyE", "KeyM"]);
     const typing = (el) => el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" ||
       el.tagName === "SELECT" || el.isContentEditable);
+    const held = new Set();
+    // If the page loses focus mid-press, the key-up never arrives and the duck
+    // keeps "holding" the arrow (it overrides voice moves). Release everything.
+    const releaseAll = () => {
+      const w = this.iframe.contentWindow;
+      for (const code of held) w?.dispatchEvent(new w.KeyboardEvent("keyup", { code }));
+      held.clear();
+    };
+    window.addEventListener("blur", releaseAll);
+    document.addEventListener("visibilitychange", releaseAll);
+    this.releaseKeys = releaseAll;
     const pass = (type) => (e) => {
       if (!KEYS.has(e.code) || typing(document.activeElement) || e.metaKey || e.ctrlKey) return;
       const w = this.iframe.contentWindow;
       if (!w) return;
       e.preventDefault();             // arrows would otherwise scroll the page
+      if (type === "keydown") held.add(e.code); else held.delete(e.code);
       w.dispatchEvent(new w.KeyboardEvent(type, { code: e.code, key: e.key, repeat: e.repeat }));
       if (type === "keydown") this.onKey?.(e.code);
     };
