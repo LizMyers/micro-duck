@@ -110,7 +110,7 @@ export class SimonSaysGame {
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      await this.speak(`${this.outLine} Say clearly that you, Simon, win this game.`, { improvise: true });
+      await this.speak(this.outLine, { improvise: true });
       await this.speak(`Simon wins! ${tally}`);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
@@ -186,10 +186,14 @@ export class SimonSaysGame {
       this.out = true;
       // Simon gloats (the end of the game is spoken in start()).
       // What happened, for Simon to gloat about in his own words (a new sentence every time).
+      // Examples steer the logic; "make up a new one" keeps the variety.
       this.outLine = !cmd.says
-        ? `You said "${line(cmd)}" without "Simon says", and the player moved (they did ${seen ? LABEL[cmd.pose] : LABEL[r.wrong]}). Gloat that you didn't say Simon says, so you win.`
-        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. Gloat that they did the wrong move, so you win.`
-        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. Gloat that they were too slow, so you win.`;
+        ? `You said "${line(cmd)}" without "Simon says", and the player moved anyway (they did ${seen ? LABEL[cmd.pose] : LABEL[r.wrong]}). ` +
+          `Gloat that you tricked them. Examples: "Gotcha! I never said Simon says. I win!" / "Ooh, I didn't say Simon says! Duck wins!" / "Tricked you! No Simon says, no moving. I win!" Make up a new one like these.`
+        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ` +
+          `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! Duck wins!" Make up a new one like these.`
+        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. ` +
+          `Gloat that they were too slow. Examples: "Too slow, friend! I win!" / "Snooze you lose! Duck wins!" Make up a new one like these.`;
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
