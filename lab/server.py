@@ -221,6 +221,16 @@ agent = Agent()
 app = FastAPI(title="Duck Lab")
 
 
+@app.middleware("http")
+async def no_cache(request, call_next):
+    # The page's JS modules change often while we build; never let the browser
+    # keep a stale copy (it once kept old movement code after a reload).
+    response = await call_next(request)
+    if not request.url.path.startswith("/sim/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.on_event("startup")
 async def _startup() -> None:
     agent.loop = asyncio.get_running_loop()
