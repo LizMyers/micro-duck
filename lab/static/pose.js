@@ -36,7 +36,7 @@ export const POSE_IDS = [
 export const POSE_LABELS = {
   look_up: "Look up", look_down: "Look down", look_left: "Look left", look_right: "Look right",
   turn_left: "Turn left", turn_right: "Turn right",
-  step_forward: "Step forward", step_back: "Step back",
+  step_forward: "Lean forward", step_back: "Lean back",
   sit_down: "Sit down", stand_up: "Stand up",
   left_arm_up: "Left arm up", right_arm_up: "Right arm up", both_arms_up: "Both arms up",
 };
