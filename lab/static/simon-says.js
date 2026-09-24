@@ -10,7 +10,7 @@
 export const COMMANDS = {
   look_up: "look up", look_down: "look down", look_left: "look left", look_right: "look right",
   turn_left: "turn left", turn_right: "turn right",
-  step_forward: "take a step forward", step_back: "take a step back",
+  step_forward: "lean forward", step_back: "lean back",   // leaning works seated at a desk
   // Arms are easy at a desk. Simon has no arms, so he calls these but can't demonstrate them.
   left_arm_up: "raise your left arm", right_arm_up: "raise your right arm", both_arms_up: "raise both arms",
 };
