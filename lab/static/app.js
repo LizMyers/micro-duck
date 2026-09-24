@@ -10,6 +10,7 @@ import { Inspector } from "/static/inspector.js";
 import { PoseTracker, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
 import { SimonOS } from "/static/simon-os.js";
+import { MacOS } from "/static/mac-os.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -44,7 +45,6 @@ const ui = {
   voice: $("voice"), preset: $("preset"), instructions: $("instructions"), apply: $("apply"),
   talk: $("talk"), talkLabel: $("talk-label"), muteWhileSpeaking: $("mute-while-speaking"),
   chat: $("chat"), chatEmpty: $("chat-empty"), clearChat: $("clear-chat"),
-  runTests: $("run-tests"), results: $("results"),
   total: $("total"), log: $("log"), toast: $("toast"),
 };
 
@@ -345,7 +345,6 @@ function connect() {
     ws.send(JSON.stringify(settings));
     inspector.message("out", settings);
     ui.talk.disabled = false;
-    ui.runTests.disabled = false;
   };
   ws.onmessage = (e) => {
     const ev = JSON.parse(e.data);
@@ -358,7 +357,6 @@ function connect() {
   ws.onclose = (e) => {
     if (state.ws === ws) state.ws = null;
     ui.talk.disabled = true;
-    ui.runTests.disabled = true;
     setMic(false);
     if (e.code === 1008) setBusy(true);
     // If the model is still up (e.g. the socket dropped), try again: slowly while another tab has it.
@@ -664,90 +662,6 @@ function stopPlayback() {
   if (state.audio) state.playhead = state.audio.ctx.currentTime;
 }
 
-// ---------- Test questions ----------------------------------------------------------------
-
-function waitForResponse(timeoutMs) {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve("timeout"), timeoutMs);
-    state.waiters.push((status) => { clearTimeout(timer); resolve(status); });
-  });
-}
-
-// Plays a recorded question out loud *and* streams the same audio to the agent,
-// at real-time speed, as if someone were saying it into the mic.
-async function speakInto(url) {
-  const { ctx } = await ensureAudio();
-  await ctx.resume();
-  const data = await (await fetch(url)).arrayBuffer();
-  const buf = await ctx.decodeAudioData(data);
-  const samples = buf.getChannelData(0);
-  const player = ctx.createBufferSource();
-  player.buffer = buf;
-  player.connect(ctx.destination);
-  player.start();
-  const started = performance.now();
-  for (let i = 0, n = 0; i < samples.length; i += FRAME, n++) {
-    const frame = new Float32Array(FRAME);
-    frame.set(samples.subarray(i, i + FRAME));
-    send({ type: "input_audio_buffer.append", audio: floatToBase64Pcm16(frame) });
-    const due = started + (n + 1) * 20;
-    await sleep(Math.max(0, due - performance.now()));
-  }
-  // Trailing silence so the agent notices the question has ended.
-  for (let n = 0; n < 75; n++) {
-    send({ type: "input_audio_buffer.append", audio: floatToBase64Pcm16(new Float32Array(FRAME)) });
-    await sleep(20);
-  }
-}
-
-function words(s) {
-  return (s || "").toLowerCase().replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(Boolean);
-}
-
-function heardMark(asked, heard) {
-  const a = words(asked), h = new Set(words(heard));
-  const hit = a.filter((w) => h.has(w)).length / Math.max(1, a.length);
-  if (hit === 1 && words(heard).length === a.length) return ["ok", "✓"];
-  if (hit >= 0.7) return ["meh", "~"];
-  return ["bad", "✗"];
-}
-
-async function runTests() {
-  if (state.testing) return;
-  const wasMicOn = state.micOn;
-  await setMic(false);
-  state.testing = true;
-  ui.runTests.disabled = true;
-  ui.talk.disabled = true;
-  ui.results.hidden = false;
-  const tbody = ui.results.querySelector("tbody");
-  tbody.innerHTML = "";
-
-  for (const [i, test] of state.options.tests.entries()) {
-    const row = tbody.insertRow();
-    row.innerHTML = `<td class="num">${i + 1}</td><td>${test.text}</td><td>…</td><td></td><td class="num"></td>`;
-    const cold = !state.warm;
-    state.lastHeard = "";
-    state.lastReply = "";
-    const done = waitForResponse(45000);
-    await speakInto(test.url);
-    const status = await done;
-    // Let the reply finish playing before asking the next question.
-    while (isPlaying()) await sleep(100);
-    const total = state.turn?.log.total_s;
-    const [cls, sym] = heardMark(test.text, state.lastHeard);
-    row.cells[2].innerHTML = `<span class="mark ${cls}">${sym}</span>${state.lastHeard || "<em>nothing</em>"}`;
-    row.cells[3].textContent = status === "timeout" ? "(timed out)" : state.lastReply;
-    row.cells[4].textContent = fmt(total) + (cold ? " ❄" : "");
-    await sleep(800);
-  }
-
-  state.testing = false;
-  ui.runTests.disabled = false;
-  ui.talk.disabled = false;
-  if (wasMicOn) setMic(true);
-}
-
 // ---------- Wire up the page ---------------------------------------------------------------
 
 for (const tab of document.querySelectorAll('[role="tab"]')) {
@@ -874,6 +788,7 @@ function showVoice() {
 $("os-change-voice").onclick = () => $("tab-voice").click();
 ui.switchModel.onclick = () => startAgent(ui.model.value, "you switched model");
 const os = new SimonOS({ startAgent, stopAgent, selectedModel: () => ui.model.value, toast });
+new MacOS();
 ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
 ui.apply.onclick = () => {
   savePrefs();
@@ -883,7 +798,6 @@ ui.apply.onclick = () => {
 ui.voice.onchange = () => { savePrefs(); send(sessionUpdate()); showVoice(); };
 ui.muteWhileSpeaking.onchange = savePrefs;
 ui.talk.onclick = () => setMic(!state.micOn);
-ui.runTests.onclick = runTests;
 ui.clearChat.onclick = () => {
   ui.chat.querySelectorAll(".bubble").forEach((b) => b.remove());
   state.userBubbles.clear();

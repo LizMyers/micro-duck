@@ -365,3 +365,31 @@ kbd {
 /* Model log (raw): warnings and errors stand out */
 #log [data-level="warning"] { color: var(--warn); }
 #log [data-level="error"], #log [data-level="critical"] { color: var(--bad); font-weight: 600; }
+
+/* Mac OS tab: memory meters */
+.mac-summary { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.mac-summary strong { font-family: var(--mono); font-size: 20px; letter-spacing: .04em; color: var(--good); }
+.mac-summary small { font-size: 13px; }
+.mac-summary[data-pressure="warning"] strong { color: var(--warn); }
+.mac-summary[data-pressure="critical"] strong { color: var(--bad); }
+.ram-bar, .mem-bar { height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.ram-bar { height: 14px; margin-top: 10px; }
+.ram-bar span, .mem-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.mac-summary[data-pressure="warning"] + .ram-bar span { background: var(--warn); }
+.mac-summary[data-pressure="critical"] + .ram-bar span { background: var(--bad); }
+.mem-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+.mem-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+.mem-head .num { font-family: var(--mono); font-size: 12px; }
+.mem-list small { display: block; margin-top: 3px; font-size: 12px; }
+.mem-list .top { font-family: var(--mono); font-size: 11px; }
+.mem-list li[data-name="Model"] .mem-bar span { background: var(--good); }
+
+/* Low-memory warning, shown on top of every tab */
+.ram-warning {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--warn); color: var(--accent-ink); font-size: 13px; font-weight: 500;
+}
+.ram-warning[hidden] { display: none; }
+.ram-warning[data-level="critical"] { background: var(--bad); color: #fff; }
+.ram-warning span { flex: 1; min-width: 200px; }
+.ram-warning .ghost { color: inherit; border-color: currentColor; }

@@ -460,6 +460,89 @@ async def system(check: bool = False) -> dict:
     return s
 
 
+# --- Memory: who is using the Mac's RAM (the numbers Activity Monitor shows) ----------------
+
+UNITS = {"B": 1 / 1024 / 1024, "K": 1 / 1024, "M": 1, "G": 1024, "T": 1024 * 1024}
+
+
+def to_mb(text: str) -> float:
+    m = re.match(r"([\d.]+)([BKMGT])", text)
+    return float(m.group(1)) * UNITS[m.group(2)] if m else 0.0
+
+
+def sysctl(name: str) -> str:
+    return subprocess.run(["sysctl", "-n", name], capture_output=True, text=True).stdout.strip()
+
+
+def app_name(path: str) -> str:
+    m = re.search(r"/([^/]+)\.app/", path)
+    return m.group(1) if m else Path(path).name
+
+
+def is_macos(path: str) -> bool:
+    return path.startswith(("/System/", "/usr/", "/sbin/", "/bin/", "/Library/Apple/")) or "/" not in path
+
+
+def memory_report() -> dict:
+    # `top`'s MEM column is each process's real footprint, including GPU memory (what MLX uses).
+    top = subprocess.run(["top", "-l", "1", "-stats", "pid,mem", "-n", "2000"],
+                         capture_output=True, text=True).stdout
+    mem = {}
+    for line in top.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0].isdigit():
+            mem[int(parts[0])] = to_mb(parts[1].rstrip("+-"))
+    paths = {}
+    for line in subprocess.run(["ps", "-axo", "pid=,comm="], capture_output=True, text=True).stdout.splitlines():
+        pid, _, path = line.strip().partition(" ")
+        paths[int(pid)] = path.strip()
+
+    model_pids = set(listening_pids(AGENT_PORT))
+    if agent.proc and agent.proc.poll() is None:
+        model_pids.add(agent.proc.pid)
+    groups = {"macOS": 0.0, "Model": 0.0, "Chrome": 0.0, "Duck Lab server": 0.0}
+    chromes: dict[str, float] = {}
+    others: dict[str, float] = {}
+    for pid, mb in mem.items():
+        path = paths.get(pid, "kernel_task")
+        if pid in model_pids:
+            groups["Model"] += mb
+        elif pid == os.getpid():
+            groups["Duck Lab server"] += mb
+        elif "/Google Chrome" in path:   # Chrome and Chrome Canary; the simulator and camera run in here
+            groups["Chrome"] += mb
+            name = app_name(path)
+            chromes[name] = chromes.get(name, 0.0) + mb
+        elif is_macos(path):
+            groups["macOS"] += mb
+        else:
+            name = app_name(path)
+            others[name] = others.get(name, 0.0) + mb
+    top_others = sorted(others.items(), key=lambda kv: -kv[1])
+    total_mb = int(sysctl("hw.memsize")) / 1024 / 1024
+    swap = re.search(r"used = ([\d.]+)M", sysctl("vm.swapusage"))
+    phys = re.search(r"PhysMem: (\S+) used \((\S+) wired, (\S+) compressor\), (\S+) unused", top)
+    level = int(sysctl("kern.memorystatus_vm_pressure_level") or 1)
+    return {
+        "total_mb": round(total_mb),
+        "used_mb": round(to_mb(phys.group(1))) if phys else None,
+        "compressed_mb": round(to_mb(phys.group(3))) if phys else None,
+        "swap_mb": round(float(swap.group(1))) if swap else 0,
+        "free_percent": int(sysctl("kern.memorystatus_level") or 0),
+        "pressure": {1: "normal", 2: "warning", 4: "critical"}.get(level, "normal"),
+        "groups": [{"name": k, "mb": round(v),
+                    **({"top": [{"name": n, "mb": round(m)} for n, m in chromes.items()]} if k == "Chrome" else {})}
+                   for k, v in groups.items()]
+                  + [{"name": "Other apps", "mb": round(sum(others.values())),
+                      "top": [{"name": n, "mb": round(v)} for n, v in top_others[:5]]}],
+    }
+
+
+@app.get("/api/memory")
+async def memory() -> dict:
+    return await asyncio.to_thread(memory_report)
+
+
 @app.post("/api/system/cleanup")
 async def cleanup() -> dict:
     def work() -> None:
