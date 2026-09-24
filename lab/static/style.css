@@ -326,6 +326,8 @@ kbd {
 .health[data-state="starting"] strong { color: var(--warn); }
 .health[data-state="starting"] .health-dot { background: var(--warn); animation: pulse 1s infinite; }
 .health[data-state="error"] strong, .health[data-state="unknown"] strong { color: var(--bad); }
+.health[data-state="busy"] strong { color: var(--warn); }
+.health[data-state="busy"] .health-dot { background: var(--warn); }
 .health[data-state="error"] .health-dot, .health[data-state="unknown"] .health-dot { background: var(--bad); }
 .os .headline { margin-top: 8px; padding-top: 8px; }
 .os .headline strong { font-size: 22px; }
