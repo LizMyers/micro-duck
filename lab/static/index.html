@@ -15,40 +15,32 @@
       <span class="logo" aria-hidden="true">🦆</span>
       <div>
         <h1>Duck Lab</h1>
-        <p class="sub">An open-source voice agent, running on this Mac</p>
+        <p class="sub">Open-source voice agent · runs on this Mac</p>
       </div>
     </div>
+
+    <!-- The relay race, as a compact status strip -->
+    <div class="relay" aria-label="Where the time goes">
+      <ol class="stages" id="stages">
+        <li data-stage="listening" title="Is someone talking?"><span class="node"></span><b>Listen</b><em class="time">–</em><small hidden></small></li>
+        <li data-stage="turn" title="Finished, or just a pause?"><span class="node"></span><b>Turn</b><em class="time">–</em><small hidden>Finished, or just a pause?</small></li>
+        <li data-stage="stt" title="Speech → text"><span class="node"></span><b>Hear</b><em class="time">–</em><small hidden></small></li>
+        <li data-stage="thinking" title="The language model replies"><span class="node"></span><b>Think</b><em class="time">–</em><small hidden></small></li>
+        <li data-stage="voice" title="Text → voice"><span class="node"></span><b>Speak</b><em class="time">–</em><small hidden></small></li>
+      </ol>
+      <div class="headline" title="End of your speech → first sound"><span>Reply in</span><strong id="total">–</strong></div>
+    </div>
+
     <div class="status" id="status" data-state="stopped">
       <span class="dot"></span><span id="status-text">Agent stopped</span>
     </div>
   </header>
 
-  <main class="quad">
-    <!-- ① Upper left: conversation -->
-    <section class="card convo" aria-labelledby="convo-h">
-      <div class="card-head">
-        <h2 id="convo-h">Conversation</h2>
-        <button class="ghost small" id="clear-chat">Clear</button>
-      </div>
-      <div class="chat" id="chat" aria-live="polite">
-        <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
-      </div>
-      <div class="talk-row">
-        <button class="talk" id="talk" disabled aria-pressed="false">
-          <span class="mic" aria-hidden="true"></span>
-          <span id="talk-label">Tap to talk</span>
-        </button>
-        <label class="check">
-          <input type="checkbox" id="mute-while-speaking">
-          <span>Mute my mic while it speaks <small>(only if it keeps interrupting itself)</small></span>
-        </label>
-      </div>
-    </section>
-
-    <!-- ② Upper right: the duck and its body language -->
+  <main class="layout">
+    <!-- Column 1, row 1: the duck -->
     <section class="card duck" aria-labelledby="duck-h">
       <div class="card-head">
-        <h2 id="duck-h">The duck</h2>
+        <h2 id="duck-h">Simon <small>the duck</small></h2>
         <div class="duck-actions">
           <button class="ghost small" id="skates" aria-pressed="false" title="Roller skates on/off (M)">🛼 Skates</button>
           <span class="mood" id="mood" data-mood="idle">Idle</span>
@@ -75,33 +67,13 @@
       </dl>
     </section>
 
-    <!-- ③ Lower left: the relay race -->
-    <section class="card relay" aria-labelledby="relay-h">
-      <div class="card-head">
-        <h2 id="relay-h">The relay race</h2>
-        <p class="hint">Five small models pass your words along. Each lights up while it works.</p>
-      </div>
-      <ol class="stages" id="stages">
-        <li data-stage="listening"><span class="node"></span><b>Listening</b><small>Is someone talking?</small><em class="time">–</em></li>
-        <li data-stage="turn"><span class="node"></span><b>Turn check</b><small>Finished, or just a pause?</small><em class="time">–</em></li>
-        <li data-stage="stt"><span class="node"></span><b>Speech → text</b><small>Writes down your words</small><em class="time">–</em></li>
-        <li data-stage="thinking"><span class="node"></span><b>Thinking</b><small>The language model replies</small><em class="time">–</em></li>
-        <li data-stage="voice"><span class="node"></span><b>Voice</b><small>Turns the reply into sound</small><em class="time">–</em></li>
-      </ol>
-      <div class="headline">
-        <span>End of your speech → first sound</span>
-        <strong id="total">–</strong>
-      </div>
-    </section>
-
-    <!-- ④ Lower right: settings and tests, in tabs -->
+    <!-- Column 1, row 2: settings and tests -->
     <section class="card controls" aria-label="Settings and tests">
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-brain" aria-selected="true" aria-controls="panel-brain">Brain</button>
         <button role="tab" id="tab-voice" aria-selected="false" aria-controls="panel-voice">Voice &amp; personality</button>
         <button role="tab" id="tab-tests" aria-selected="false" aria-controls="panel-tests">Tests</button>
       </div>
-
       <div role="tabpanel" id="panel-brain" aria-labelledby="tab-brain">
         <label class="field">
           <span>Language model</span>
@@ -145,24 +117,48 @@
       </div>
     </section>
 
-    <!-- ⑤ Right column: every message between the page and the agent -->
-    <aside class="card inspector" id="inspector" aria-labelledby="insp-h">
-      <div class="card-head">
-        <h2 id="insp-h">Inspector</h2>
-        <div class="row tight">
+    <!-- Column 2: conversation / inspector / raw log, with the talk button always visible -->
+    <section class="card side" aria-label="Conversation and inspector">
+      <div class="tabs side-tabs" role="tablist">
+        <button role="tab" id="tab-convo" aria-selected="true" aria-controls="panel-convo">Conversation</button>
+        <button role="tab" id="tab-insp" aria-selected="false" aria-controls="panel-insp">Inspector</button>
+        <button role="tab" id="tab-log" aria-selected="false" aria-controls="panel-log">Agent log</button>
+      </div>
+
+      <div role="tabpanel" id="panel-convo" class="side-panel" aria-labelledby="tab-convo">
+        <div class="row tight panel-tools"><button class="ghost small" id="clear-chat">Clear</button></div>
+        <div class="chat" id="chat" aria-live="polite">
+        <p class="empty" id="chat-empty">Start the agent, then tap the button and say hello.</p>
+      </div>
+      </div>
+
+      <div role="tabpanel" id="panel-insp" class="side-panel inspector" aria-labelledby="tab-insp" hidden>
+        <div id="inspector" class="insp-root">
+          <div class="row tight">
           <label class="check"><input type="checkbox" id="insp-hide-audio" checked><span>Hide audio</span></label>
           <button class="ghost small" id="insp-copy">Copy</button>
           <button class="ghost small" id="insp-clear">Clear</button>
         </div>
+          <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
+          <div class="insp-list" aria-live="off"></div>
+        </div>
       </div>
-      <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
-      <div class="insp-list" aria-live="off"></div>
-    </aside>
 
-    <details class="card log">
-      <summary>Under the hood <small>(the agent's live log)</small></summary>
-      <pre id="log"></pre>
-    </details>
+      <div role="tabpanel" id="panel-log" class="side-panel" aria-labelledby="tab-log" hidden>
+        <pre id="log"></pre>
+      </div>
+
+      <div class="talk-row">
+        <button class="talk" id="talk" disabled aria-pressed="false">
+          <span class="mic" aria-hidden="true"></span>
+          <span id="talk-label">Tap to talk</span>
+        </button>
+        <label class="check">
+          <input type="checkbox" id="mute-while-speaking">
+          <span>Mute my mic while it speaks <small>(only if it keeps interrupting itself)</small></span>
+        </label>
+      </div>
+    </section>
   </main>
 
   <div class="toast" id="toast" role="status" hidden></div>
