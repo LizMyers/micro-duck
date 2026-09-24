@@ -145,6 +145,20 @@
       </div>
     </section>
 
+    <!-- ⑤ Right column: every message between the page and the agent -->
+    <aside class="card inspector" id="inspector" aria-labelledby="insp-h">
+      <div class="card-head">
+        <h2 id="insp-h">Inspector</h2>
+        <div class="row tight">
+          <label class="check"><input type="checkbox" id="insp-hide-audio" checked><span>Hide audio</span></label>
+          <button class="ghost small" id="insp-copy">Copy</button>
+          <button class="ghost small" id="insp-clear">Clear</button>
+        </div>
+      </div>
+      <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
+      <div class="insp-list" aria-live="off"></div>
+    </aside>
+
     <details class="card log">
       <summary>Under the hood <small>(the agent's live log)</small></summary>
       <pre id="log"></pre>

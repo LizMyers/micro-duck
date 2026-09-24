@@ -6,6 +6,7 @@
 // Timings for each stage come from the lab server, which reads the agent's log.
 
 import { DuckBody } from "/static/duck-body.js";
+import { Inspector } from "/static/inspector.js";
 import { TOOLS, runTool, TOOL_LABELS, perform } from "/static/duck-tools.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
@@ -42,6 +43,8 @@ const ui = {
   runTests: $("run-tests"), results: $("results"),
   total: $("total"), log: $("log"), toast: $("toast"),
 };
+
+const inspector = new Inspector($("inspector"));
 
 const body = new DuckBody({
   iframe: $("sim"), moodEl: $("mood"), whyEl: $("mood-why"),
@@ -177,7 +180,11 @@ function listenToLab() {
     const ev = JSON.parse(e.data);
     if (ev.type === "status") onAgentStatus(ev);
     else if (ev.type === "log") appendLog(ev.line);
-    else if (ev.type === "stage") onStage(ev);
+    else if (ev.type === "stage") {
+      onStage(ev);
+      const { type, stage, t, ...rest } = ev;
+      inspector.note(`stage: ${stage}`, rest);
+    }
   };
 }
 
@@ -307,11 +314,16 @@ function connect() {
   const ws = new WebSocket(state.options.agent_url);
   state.ws = ws;
   ws.onopen = () => {
+    inspector.note(`Connected to the agent at ${state.options.agent_url}`);
     ws.send(JSON.stringify(sessionUpdate()));
     ui.talk.disabled = false;
     ui.runTests.disabled = false;
   };
-  ws.onmessage = (e) => onAgentEvent(JSON.parse(e.data));
+  ws.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    inspector.message("in", ev);
+    onAgentEvent(ev);
+  };
   ws.onclose = () => {
     if (state.ws === ws) state.ws = null;
     ui.talk.disabled = true;
@@ -330,7 +342,12 @@ function disconnect() {
 }
 
 function send(obj) {
-  if (state.ws && state.ws.readyState === WebSocket.OPEN) state.ws.send(JSON.stringify(obj));
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify(obj));
+    inspector.message("out", obj);
+  } else if (obj.type !== "input_audio_buffer.append") {
+    inspector.note(`not sent (not connected): ${obj.type}`, obj, "err");
+  }
 }
 
 function onAgentEvent(ev) {
@@ -377,8 +394,13 @@ function onAgentEvent(ev) {
       let args = {};
       try { args = JSON.parse(ev.arguments || "{}"); } catch {}
       const chip = addAction(ev.name, args);
+      inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
       if (state.botBubble) state.botBubble.acted = true;
-      const result = runTool(body.rl, ev.name, args).then((r) => { finishAction(chip, r); return r; });
+      const result = runTool(body.rl, ev.name, args).then((r) => {
+        finishAction(chip, r);
+        inspector.note(`🦆 duck finished: ${ev.name} ${r.ok ? "✓" : "✗"}`, r, "tool");
+        return r;
+      });
       state.toolOutputs.push({ call_id: ev.call_id, result });
       break;
     }
