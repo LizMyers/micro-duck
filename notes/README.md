@@ -20,7 +20,7 @@ Each milestone file records what we ran, what broke, how we fixed it, and what w
 | 3 | Embodiment in sim: moves, beak, barge-in | 03-embodiment.md | – |
 | 4 | Ship: Space, upstream PR, blog, video | 04-ship.md | – |
 
-Tutorial mini-series outline: [tutorial-series.md](tutorial-series.md) · Ideas: [ideas.md](ideas.md) · Research notes: [research/](research/)
+How to run and watch the lab: [running-the-lab.md](running-the-lab.md) · Tutorial mini-series outline: [tutorial-series.md](tutorial-series.md) · Ideas: [ideas.md](ideas.md) · Research notes: [research/](research/)
 
 ## Machine
 Apple M3 Pro, 18 GB RAM, macOS 27.0 · Python 3.11 (via uv 0.8.4)
