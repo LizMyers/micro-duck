@@ -15,7 +15,7 @@ export const COMMANDS = {
 };
 
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
-const START_WINDOW = 4000;   // ms to do the move, counted from when Simon starts speaking
+const START_WINDOW = 3000;   // ms to do the move, counted from when Simon FINISHES speaking
 const MIN_WINDOW = 2000;
 const ROUNDS = 5;            // a short game for testing: get all 5 right and you win
 const HOLD = 300;            // a pose must be held this long to count
@@ -123,7 +123,7 @@ export class SimonSaysGame {
     this.render(text, "");
     this.app.note(`🎲 round ${this.round}: "${text}" (${cmd.says ? "do it" : "trap: don't move"})`);
 
-    const { started } = this.app.sayLine(text);
+    const { started, done } = this.app.sayLine(text);
     if (!(await started)) {           // no audio within 15 s: skip rather than judge unfairly
       this.render("Simon didn't answer. Is the model READY?", "");
       return this.stop(null);
@@ -132,16 +132,18 @@ export class SimonSaysGame {
     const demo = MIRROR[cmd.pose] && Math.random() < 0.5;
     if (demo) this.app.lookAt(MIRROR[cmd.pose]);
 
-    // The judging window, from when Simon starts speaking.
-    const t0 = performance.now();
+    // Watch from the first word (moving early on a trap still counts), but the clock only starts
+    // when Simon has finished the sentence: then you get `window` ms.
+    let deadline = Infinity;
+    done.then(() => { deadline = performance.now() + this.window; });
     let seen = false, wrong = null;
     // "Both arms" also lights each single arm, so a single-arm command ignores it, and vice versa.
     const others = MOVING.filter((p) => p !== cmd.pose && !(cmd.pose === "both_arms_up" && p.endsWith("_arm_up")));
-    while (this.running && performance.now() - t0 < this.window) {
+    while (this.running && performance.now() < deadline) {
       if (tracker.held(cmd.pose, HOLD)) { seen = true; if (!cmd.says) break; }
       if (seen && cmd.says) break;
       wrong ??= others.find((p) => tracker.held(p, HOLD) && !(p.endsWith("_arm_up") && tracker.held("both_arms_up", HOLD))) ?? null;
-      const left = Math.max(0, this.window - (performance.now() - t0));
+      const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
       $("ss-timer").style.width = `${(left / this.window) * 100}%`;
       $("ss-seconds").textContent = (left / 1000).toFixed(1);
       await sleep(50);
