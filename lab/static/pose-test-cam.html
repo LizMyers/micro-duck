@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pose Check</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fbf5ea; --surface: #ffffff; --surface-2: #f7e6cb; --ink: #2b2927; --ink-2: #6c6a68;
+      --line: #eadcc4; --accent: #f08a24; --accent-ink: #ffffff; --accent-soft: #fde7cf;
+      --good: #2f8f5b; --bad: #c2413a; --radius: 16px; --mono: "JetBrains Mono", ui-monospace, monospace;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #1c1b1a; --surface: #262422; --surface-2: #33302c; --ink: #f3ede4; --ink-2: #aaa49c;
+        --line: #3d3934; --accent: #f5a04a; --accent-ink: #1c1b1a; --accent-soft: #4a3521;
+        --good: #5cc28a; --bad: #ec7a72; color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #1c1b1a; --surface: #262422; --surface-2: #33302c; --ink: #f3ede4; --ink-2: #aaa49c;
+      --line: #3d3934; --accent: #f5a04a; --accent-ink: #1c1b1a; --accent-soft: #4a3521;
+      --good: #5cc28a; --bad: #ec7a72; color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; display: grid; gap: 16px;
+           grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { margin: 0; color: var(--ink-2); font-size: 13px; }
+    header { max-width: 1100px; margin: 0 auto; padding: 20px 16px 0; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+    .cam { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+    .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .cam video { display: none; }
+    .cam .msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-2); padding: 16px; text-align: center; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+    button { font: inherit; padding: 8px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+    button.primary { background: var(--ink); color: var(--bg); }
+    button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .stat { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    li { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 10px 12px; border-radius: 12px;
+         border: 1px solid var(--line); background: var(--bg); transition: background .15s, border-color .15s; }
+    li .dot { grid-row: span 2; width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; border: 2px solid var(--ink-2); }
+    li b { font-size: 14px; }
+    li small { color: var(--ink-2); font-size: 12px; }
+    li[data-on="true"] { background: var(--accent-soft); border-color: var(--accent); }
+    li[data-on="true"] .dot { background: var(--accent); border-color: var(--accent); }
+    li[data-held="true"] .dot { background: var(--good); border-color: var(--good); }
+    pre { font: 12px/1.5 var(--mono); white-space: pre-wrap; margin: 12px 0 0; color: var(--ink-2); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pose check</h1>
+    <p class="sub">Tests the webcam judge for Simon Says. Your video stays in this browser; nothing is uploaded.</p>
+  </header>
+  <main>
+    <section class="card">
+      <div class="cam">
+        <video id="video" playsinline muted></video>
+        <canvas id="canvas" aria-label="Your webcam, mirrored, with the tracked skeleton"></canvas>
+        <p class="msg" id="msg">Click “Start camera”. Chrome will ask to use your camera.</p>
+      </div>
+      <div class="row">
+        <button class="primary" id="start">Start camera</button>
+        <button class="ghost" id="calibrate" disabled>Calibrate (stand normally)</button>
+        <span class="stat" id="stat"></span>
+      </div>
+      <pre id="smoke"></pre>
+    </section>
+    <section class="card">
+      <ul id="poses"></ul>
+      <p class="sub" style="margin-top:12px">Orange = seen right now. Green = held for 300 ms (what the game counts). Crouch needs calibrating first.</p>
+    </section>
+  </main>
+  <script type="module">
+    import { PoseTracker, POSE_IDS, POSE_LABELS } from "/static/pose.js";
+    const $ = (id) => document.getElementById(id);
+    const tracker = new PoseTracker();
+    const smoke = $("smoke");
+    const log = (m) => { smoke.textContent += m + "\n"; };
+    window.addEventListener("error", (e) => log(`ERR ${e.message}`));
+    window.addEventListener("unhandledrejection", (e) => log(`REJ ${e.reason?.message || e.reason}`));
+
+    const items = {};
+    for (const id of POSE_IDS) {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="dot"></span><b>${POSE_LABELS[id]}</b><small>–</small>`;
+      $("poses").append(li);
+      items[id] = li;
+    }
+
+    let frames = 0;
+    tracker.onFrame(({ poses, landmarks }) => {
+      frames++;
+      for (const id of POSE_IDS) {
+        items[id].dataset.on = String(poses[id].ok);
+        items[id].dataset.held = String(tracker.held(id, 300));
+        items[id].querySelector("small").textContent = poses[id].reason;
+      }
+      $("stat").textContent = `${tracker.fps} fps · ${landmarks ? "person found" : "no person"}` +
+        (tracker.baseline ? " · calibrated" : "");
+    });
+
+    async function start() {
+      $("start").disabled = true;
+      $("msg").textContent = "Loading the pose model…";
+      const t0 = performance.now();
+      try {
+        await tracker.start($("video"), $("canvas"));
+        $("msg").hidden = true;
+        $("calibrate").disabled = false;
+        $("start").textContent = "Stop camera";
+        $("start").disabled = false;
+        $("start").onclick = stop;
+        log(`started in ${Math.round(performance.now() - t0)} ms; status=${tracker.status}`);
+      } catch (e) {
+        $("msg").textContent = tracker.error || e.message;
+        $("start").disabled = false;
+        log(`FAILED: ${tracker.error || e.message}`);
+      }
+    }
+    function stop() {
+      tracker.stop();
+      $("msg").hidden = false;
+      $("msg").textContent = "Camera off.";
+      $("start").textContent = "Start camera";
+      $("start").onclick = start;
+      $("calibrate").disabled = true;
+    }
+    $("start").onclick = start;
+    $("calibrate").onclick = () => {
+      const b = tracker.calibrate();
+      $("stat").textContent = b ? "Calibrated." : "Couldn't see your face and shoulders. Step back a little.";
+    };
+
+    // ?autostart=1 (headless smoke test): start, then report after a few seconds.
+    if (new URLSearchParams(location.search).get("autostart")) {
+      start().then(() => setTimeout(() => {
+        log(`frames processed: ${frames}; fps=${tracker.fps}; status=${tracker.status}; error=${tracker.error}`);
+        log("SMOKE DONE");
+      }, 5000));
+    }
+  </script>
+</body>
+</html>
