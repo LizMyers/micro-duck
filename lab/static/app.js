@@ -7,7 +7,7 @@
 
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
-import { TOOLS, runTool, TOOL_LABELS, perform } from "/static/duck-tools.js";
+import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
 const FRAME = 480;             // 20 ms of audio at 24 kHz.
@@ -45,6 +45,8 @@ const ui = {
 };
 
 const inspector = new Inspector($("inspector"));
+
+setTrace((text, detail) => inspector.note(`🦆 ${text}`, detail, "tool"));
 
 const body = new DuckBody({
   iframe: $("sim"), moodEl: $("mood"), whyEl: $("mood-why"),
@@ -380,6 +382,7 @@ function onAgentEvent(ev) {
       state.lastHeard = ev.transcript;
       break;
     case "response.created":
+      state.responding = true;
       botBubble();
       break;
     case "response.output_audio_transcript.delta":
@@ -392,25 +395,42 @@ function onAgentEvent(ev) {
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
     case "response.function_call_arguments.done": {
-      // The model wants the duck to do something. Do it, measure what really
-      // happened, and report that back once this response is finished.
+      // The model wants the duck to move. Start the move, tell the model
+      // straight away that it has started (the agent won't talk again until it
+      // hears back), and follow up only if the move turns out to fail.
       let args = {};
       try { args = JSON.parse(ev.arguments || "{}"); } catch {}
       const chip = addAction(ev.name, args);
-      inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
       if (state.botBubble) state.botBubble.acted = true;
-      const result = runTool(body.rl, ev.name, args).then((r) => {
+      inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
+      state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: "started", doing: TOOL_LABELS[ev.name]?.(args) } });
+      runTool(body.rl, ev.name, args).then((r) => {
         finishAction(chip, r);
         inspector.note(`🦆 duck finished: ${ev.name} ${r.ok ? "✓" : "✗"}`, r, "tool");
-        return r;
+        if (!r.ok) whenIdle(() => {
+          send({ type: "conversation.item.create", item: { type: "message", role: "system", content: [
+            { type: "input_text", text: `The ${ev.name} move failed: ${r.error} Tell the user briefly and honestly.` }] } });
+          send({ type: "response.create" });
+        });
       });
-      state.toolOutputs.push({ call_id: ev.call_id, result });
       break;
     }
     case "response.done": {
       const status = ev.response?.status;
       const spoke = !!state.botBubble?.text;
-      if (state.toolOutputs.length) reportTools(state.toolOutputs.splice(0), status, spoke);
+      state.responding = false;
+      if (state.toolOutputs.length) {
+        for (const o of state.toolOutputs.splice(0)) {
+          send({ type: "conversation.item.create",
+            item: { type: "function_call_output", call_id: o.call_id, output: JSON.stringify(o.output) } });
+        }
+        // It acted without saying anything: let it say a few words, once.
+        if (status === "completed" && !spoke && state.followUps < 1 && !state.testing) {
+          state.followUps++;
+          send({ type: "response.create" });
+        }
+      }
+      flushIdle();
       finishBotBubble(status === "cancelled" ? "interrupted" : null);
       if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
       state.warm = true;
@@ -458,19 +478,13 @@ function finishAction(el, r) {
   el.classList.toggle("failed", !r.ok);
 }
 
-// Tell the model what actually happened. If a move failed, or it acted without
-// saying anything, give it one chance to speak (so it can own up).
-async function reportTools(outputs, status, spoke) {
-  const results = await Promise.all(outputs.map((o) => o.result));
-  outputs.forEach((o, i) => send({
-    type: "conversation.item.create",
-    item: { type: "function_call_output", call_id: o.call_id, output: JSON.stringify(results[i]) },
-  }));
-  const failed = results.some((r) => !r.ok);
-  if (status === "completed" && (failed || !spoke) && state.followUps < 1 && !state.testing) {
-    state.followUps++;
-    send({ type: "response.create" });
-  }
+// Some messages must wait until the agent isn't in the middle of a reply.
+const idleQueue = [];
+function whenIdle(fn) {
+  if (!state.responding) fn(); else idleQueue.push(fn);
+}
+function flushIdle() {
+  while (!state.responding && idleQueue.length) idleQueue.shift()();
 }
 
 function userBubble(id) {
