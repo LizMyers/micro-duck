@@ -104,8 +104,10 @@ export class SimonSaysGame {
     // Who won goes on the all-time scoreboard. Simon improvises a reaction (told plainly who won),
     // then reads the result as a fixed line, so it's never unclear.
     const simonWon = this.out;
-    this.board.add(simonWon ? "simon" : "you");
-    const { simon, you } = this.board.totals;
+    // The new totals are spoken first; the scoreboard card flips only after Simon has finished
+    // (Liz's hunch: the flip was interrupting his speech).
+    const winner = simonWon ? "simon" : "you";
+    const { simon, you } = { ...this.board.totals, [winner]: this.board.totals[winner] + 1 };
     // Numbers as words, in its own short line: the voice model dropped the end of
     // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
     const tally = `The score is Simon ${words(simon)}, you ${words(you)}.`;
@@ -122,6 +124,7 @@ export class SimonSaysGame {
       await this.speak("You win!");
       await this.speak(tally);
     }
+    this.board.add(winner);
     this.stop(null);
   }
 
