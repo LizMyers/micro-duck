@@ -18,6 +18,14 @@ const POSES = {
   interrupted: [-0.20, 0.20,  0.00,  0.00],  // pull back, surprised
 };
 
+// Head looks for "copy me" and Simon Says. Left/right are SIMON's own left and right.
+const LOOKS = {
+  up:    [0.45, -0.35,  0.00, 0.00],
+  down:  [-0.25, 0.45,  0.00, 0.00],
+  left:  [0.10,  0.00,  0.70, 0.00],
+  right: [0.10,  0.00, -0.70, 0.00],
+};
+
 const WHY = {
   idle: "Waiting for someone to talk.",
   listening: "You're talking, so it looks up at you and tilts its head.",
@@ -36,6 +44,7 @@ export class DuckBody {
     this.buf = null;
     this.timer = null;
     this.jawOverride = null;   // set a number to hold the beak open (for tuning)
+    this.look = null;          // "up" | "down" | "left" | "right" | null: overrides the mood's head pose
     this.forwardKeys();
     requestAnimationFrame(() => this.tick());
     // Once the simulator has booted and the entrance has played, face the duck.
@@ -130,14 +139,25 @@ export class DuckBody {
     this.moodEl.dataset.mood = mood;
     this.moodEl.textContent = mood[0].toUpperCase() + mood.slice(1);
     this.whyEl.textContent = WHY[mood];
-    const rl = this.rl;
-    if (rl?.headTarget) for (let i = 0; i < 4; i++) rl.headTarget[i] = this.pose[i];
-    this.drawHead();
+    this.applyHead();
     if (holdMs && then) this.timer = setTimeout(() => this.setMood(then), holdMs);
   }
 
-  drawHead() {
-    const [neck, pitch, yaw] = this.pose;
+  // Point the head up/down/left/right (Simon's own directions), or null to go back to the mood's pose.
+  lookAt(dir) {
+    this.look = dir && LOOKS[dir] ? dir : null;
+    this.applyHead();
+  }
+
+  applyHead() {
+    const pose = this.look ? LOOKS[this.look] : this.pose;
+    const rl = this.rl;
+    if (rl?.headTarget) for (let i = 0; i < 4; i++) rl.headTarget[i] = pose[i];
+    this.drawHead(pose);
+  }
+
+  drawHead(pose = this.pose) {
+    const [neck, pitch, yaw] = pose;
     const up = neck - pitch;           // both raise the gaze
     const x = Math.max(-1, Math.min(1, -yaw / 0.6)) * 9;
     const y = Math.max(-1, Math.min(1, -up / 0.6)) * 9;
@@ -147,7 +167,7 @@ export class DuckBody {
     if (up < -0.1) parts.push("back");
     if (yaw > 0.1) parts.push("left");
     if (yaw < -0.1) parts.push("right");
-    if (Math.abs(this.pose[3]) > 0.1) parts.push("tilted");
+    if (Math.abs(pose[3]) > 0.1) parts.push("tilted");
     this.headText.textContent = parts.length ? parts.join(", ") : "neutral";
   }
 
