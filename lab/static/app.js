@@ -815,6 +815,21 @@ $("os-change-voice").onclick = () => $("tab-voice").click();
 ui.switchModel.onclick = () => startAgent(ui.model.value, "you switched model");
 const os = new SimonOS({ startAgent, stopAgent, selectedModel: () => ui.model.value, toast });
 new MacOS();
+
+// Duck colour: the simulator's duck and the page's colours follow the same choice (remembered).
+function setDuckColour(name) {
+  document.documentElement.dataset.duck = name;
+  body.colour = name;
+  body.setColour(name);
+  $("duck-colour").value = name;
+  try { localStorage.setItem("duck-colour", name); } catch {}
+}
+{
+  let saved = "blue";
+  try { saved = localStorage.getItem("duck-colour") || "blue"; } catch {}
+  setDuckColour(saved);
+  $("duck-colour").onchange = (e) => setDuckColour(e.target.value);
+}
 new SimonSaysGame({
   tracker: () => cam.tracker,
   ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY."
