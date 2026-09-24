@@ -25,3 +25,6 @@ Rule: every command is something **both Simon and the player** can do, and the w
 - **sit down | stand up**             → player: head drops a lot / returns to calibrated height
 Not in v1: arm moves (Simon has no arms), "Quack!" (mic-judged), bow, kick, skates.
 Still to build: look_* moves for Simon (head poses exist), new pose checks for steps/turns/looks, the game master.
+
+## Launch copy
+- **LinkedIn headline (Liz):** "Play Simon Says with Your Microduck"
