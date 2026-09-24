@@ -750,7 +750,7 @@ for (const tab of document.querySelectorAll('[role="tab"]')) {
 
 // ---------- Webcam referee (pose tracking runs entirely in this browser) ----------
 const cam = {
-  tracker: null, on: false, held: new Set(),
+  tracker: null, on: false, held: new Set(), copy: false, copied: null,
   btn: $("camera"), pip: $("cam-pip"), chips: $("pose-chips"), status: $("cam-status"),
 };
 for (const id of POSE_IDS) {
@@ -791,7 +791,29 @@ async function startCamera() {
       if (!on) cam.held.delete(id);
     }
     if (cam.calibrated) cam.status.textContent = `${Math.round(cam.tracker.fps || 0)} fps · watching`;
+    if (cam.copy) copyHead();
   });
+}
+
+// Copy me: Simon mirrors your head. You look to YOUR left, he looks to HIS right, so from where
+// you stand he turns the same way on screen, like a reflection. No language model involved:
+// the camera's verdict goes straight to the head.
+const MIRROR = { up: "up", down: "down", left: "right", right: "left" };
+
+function copyHead() {
+  const seen = ["up", "down", "left", "right"].find((d) => cam.tracker.held(`look_${d}`, 300)) ?? null;
+  if (seen === cam.copied) return;
+  cam.copied = seen;
+  body.lookAt(seen && MIRROR[seen]);
+  inspector.note(seen ? `🪞 you look ${seen} → Simon looks to his ${MIRROR[seen]}` : "🪞 you look ahead → Simon too");
+}
+
+function setCopy(on) {
+  cam.copy = on;
+  cam.copied = null;
+  if (!on) body.lookAt(null);
+  $("copy-me").setAttribute("aria-pressed", String(on));
+  $("copy-me").textContent = on ? "Copy me: on" : "Copy me: off";
 }
 
 function stopCamera() {
@@ -799,6 +821,7 @@ function stopCamera() {
   cam.tracker?.stop();
   cam.on = false;
   cam.calibrated = false;
+  setCopy(false);
   cam.pip.hidden = true;
   cam.chips.hidden = true;
   cam.btn.setAttribute("aria-pressed", "false");
@@ -814,6 +837,7 @@ function calibrate() {
 
 cam.btn.onclick = () => (cam.on ? stopCamera() : startCamera());
 $("calibrate").onclick = calibrate;
+$("copy-me").onclick = () => setCopy(!cam.copy);
 
 // Skates toggle: mirrors the duck's actual state, however it was switched.
 const skatesBtn = $("skates");
