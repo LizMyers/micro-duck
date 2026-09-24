@@ -1,20 +1,19 @@
-# 🦆 Micro Duck — a voice agent for a robot that can't talk
+# 🤗 Simon Says
 
-**Talk to Simon, a simulated [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/), and he walks,
-turns, sits and bows where you tell him — using only open models running on a laptop.**
+**Simon, as we call our virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/), is a biped
+robot duck from Pollen Robotics (Hugging Face).** He's 25 cm tall, has no arms, and out of the box he doesn't speak
+words; he quacks. We gave him ears and a brain. Tell him *"take two steps forward, turn left, sit down"* and he does it,
+using only open models running on a laptop.
 
-Microduck is Pollen Robotics' (Hugging Face) little biped robot. It doesn't speak words — it quacks. Take the words
-away and what's left is everything a voice agent actually has to get right: **timing, turn-taking, tool calls,
-honesty about what the body really did, and body language**. That's what this project explores.
+Next, Simon will play Simon Says with you. He calls the moves, tries to catch you out, and your webcam is the referee.
 
-> Status: work in progress. Voice control of the simulated duck works end to end. Next up: a game of
-> **Simon Says** where Simon (the duck) calls the commands and your webcam is the referee.
+> Status: work in progress. Voice control of the simulated duck works end to end. The Simon Says game is next.
 
 ## What it does today
 - 🎙 **Speak to Simon** in the browser. A fully local voice agent —
   [huggingface/speech-to-speech](https://github.com/huggingface/speech-to-speech) with Parakeet (speech-to-text),
   Qwen3-4B via MLX (language model) and Qwen3-TTS (voice) — hears you and decides what to do.
-- 🦆 **Simon moves for real (in simulation).** The model calls tools (`step_forward`, `turn_left`, `sit_down`, `bow`,
+- 🚶 **Simon moves for real (in simulation).** The model calls tools (`step_forward`, `turn_left`, `sit_down`, `bow`,
   `skates_on`, …) which drive Pollen's trained walking policies in their browser simulator (MuJoCo + ONNX).
 - 📏 **Honest moves.** Every move is measured (centimetres walked, degrees turned). If Simon didn't actually move,
   he's told — and says so — instead of claiming success.
