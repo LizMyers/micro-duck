@@ -413,8 +413,8 @@ kbd {
 
 /* Simon Says game */
 .ss-command { margin: 16px 0 8px; font-size: 26px; font-weight: 700; line-height: 1.2; min-height: 1.2em; }
-.ss-timer-wrap { height: 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
-.ss-timer-wrap span { display: block; height: 100%; width: 0; background: var(--accent); }
+.ss-timer-wrap { height: 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.ss-timer-wrap span { display: block; height: 100%; width: 0; background: var(--duck); }
 .ss-result { margin: 10px 0 0; font-size: 15px; font-weight: 600; min-height: 1.5em; }
 .ss-score { margin: 4px 0 8px; font-family: var(--mono); font-size: 13px; color: var(--ink-2); min-height: 1.4em; }
 
@@ -425,3 +425,5 @@ kbd {
   background: var(--c); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line);
 }
 .duck-dots .dot[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.ss-now { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ss-seconds { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--duck); min-width: 3ch; text-align: right; }

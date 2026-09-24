@@ -155,7 +155,10 @@
           <button class="primary" id="ss-start" disabled>Start game</button>
           <span class="hint" id="ss-ready">–</span>
         </div>
-        <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>
+        <div class="ss-now">
+          <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>
+          <span class="ss-seconds" id="ss-seconds" aria-label="Seconds left"></span>
+        </div>
         <div class="ss-timer-wrap" aria-hidden="true"><span id="ss-timer"></span></div>
         <p class="ss-result" id="ss-result"></p>
         <p class="ss-score" id="ss-score"></p>

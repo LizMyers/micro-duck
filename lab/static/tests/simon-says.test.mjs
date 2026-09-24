@@ -30,3 +30,10 @@ test("about 70% are real 'Simon says'", () => {
   assert.equal(nextCommand(seq(0.71, 0)).says, false);
   assert.ok(Object.keys(COMMANDS).length === 9);
 });
+
+test("the other arm is 'wrong move', not 'too slow'", () => {
+  const r = judge(true, false, "left_arm_up");
+  assert.equal(r.point, false);
+  assert.match(r.text, /Wrong move: that was your left arm/);
+  assert.equal(judge(true, false).text, "Too slow!");
+});
