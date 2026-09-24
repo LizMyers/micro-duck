@@ -196,13 +196,15 @@ class Agent:
         self.set_status("stopped")
 
     def _stop_locked(self) -> None:
-        if self.proc and self.proc.poll() is None:
-            self.proc.terminate()
+        # Forget the process *before* stopping it: its log reader treats "exited while still
+        # self.proc" as a crash, and a clean stop must not look like one.
+        proc, self.proc = self.proc, None
+        if proc and proc.poll() is None:
+            proc.terminate()
             try:
-                self.proc.wait(timeout=10)
+                proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                self.proc.kill()
-        self.proc = None
+                proc.kill()
 
     def _read_log(self, proc: subprocess.Popen) -> None:
         assert proc.stdout is not None
@@ -286,6 +288,15 @@ def process_info(pid: int) -> dict | None:
     return {"pid": pid, "mb": int(rss) // 1024, "started": started, "command": rest[25:]}
 
 
+def footprint_mb(pid: int) -> int | None:
+    """Real memory use, including the GPU memory MLX models live in (ps's RSS leaves that out)."""
+    out = subprocess.run(["footprint", str(pid)], capture_output=True, text=True).stdout
+    m = re.search(r"Footprint: ([\d.]+) ([KMG])B", out)
+    if not m:
+        return None
+    return round(float(m.group(1)) * {"K": 1 / 1024, "M": 1, "G": 1024}[m.group(2)])
+
+
 def find_pids(pattern: str) -> list[int]:
     out = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True).stdout
     return [int(p) for p in out.split()]
@@ -315,7 +326,8 @@ def scan() -> dict:
         "lab": {"pid": os.getpid(), "started": LAB_STARTED, "port": LAB_PORT,
                 "url": f"http://localhost:{LAB_PORT}"},
         "agent": {**agent.snapshot(), "label": model_label(agent.model) if agent.model else None,
-                  "pid": agent_pid, "mb": agent_info["mb"] if agent_info else None, "port": AGENT_PORT,
+                  "pid": agent_pid, "mb": (footprint_mb(agent_pid) or agent_info["mb"]) if agent_info else None,
+                  "port": AGENT_PORT,
                   "port_pids": listening_pids(AGENT_PORT)},
         "remembered": {"model": auto, "label": model_label(auto) if auto else None},
         "leftovers": leftovers(),
@@ -431,7 +443,7 @@ async def system(check: bool = False) -> dict:
                 cmd=f'lsof -nP -iTCP -sTCP:LISTEN | grep -E ":{LAB_PORT}|:{AGENT_PORT}"')
         if a["pid"]:
             lab_log(f"Model: {a['status']}, {a['label']}, pid {a['pid']}, {a['mb']:,} MB of memory.",
-                    cmd=f"ps -o pid,rss,command -p {a['pid']}")
+                    cmd=f"footprint {a['pid']}")
         elif a["port_pids"]:
             lab_log(f"Model: not ours, pid {a['port_pids'][0]} holds port {AGENT_PORT}.",
                     level="warn")
