@@ -1,7 +1,7 @@
 // Unit tests for the Simon Says rules. Run: node --test lab/static/tests/simon-says.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nextCommand, line, judge, COMMANDS } from "../simon-says.js";
+import { nextCommand, line, judge, words, COMMANDS } from "../simon-says.js";
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
 
@@ -47,4 +47,10 @@ test("strict traps: any move on a trap is out, not just that move", () => {
   assert.equal(r.point, false);
   assert.match(r.text, /Simon didn't say! \(You did look right/);
   assert.equal(judge(false, false).point, true);   // stayed still: safe
+});
+
+test("scores are spoken as words", () => {
+  assert.equal(words(3), "three");
+  assert.equal(words(0), "zero");
+  assert.equal(words(42), "42");
 });
