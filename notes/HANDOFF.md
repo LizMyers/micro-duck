@@ -1,5 +1,5 @@
 # HANDOFF — Micro Duck / Duck Lab
-*Written 2026-09-23 late evening, before a context compaction. Read this first.*
+*Written 2026-09-23, updated 2026-09-24 end of day (see "Update 2026-09-24"). Read this first.*
 
 ## Who / why
 - **Liz** (GitHub `LizMyers`) is building this as a portfolio piece for Hugging Face's
@@ -38,7 +38,7 @@
   so for movement tests use `lab/static/policy-test.html` (it steps physics with `rl.step`). Watch memory:
   18 GB Mac, the agent takes about 8 GB.
 
-## Architecture (as of now)
+## Architecture (as of 09-23; see the 09-24 update below for what changed)
 - `lab/server.py`: FastAPI. Starts and stops `speech-to-speech serve --mac-optimal-settings`, parses its logs into
   stage events (SSE `/api/events`), serves the sim at `/sim/`, the moves at `/moves/` (the polite-bow ONNX plus our manifest)
   and the test prompts. It sends `Cache-Control: no-store`: Chrome once cached old JS.
@@ -57,7 +57,7 @@
 - Sim hooks we added (`window.rl`): `setJaw`, `setTwist`, `yaw`, `velLimits`, `sit/stand/sitting`, `unlockInputs`;
   `?embed=1` = just the duck, entrance auto-plays, controls unlocked after 3 s, **multiplayer ghosts disabled**.
 
-## Layout (current)
+## Layout (as of 09-23; superseded by the 09-24 update below)
 Top bar: brand · relay race strip (Listen/Turn/Hear/Think/Speak · "Reply in") · status.
 Left: **Simon the duck** (📷 Camera, 🛼 Skates, mood) with webcam picture-in-picture + pose chips; below it the
 Brain / Voice & personality / Tests tabs. Right: **Conversation | Inspector | Agent log** tabs, Tap-to-talk at the bottom.
@@ -79,34 +79,57 @@ Other candidates: `notes/research/upstream-candidates.md` (Gemma end-of-turn and
 - Pose thresholds come from synthetic test data; they haven't been tuned on Liz yet.
 - `recordings/` is gitignored (screenshots live only locally).
 
-## Update 2026-09-24
-- Simon OS tab (first tab): STATUS / SERVER / MODEL / VOICE / STRAY PROCESSES rows with their controls,
-  system messages (with Terminal equivalents), relay race at the bottom. Help tab = manual keyboard controls.
-  The server always starts the model; a second server refuses to start. See `notes/running-the-lab.md`.
-- **UI is parked:** Liz will redesign it in Figma and hand over the file. Don't polish the UI until then.
-- Liz wants plain names (Server, Model, Voice, Status), no nicknames or emoji, and no changes she didn't ask for.
-- Rest of 2026-09-24: camera (pose checks).
+## Update 2026-09-24 (end of day) — read this first
+*Replaces the "plan for tomorrow" from 09-23: items 1–4 are done or under way.*
 
-## Plan for tomorrow (in order, one at a time)
-1. **Make the buttons clear.** Ask Liz what confuses her; likely: one clear agent control (●Start → Loading… →
-   ■Stop, with "switch model" separate), labelled toggles ("📷 Camera: off/on"), explain Calibrate inline, and group
-   Apply with the personality. Keep it small.
-2. **Simon's new moves** for the v1 vocabulary (decided, in `notes/ideas.md`):
-   *take 1–2 steps forward|back, turn left|right, look up|down|left|right, sit down, stand up.*
-   Add `look_up/down/left/right` (head poses via `rl.headTarget`; hold ~1.5 s, then back to neutral). Update the tools
-   and BODY_RULES. Remember: Simon faces you, so **his left is your right** (that's the trap).
-3. **New pose checks** in `pose.js` (with node tests): look L/R/U/D (face landmarks relative to shoulders),
-   turned L/R (shoulder-width shrink / face turned), stepped forward/back (shoulder width vs calibration),
-   sat (head drop, the existing crouch), stood (back to baseline). Liz tests them live with the pose chips.
-4. **Game master (single player):** a Simon Says tab. Simon calls a command (spoken via `sayOnly`-style exact
-   lines), sometimes with "Simon says…" and sometimes not (the trap); he demonstrates some moves; the webcam judges a
-   ~2.5 s window; score and streak; speeds up. Anyone who moves without "Simon says" is OUT.
-5. **Package and apply** (README.md is drafted; before going public: create Liz's GitHub fork of speech-to-speech and push the
-   `tool-call-positional-args` branch so the README's install step works; add the demo video/GIF at the top): a 60–90 s video of Liz playing (Inspector visible), the README, make the repo public, apply
-   (the first answer must start "GPU-poor and proud 🤗").
+### Built today
+- **Simon OS** (first tab): rows STATUS / SERVER / MODEL / VOICE / COLOUR / STRAY PROCESSES, each with its
+  controls; system messages with the Terminal command each stands in for; relay race at the bottom.
+  The server narrates to the Terminal and `lab/logs/lab.log`, always starts the model, refuses to start twice,
+  finds/stops stray processes, and "Restart server" (os.execv) works from the page. Header hidden.
+  Details: `notes/running-the-lab.md`.
+- **Simon Says tab**: 5 rounds; one mistake and Simon wins (gloats + head bob); all 5 right and you win.
+  Spoken "OK!" after each correct move. Start game turns the camera on and calibrates. Page is the game master
+  (`lab/static/simon-says.js`), webcam referees, the model only speaks lines **out-of-band**
+  (`conversation: "none"`, so history doesn't grow). Lines are cached client-side after first use (🔁 in Inspector).
+  Commands: look up/down/left/right, turn left/right, step forward/back, raise left/right/both arms.
+- **Camera** (`pose.js`, 23 tests): v1 checks relative to calibration (look, turn, step, sit/stand, arms), each chip
+  shows its live number for tuning. Thresholds in `THRESHOLDS` are geometry guesses, **not tuned on Liz yet**.
+- **Copy me** (camera bar): Simon mirrors your head looks, no model involved.
+- **Mac OS tab** (replaced Tests): memory per part (macOS, Model, Chrome incl. sim, server, other apps) from `top`;
+  a banner on every tab when macOS reports memory pressure. **Duck colour** dots (Sky default, Cream, Lavender,
+  Graphite) recolour the sim duck plus only the page background, Tap to talk and the RAM banner.
+- **Model log (raw)** tab: short lines, warnings amber, errors red. Simon's instructions now say he can't see.
 
-**Later / tutorial finale:** multiplayer Simon Says via the sim's ghost channel (`notes/ideas.md`). Also the creature
-voice (quacks via Pollen's Apache-2.0 `sounds` synth, `notes/research/microduck-voice-synth.md`) and an HF Space.
+### Learned today (gotchas, with fixes)
+- The model **answers** trap lines instead of repeating them ("Look up!" → "Sure, here's my best look up.").
+  Fix: two word-for-word examples in the out-of-band request. Watch for it.
+- **Qwen3-TTS runs on** for some short lines (28.8 s of audio for "Simon says, turn left." and "…take a step
+  forward.", deterministic). Fix: lines cut at 3.5 s with `response.cancel` (✂️ in Inspector). Upstream candidate.
+- The model accepts **one connection**; extra Duck Lab tabs are rejected in a loop. Page now shows MODEL BUSY.
+- "Crashed" on Restart model was a race in our code (exit code 0); fixed. Model memory is ~8.5 GB, which `ps`
+  RSS doesn't show (MLX/GPU memory); we use `footprint`/`top`.
+- Liz's Mac is tight: 18 GB, 16 GB swap in use, two Chromes (Canary + Chrome) + Cursor + Figma open.
+
+### How Liz wants to work (added today)
+Change only what she names; ask one short question when a request could mean two things; plain labels, no
+nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over the file.
+
+### Open questions for Liz
+- "Take a step forward/back" → **"lean forward/back"** for desk play, or drop them?
+- Take **Sit down** off the chips too (the game doesn't use it)?
+- The Colour row label: keep or remove?
+
+## Plan for next session (in order, one at a time)
+1. **Play-test Simon Says** with Liz; read the Inspector/logs: which commands judge well, which lines misbehave.
+2. **Tune camera thresholds on Liz** (chips show the numbers; compare with `THRESHOLDS` in `pose.js`).
+3. **Hand model: hold up 1–5 fingers** (MediaPipe HandLandmarker, 21 points/hand; ~1 h + tuning; watch CPU/RAM).
+   Simon can call finger commands but can't demonstrate them.
+4. Maybe: pre-warm all game lines at game start, so the first game is as fast as later ones.
+5. **Package and apply** (unchanged): video of Liz playing (Inspector visible), README, make public, push the
+   `tool-call-positional-args` branch to Liz's fork, apply (first answer starts "GPU-poor and proud 🤗").
+
+**Later / tutorial finale:** multiplayer Simon Says via the sim's ghost channel; creature voice; HF Space.
 
 ## Notes index
 `notes/README.md`, `00-plan.md`, `01-local-voice-agent.md`, `02-duck-lab-and-voice-moves.md`, `ideas.md`,
