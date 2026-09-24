@@ -49,6 +49,9 @@ const LABEL = {
   left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
 };
 
+// Quick acknowledgements (exact, so they're cached and instant after the first time).
+const OKS = ["OK!", "Got it!", "Nice one!", "Good!"];
+
 const MIRROR = { look_up: "up", look_down: "down", look_left: "right", look_right: "left" };
 const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right", "left_arm_up", "right_arm_up"];
 
@@ -89,10 +92,10 @@ export class SimonSaysGame {
     if (this.out) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      await this.speak(this.outLine);
+      await this.speak(this.outLine, { improvise: true });
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
-      await this.speak("You win! Well done. Simon is impressed.");
+      await this.speak(`The player got all ${ROUNDS} rounds right and won. Congratulate them, a little grudgingly.`, { improvise: true });
     }
     this.stop(null);
   }
@@ -105,8 +108,8 @@ export class SimonSaysGame {
     this.app.note(`🎲 Simon Says: game over, score ${this.score}`);
   }
 
-  async speak(text) {
-    const { started, done } = this.app.sayLine(text);
+  async speak(text, opts) {
+    const { started, done } = this.app.sayLine(text, opts);
     if (await started) await done;
   }
 
@@ -160,13 +163,16 @@ export class SimonSaysGame {
     } else {
       this.out = true;
       // Simon gloats (the end of the game is spoken in start()).
-      this.outLine = !cmd.says ? "Ha! Simon didn't say! I win!"
-        : r.wrong ? "Wrong move! Ha ha, I win!" : "Too slow! Ha ha, I win!";
+      // What happened, for Simon to gloat about in his own words (a new sentence every time).
+      this.outLine = !cmd.says
+        ? `The player did "${COMMANDS[cmd.pose]}", but you never said "Simon says". Gloat that you didn't say Simon says, so you win.`
+        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. Gloat that they did the wrong move, so you win.`
+        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. Gloat that they were too slow, so you win.`;
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say out loud that the move was registered, before the next command.
-    if (r.point && this.round < ROUNDS) await this.speak("OK!");
+    if (r.point && this.round < ROUNDS) await this.speak(OKS[Math.floor(Math.random() * OKS.length)]);
   }
 
   render(big, small) {

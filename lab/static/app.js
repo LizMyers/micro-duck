@@ -424,10 +424,10 @@ function onAgentEvent(ev) {
         const samples = base64Pcm16ToFloat(ev.delta);
         l.chunks.push(samples);
         l.samples += samples.length;
-        if (l.samples > LINE_MAX * RATE) {   // the voice model ran on: stop it
+        if (l.samples > l.max * RATE) {   // the voice model ran on: stop it
           l.cut = true;
           send({ type: "response.cancel" });
-          inspector.note(`✂️ cut "${l.text}" at ${LINE_MAX} s (the voice model ran on)`);
+          inspector.note(`✂️ cut "${l.text}" at ${l.max} s (the voice model ran on)`);
         }
         if (body.mood !== "speaking") body.setMood("speaking");
         playChunk(samples);
@@ -462,7 +462,7 @@ function onAgentEvent(ev) {
       if (state.line) {
         const l = state.line;
         state.line = null;
-        if (l.chunks.length && (status === "completed" || l.cut)) lineCache.set(l.text, l.chunks);
+        if (!l.improvise && l.chunks.length && (status === "completed" || l.cut)) lineCache.set(l.text, l.chunks);
         l.onDone(status);
       }
       const spoke = !!state.botBubble?.text;
@@ -540,13 +540,16 @@ function sayOnly(instructions) {
 //   cut off after LINE_MAX seconds.
 // `started` resolves true at the first sound (false if none within 15 s); `done` when it has played.
 const LINE_MAX = 3.5;
+const FREE_MAX = 6;            // improvised reactions are longer, so they get more room
 const lineCache = new Map();   // text -> Float32Array chunks
 
-function sayLine(text) {
+// improvise: instead of an exact line, `text` describes what happened and Simon makes up one short
+// sentence about it (variety for free; never cached). Used for reactions, never for commands.
+function sayLine(text, { improvise = false } = {}) {
   let startedResolve, doneResolve;
   const started = new Promise((r) => (startedResolve = r));
   const done = new Promise((r) => (doneResolve = r));
-  const cached = lineCache.get(text);
+  const cached = !improvise && lineCache.get(text);
   if (cached) {
     ensureAudio().then(() => {
       body.setMood("speaking");
@@ -561,7 +564,7 @@ function sayLine(text) {
   whenIdle(() => {
     // Claim the next reply only once any earlier one has finished.
     state.line = {
-      text, chunks: [], samples: 0, cut: false,
+      text, chunks: [], samples: 0, cut: false, max: improvise ? FREE_MAX : LINE_MAX, improvise,
       onAudio: () => { clearTimeout(timer); startedResolve(true); },
       onDone: (status) => {
         clearTimeout(timer);
@@ -570,6 +573,12 @@ function sayLine(text) {
       },
     };
     const msg = (role, t) => ({ type: "message", role, content: [{ type: role === "user" ? "input_text" : "output_text", text: t }] });
+    if (improvise) return send({ type: "response.create", response: {
+      conversation: "none", tool_choice: "none",
+      instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
+        "Reply with ONE short sentence to say out loud (under 15 words). No emoji, no laughing sounds like 'ha ha'.",
+      input: [msg("user", text)],
+    } });
     send({ type: "response.create", response: {
       conversation: "none", tool_choice: "none",
       instructions: "You are Simon, a robot duck hosting a game of Simon Says. The user gives you a line. " +
