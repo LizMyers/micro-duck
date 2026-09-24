@@ -147,6 +147,13 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   fully received (7.2 s of audio) but Liz heard it stop at "Simon 3". Now: "You win!" then "The score is Simon
   three, you two." (numbers as words, separate short line). Verify; if it holds, an upstream TTS note.
 
+- **Liz's hunch, confirmed:** Simon's end-of-game speech sounded interrupted while the scoreboard card flipped.
+  Now the card flips only after he finishes speaking, and the speech is clean. Lesson: keep page animations
+  away from moments when the character is talking (the camera tracker shares that thread too: if choppy
+  audio shows up elsewhere, try buffering whole lines or moving pose tracking to a Web Worker).
+- **Improvised lines repeat:** the congratulations were word for word the same two games running. Idea: give
+  Simon a random mood each time (dramatic, sulky, sporting, sarcastic…) for real variety.
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
