@@ -61,8 +61,9 @@ MODELS = [
      "note": "Hugging Face's own small model."},
     {"id": "mlx-community/Llama-3.2-3B-Instruct-4bit", "label": "Llama 3.2 3B", "gb": 1.8,
      "note": "Meta's small model."},
-    {"id": "mlx-community/gemma-3-1b-it-4bit", "label": "Gemma 3 1B", "gb": 0.8,
-     "note": "Google's tiniest. Fastest, least clever."},
+    {"id": "mlx-community/gemma-3-1b-it-4bit", "label": "Gemma 3 1B (not working yet)", "gb": 0.8,
+     "note": "Not working yet: the library doesn't stop at Gemma's <end_of_turn> marker and "
+             "Gemma rejects two user turns in a row. Candidate upstream fix (see notes)."},
 ]
 
 # Built-in voices of the Qwen3-TTS CustomVoice model (read from its config.json).
