@@ -141,7 +141,7 @@ function savePrefs() {
   try {
     localStorage.setItem("duck-lab", JSON.stringify({
       model: ui.model.value, voice: ui.voice.value, preset: ui.preset.value,
-      instructions: ui.instructions.value, mute: ui.muteWhileSpeaking.checked,
+      instructions: ui.instructions.value, mute: ui.muteWhileSpeaking.checked, muteV2: true,
     }));
   } catch {}
 }
@@ -155,7 +155,7 @@ function restorePrefs() {
     if (p.preset) ui.preset.value = p.preset;
     // Earlier versions accidentally saved the body rules into the personality.
     if (p.instructions) ui.instructions.value = p.instructions.split("\n\nYou have a small robot duck body")[0];
-    if (typeof p.mute === "boolean") ui.muteWhileSpeaking.checked = p.mute;
+    if (typeof p.mute === "boolean" && p.muteV2) ui.muteWhileSpeaking.checked = p.mute;
   } catch {}
 }
 
@@ -555,6 +555,10 @@ async function ensureMic() {
     // Without headphones the mic hears the reply and thinks you're interrupting.
     // Sending silence instead keeps the agent's clock ticking without the echo.
     const quiet = ui.muteWhileSpeaking.checked && isPlaying();
+    if (quiet !== state.micMuted) {
+      state.micMuted = quiet;
+      inspector.note(quiet ? "🔇 mic muted while the duck speaks (sending silence)" : "🎙 mic live again");
+    }
     send({ type: "input_audio_buffer.append", audio: floatToBase64Pcm16(quiet ? new Float32Array(FRAME) : e.data) });
   };
   src.connect(node);
