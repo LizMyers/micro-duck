@@ -18,6 +18,7 @@ export const COMMANDS = {
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
 const START_WINDOW = 4000;   // ms to do the move, counted from when Simon starts speaking
 const MIN_WINDOW = 2000;
+const ROUNDS = 5;            // a short game for testing: get all 5 right and you win
 const HOLD = 300;            // a pose must be held this long to count
 
 // Pick the next command (never the same one twice in a row).
@@ -66,18 +67,23 @@ export class SimonSaysGame {
 
   async start() {
     await this.app.prepare();
-    Object.assign(this, { running: true, score: 0, streak: 0, best: 0, lives: 3, window: START_WINDOW,
-      last: null, round: 0 });
+    Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0 });
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
     await this.speak("Let's play Simon Says!");
-    while (this.running && this.lives > 0) await this.playRound();
-    if (this.running) {
-      this.render(`Game over. Score ${this.score}`, `Best streak ${this.best}`);
-      await this.speak(`Game over! You scored ${this.score}.`);
-      this.stop(null);
+    // One mistake and you're out (classic rules). Survive all the rounds and you win.
+    while (this.running && !this.out && this.round < ROUNDS) await this.playRound();
+    if (!this.running) return;
+    if (this.out) {
+      this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
+      this.app.celebrate();
+      await this.speak(this.outLine);
+    } else {
+      this.render("You win!", `All ${ROUNDS} right.`);
+      await this.speak("You win! Well done. Simon is impressed.");
     }
+    this.stop(null);
   }
 
   stop(message) {
@@ -131,22 +137,22 @@ export class SimonSaysGame {
     const r = judge(cmd.says, seen);
     if (r.point) {
       this.score++;
-      this.streak++;
-      this.best = Math.max(this.best, this.streak);
-      if (this.score % 3 === 0) this.window = Math.max(MIN_WINDOW, Math.round(this.window * 0.9));
+      if (this.score % 2 === 0) this.window = Math.max(MIN_WINDOW, Math.round(this.window * 0.9));
     } else {
-      this.lives--;
-      this.streak = 0;
+      this.out = true;
+      // Simon gloats (the end of the game is spoken in start()).
+      this.outLine = cmd.says ? "Too slow! Ha ha, I win!" : "Ha! Simon didn't say! I win!";
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : "didn't move"}`);
-    this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, score: this.score, lives: this.lives });
+    this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, score: this.score, round: this.round });
     // Say out loud that the move was registered, before the next command.
-    await this.speak(r.point ? "OK!" : cmd.says ? "Oops, too slow!" : "Oops, Simon didn't say!");
+    if (r.point && this.round < ROUNDS) await this.speak("OK!");
   }
 
   render(big, small) {
     $("ss-command").textContent = big;
     $("ss-result").textContent = small;
-    $("ss-score").textContent = this.running || this.round ? `Score ${this.score ?? 0} · Streak ${this.streak ?? 0} · Lives ${this.lives ?? 3} · Window ${((this.window ?? START_WINDOW) / 1000).toFixed(1)} s` : "";
+    $("ss-score").textContent = this.running || this.round
+      ? `Round ${this.round} of ${ROUNDS} · Score ${this.score ?? 0} · Window ${((this.window ?? START_WINDOW) / 1000).toFixed(1)} s` : "";
   }
 }

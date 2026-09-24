@@ -888,6 +888,8 @@ new SimonSaysGame({
   prepare: async () => { await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false); },
   sayLine,
   lookAt: (dir) => body.lookAt(dir),
+  // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
+  celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
   note: (text, data) => inspector.note(text, data),
 });
 ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
