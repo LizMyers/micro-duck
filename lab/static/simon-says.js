@@ -53,7 +53,8 @@ const LABEL = {
 const OKS = ["OK!", "Got it!", "Nice one!", "Good!"];
 
 const MIRROR = { look_up: "up", look_down: "down", look_left: "right", look_right: "left" };
-const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right", "left_arm_up", "right_arm_up"];
+const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", "turn_right",
+  "left_arm_up", "right_arm_up", "both_arms_up"];
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -140,12 +141,12 @@ export class SimonSaysGame {
     let deadline = Infinity;
     done.then(() => { deadline = performance.now() + this.window; });
     let seen = false, wrong = null;
-    // "Both arms" also lights each single arm, so a single-arm command ignores it, and vice versa.
-    const others = MOVING.filter((p) => p !== cmd.pose && !(cmd.pose === "both_arms_up" && p.endsWith("_arm_up")));
+    // Arm checks are strict, so both arms on "raise your left arm" is a wrong move, and vice versa.
+    const others = MOVING.filter((p) => p !== cmd.pose);
     while (this.running && performance.now() < deadline) {
       if (tracker.held(cmd.pose, HOLD)) { seen = true; if (!cmd.says) break; }
       if (seen && cmd.says) break;
-      wrong ??= others.find((p) => tracker.held(p, HOLD) && !(p.endsWith("_arm_up") && tracker.held("both_arms_up", HOLD))) ?? null;
+      wrong ??= others.find((p) => tracker.held(p, HOLD)) ?? null;
       const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
       $("ss-timer").style.width = `${(left / this.window) * 100}%`;
       $("ss-seconds").textContent = (left / 1000).toFixed(1);

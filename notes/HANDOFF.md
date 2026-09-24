@@ -128,12 +128,11 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   Simon is told not to make laughing sounds: Qwen3-TTS turned "Ha!" into a laugh that swallowed the words.
   Good tutorial point: script where words must be exact, improvise where variety adds charm.
 - **Arms verified on Liz:** left/right are the right way round.
+- **Arms are strict (Liz decided):** she noticed raising both arms also lit Left and Right arm up. Now one arm
+  means only that arm; both arms lights "Both arms up" alone, and on a single-arm command it's
+  "Wrong move: that was both arms!".
 
 ### Open questions for Liz
-- **Arms: strict or lenient?** Liz noticed that raising both arms also lights Left arm up and Right arm up
-  (by design: "both" counts as each). So "raise your left arm" + both arms currently counts as correct.
-  Proposed: single-arm checks require the other arm down; raising both on a single-arm command becomes
-  "Wrong move: that was both arms!". Liz to decide.
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
 
