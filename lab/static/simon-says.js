@@ -65,6 +65,7 @@ export class SimonSaysGame {
   constructor(app) {
     this.app = app;
     this.running = false;
+    this.board = new Scoreboard();
     $("ss-start").onclick = () => (this.running ? this.stop("Stopped.") : this.start());
     setInterval(() => this.showReady(), 1000);
   }
@@ -90,13 +91,22 @@ export class SimonSaysGame {
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
     while (this.running && !this.out && this.round < ROUNDS) await this.playRound();
     if (!this.running) return;
-    if (this.out) {
+    // Who won goes on the all-time scoreboard. Simon improvises a reaction (told plainly who won),
+    // then reads the result as a fixed line, so it's never unclear.
+    const simonWon = this.out;
+    this.board.add(simonWon ? "simon" : "you");
+    const { simon, you } = this.board.totals;
+    const tally = `All-time score: Simon ${simon}, you ${you}.`;
+    if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      await this.speak(this.outLine, { improvise: true });
+      await this.speak(`${this.outLine} Say clearly that you, Simon, win this game.`, { improvise: true });
+      await this.speak(`Simon wins! ${tally}`);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
-      await this.speak(`The player got all ${ROUNDS} rounds right and won. Congratulate them, a little grudgingly.`, { improvise: true });
+      await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
+        "Congratulate them, a little grudgingly, and say clearly that they win.", { improvise: true });
+      await this.speak(`You win! ${tally}`);
     }
     this.stop(null);
   }
@@ -182,4 +192,30 @@ export class SimonSaysGame {
     $("ss-score").textContent = this.running || this.round
       ? `Round ${this.round} of ${ROUNDS} · Score ${this.score ?? 0} · Window ${((this.window ?? START_WINDOW) / 1000).toFixed(1)} s` : "";
   }
+}
+
+// All-time scoreboard, flip-card style (like a volleyball scoreboard). Saved in this browser.
+const BOARD_KEY = "simon-says-score";
+
+class Scoreboard {
+  constructor() {
+    this.totals = { simon: 0, you: 0 };
+    try { Object.assign(this.totals, JSON.parse(localStorage.getItem(BOARD_KEY) || "{}")); } catch {}
+    for (const who of ["simon", "you"]) $(`ss-card-${who}`).textContent = this.totals[who];
+  }
+
+  add(who) {
+    this.totals[who]++;
+    try { localStorage.setItem(BOARD_KEY, JSON.stringify(this.totals)); } catch {}
+    flip($(`ss-card-${who}`), this.totals[who]);
+  }
+}
+
+// The card folds away from the top, the number changes, and the new card folds down into place.
+function flip(card, value) {
+  const half = { duration: 180, easing: "ease-in", fill: "forwards" };
+  card.animate([{ transform: "rotateX(0deg)" }, { transform: "rotateX(-90deg)" }], half).finished.then(() => {
+    card.textContent = value;
+    card.animate([{ transform: "rotateX(90deg)" }, { transform: "rotateX(0deg)" }], { ...half, easing: "ease-out" });
+  });
 }
