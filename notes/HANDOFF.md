@@ -91,7 +91,8 @@ Other candidates: `notes/research/upstream-candidates.md` (Gemma end-of-turn and
 4. **Game master (single player):** a Simon Says tab. Simon calls a command (spoken via `sayOnly`-style exact
    lines), sometimes with "Simon says…" and sometimes not (the trap); he demonstrates some moves; the webcam judges a
    ~2.5 s window; score and streak; speeds up. Anyone who moves without "Simon says" is OUT.
-5. **Package and apply:** a 60–90 s video of Liz playing (Inspector visible), the README, make the repo public, apply
+5. **Package and apply** (README.md is drafted; before going public: create Liz's GitHub fork of speech-to-speech and push the
+   `tool-call-positional-args` branch so the README's install step works; add the demo video/GIF at the top): a 60–90 s video of Liz playing (Inspector visible), the README, make the repo public, apply
    (the first answer must start "GPU-poor and proud 🤗").
 
 **Later / tutorial finale:** multiplayer Simon Says via the sim's ghost channel (`notes/ideas.md`). Also the creature
