@@ -7,6 +7,7 @@
 
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
+import { PoseTracker, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
 
 const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
@@ -715,6 +716,70 @@ for (const tab of document.querySelectorAll('[role="tab"]')) {
     }
   };
 }
+
+// ---------- Webcam referee (pose tracking runs entirely in this browser) ----------
+const cam = {
+  tracker: null, on: false, held: new Set(),
+  btn: $("camera"), pip: $("cam-pip"), chips: $("pose-chips"), status: $("cam-status"),
+};
+for (const id of POSE_IDS) {
+  const li = document.createElement("li");
+  li.dataset.pose = id;
+  li.textContent = POSE_LABELS[id].replace(/^(Raise|Touch|Cover|Flap) (your )?/i, "").replace(/^./, (c) => c.toUpperCase());
+  li.title = POSE_LABELS[id];
+  cam.chips.append(li);
+}
+
+async function startCamera() {
+  cam.pip.hidden = false;
+  cam.chips.hidden = false;
+  cam.status.textContent = "Starting camera… (allow access)";
+  cam.tracker ??= new PoseTracker();
+  try {
+    await cam.tracker.start($("cam-video"), $("cam-canvas"));
+  } catch (e) {
+    cam.status.textContent = cam.tracker.error || "Camera failed";
+    inspector.note(`📷 camera failed: ${cam.tracker.error || e.message}`, null, "err");
+    return;
+  }
+  cam.on = true;
+  cam.btn.setAttribute("aria-pressed", "true");
+  inspector.note("📷 camera on (video stays in this browser)");
+  cam.status.textContent = "Stand normally, then Calibrate";
+  // Calibrate automatically once a body is in view (needed for "crouch").
+  setTimeout(() => { if (cam.on && !cam.calibrated) calibrate(); }, 2500);
+  cam.unsubscribe = cam.tracker.onFrame(() => {
+    for (const li of cam.chips.children) {
+      const id = li.dataset.pose;
+      const on = cam.tracker.held(id, 300);
+      li.classList.toggle("on", on);
+      if (on && !cam.held.has(id)) { cam.held.add(id); inspector.note(`🧍 you: ${POSE_LABELS[id]}`); }
+      if (!on) cam.held.delete(id);
+    }
+    if (cam.calibrated) cam.status.textContent = `${Math.round(cam.tracker.fps || 0)} fps · watching`;
+  });
+}
+
+function stopCamera() {
+  cam.unsubscribe?.();
+  cam.tracker?.stop();
+  cam.on = false;
+  cam.calibrated = false;
+  cam.pip.hidden = true;
+  cam.chips.hidden = true;
+  cam.btn.setAttribute("aria-pressed", "false");
+  inspector.note("📷 camera off");
+}
+
+function calibrate() {
+  const base = cam.tracker?.calibrate();
+  cam.calibrated = !!base;
+  cam.status.textContent = base ? "Calibrated ✓" : "Can't see you: step back so head and shoulders show";
+  inspector.note(base ? "📷 calibrated to your normal stance" : "📷 calibration failed (no body in view)", base);
+}
+
+cam.btn.onclick = () => (cam.on ? stopCamera() : startCamera());
+$("calibrate").onclick = calibrate;
 
 // Skates toggle: mirrors the duck's actual state, however it was switched.
 const skatesBtn = $("skates");

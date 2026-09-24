@@ -42,6 +42,7 @@
       <div class="card-head">
         <h2 id="duck-h">Simon <small>the duck</small></h2>
         <div class="duck-actions">
+          <button class="ghost small" id="camera" aria-pressed="false" title="Your webcam: the Simon Says referee">📷 Camera</button>
           <button class="ghost small" id="skates" aria-pressed="false" title="Roller skates on/off (M)">🛼 Skates</button>
           <span class="mood" id="mood" data-mood="idle">Idle</span>
         </div>
@@ -49,6 +50,16 @@
       <div class="sim-wrap">
         <iframe id="sim" title="Microduck simulator" loading="eager"></iframe>
         <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
+        <!-- Webcam picture-in-picture: the referee. Video never leaves this browser. -->
+        <div class="cam-pip" id="cam-pip" hidden>
+          <video id="cam-video" playsinline muted hidden></video>
+          <canvas id="cam-canvas" width="640" height="480" aria-label="Your webcam with pose skeleton"></canvas>
+          <div class="cam-bar">
+            <span id="cam-status">Starting camera…</span>
+            <button class="ghost small" id="calibrate" title="Stand normally, facing the camera, then press">Calibrate</button>
+          </div>
+        </div>
+        <ul class="pose-chips" id="pose-chips" hidden aria-label="Poses the camera sees"></ul>
       </div>
       <p class="keys-hint"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &amp; turn · <kbd>R</kbd> sit / stand · <kbd>Q</kbd> <kbd>E</kbd> kick · <kbd>M</kbd> skates</p>
       <dl class="body-readout">
