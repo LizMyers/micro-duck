@@ -167,6 +167,18 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 
 
 ## Plan for next session (in order, one at a time)
+**Make the work public first (Liz, 2026-09-25: "is there enough meat for the wildcard?").** Honest read: strong
+private prototype; the meat must become visible. Realistically 1–2 weeks. In order:
+A. **Upstream PRs to HF speech-to-speech** (most convincing signal): 1) the tool-call fixes on branch
+   `tool-call-positional-args` (push to Liz's fork, open PR with a clear description); 2) local MLX model ignores
+   per-response `max_output_tokens` (LLM/language_model.py). Optionally file an issue for the Qwen3-TTS run-on
+   after short lines (28.8 s audio for "Simon says, turn left.").
+B. **Record the demo video** (shot list below) and **make the repo public** (README + video at the top).
+C. **Publish one tutorial**, e.g. #1 "An open voice agent on your laptop, and where the latency goes", as an HF
+   community article/blog post.
+D. **Community signal:** LinkedIn post with the video ("Play Simon Says with Your Microduck").
+Then draft the application (item 0), leading with Liz's dev-rel track record, with Simon as proof on HF's stack.
+
 0. **Draft the application with Liz (she asked, 2026-09-25).** Decision: apply as the **wildcard** (dev rel /
    developer experience for voice agents), naming the voice-agents team; not the Senior ML Engineer role (too big
    a stretch to own alone in interviews). Say openly she built it with an AI pair programmer. Evidence to lead
