@@ -169,7 +169,9 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 ## Plan for next session (in order, one at a time)
 **Make the work public first (Liz, 2026-09-25: "is there enough meat for the wildcard?").** Honest read: strong
 private prototype; the meat must become visible. Realistically 1–2 weeks. In order:
-A. **Upstream PRs to HF speech-to-speech** (most convincing signal): 1) the tool-call fixes on branch
+A. **(PR 1 prepared 2026-09-25: `notes/upstream-pr-tool-calls.md`; branch `pr/tool-call-fixes` in worktree
+   `~/Documents/Development/s2s-pr`, rebased on upstream main, 1,755 tests pass, ruff clean. Waiting for Liz's
+   OK to fork, push and open.)** **Upstream PRs to HF speech-to-speech** (most convincing signal): 1) the tool-call fixes on branch
    `tool-call-positional-args` (push to Liz's fork, open PR with a clear description); 2) local MLX model ignores
    per-response `max_output_tokens` (LLM/language_model.py). Optionally file an issue for the Qwen3-TTS run-on
    after short lines (28.8 s audio for "Simon says, turn left.").
