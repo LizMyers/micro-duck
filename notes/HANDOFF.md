@@ -174,11 +174,15 @@ A. **Upstream PRs to HF speech-to-speech** (most convincing signal): 1) the tool
    per-response `max_output_tokens` (LLM/language_model.py). Optionally file an issue for the Qwen3-TTS run-on
    after short lines (28.8 s audio for "Simon says, turn left.").
 B. **Record the demo video** (shot list below) and **make the repo public** (README + video at the top).
+B2. **Portfolio case study** (after B, before/with D): video or GIF hero; one-line pitch ("Simon Says with a robot
+   duck: HF's open-source voice agent, a webcam referee and a simulated Microduck, all on a laptop"); what Liz
+   built/decided; what she found (upstream PR + issues); links to repo, PR, LinkedIn, tutorial series later.
+   Reuse README text and the video; keep it short.
 C. **Publish one tutorial**, e.g. #1 "An open voice agent on your laptop, and where the latency goes", as an HF
    community article/blog post.
 D. **Community signal:** LinkedIn post with the video ("Play Simon Says with Your Microduck").
 Then draft the application (item 0), leading with Liz's dev-rel track record, with Simon as proof on HF's stack.
-**Timing (Liz, 2026-09-25):** A, B, D first (A → B → D: PR open, then video + public repo, then LinkedIn
+**Timing (Liz, 2026-09-25):** A, B, B2, D first (A → B → B2 → D: PR open, then video + public repo, then LinkedIn
 linking to both). **Apply early next week.** Tutorial (C) after applying, while the application is in review;
 mention the series as "in progress" with a link to `notes/tutorial-series.md`.
 
