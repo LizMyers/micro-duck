@@ -212,6 +212,11 @@ mention the series as "in progress" with a link to `notes/tutorial-series.md`.
    (Start game swings the sim camera in front of him, head level, via `faceCamera`). This is also the right
    design for a real Microduck, where the camera can't move, so the robot must.
 5. "Look at Simon: 3… 2… 1…" calibration countdown (see late additions).
+5b. **Voice A/B test: Kokoro vs Qwen3-TTS** (Liz, 2026-09-25). Measure RAM, time to first sound, run-ons,
+   and how Simon sounds. Qwen3-TTS: 2.5 GB, ~0.18 s to first sound, expressive (style instructions), but the
+   run-on glitch. Kokoro: tiny and fast, likely less expressive. Tutorial angle: "Picking a voice for your
+   agent: size, speed and personality". Context: Hear (Parakeet, 0.05–0.3 s) is not the bottleneck; Think is
+   (1.3–2 s per uncached game line), so pre-warming lines (item 6) matters more for speed.
 6. Maybe: pre-warm all game lines at game start, so the first game is as fast as later ones.
 7. **Package and apply** (unchanged): video of Liz playing (Inspector visible), README, make public, push the
    `tool-call-positional-args` branch to Liz's fork, apply (first answer starts "GPU-poor and proud 🤗").
