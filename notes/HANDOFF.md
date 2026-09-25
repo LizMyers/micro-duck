@@ -178,6 +178,9 @@ C. **Publish one tutorial**, e.g. #1 "An open voice agent on your laptop, and wh
    community article/blog post.
 D. **Community signal:** LinkedIn post with the video ("Play Simon Says with Your Microduck").
 Then draft the application (item 0), leading with Liz's dev-rel track record, with Simon as proof on HF's stack.
+**Timing (Liz, 2026-09-25):** A, B, D first (A → B → D: PR open, then video + public repo, then LinkedIn
+linking to both). **Apply early next week.** Tutorial (C) after applying, while the application is in review;
+mention the series as "in progress" with a link to `notes/tutorial-series.md`.
 
 0. **Draft the application with Liz (she asked, 2026-09-25).** Decision: apply as the **wildcard** (dev rel /
    developer experience for voice agents), naming the voice-agents team; not the Senior ML Engineer role (too big
