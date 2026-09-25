@@ -92,7 +92,8 @@ Tutorials section on lizm.dev (or a "Field notes" subsection), cross-posted as H
    bottleneck (1.3–2 s per uncached game line); Hear (Parakeet) is 0.05–0.3 s.
 2. **Picking a voice for your agent: Kokoro vs Qwen3-TTS.** RAM, time to first sound, run-ons, how it sounds.
 3. **Nine voices, one duck: a listening test.** All Qwen3-TTS preset voices on the same line, incl. the dialect
-   voices (eric: Sichuan, dylan: Beijing).
+   voices (eric: Sichuan, dylan: Beijing). Liz's verdict: **Aiden, by a mile**. The post can explain
+   what made the difference.
 4. **Local vs hosted: where should each stage run?** RAM, latency, cost, privacy; a hybrid setup (hosted Think via
    HF Inference Providers, local Hear/Speak).
 5. **When the voice model won't stop talking.** The Qwen3-TTS run-on (28.8 s for "Simon says, turn left."), the

@@ -161,6 +161,9 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
   in speech-to-speech ignores per-response `max_output_tokens` (uses its global max_new_tokens):
   **upstream candidate** (LLM/language_model.py).
 
+- **Simon's voice is Aiden (Liz decided, 2026-09-25, "by a mile")** after listening to the nine Qwen3-TTS
+  preset voices. Aiden is already the default; keep it.
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
