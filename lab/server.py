@@ -408,7 +408,7 @@ def options() -> dict:
     return {
         "models": [{**m, "cached": is_cached(m["id"])} for m in MODELS],
         "voices": VOICES,
-        "sim_url": "/sim/?embed=1" if SIM_DIST.exists() else None,
+        "sim_url": "/sim/?embed=1&ball=0" if SIM_DIST.exists() else None,   # ball=0: our sim patch, no ball
         "agent_url": f"ws://127.0.0.1:{AGENT_PORT}/v1/realtime",
         "tests": [{"text": t, "url": f"/prompts/prompt_{i:02d}.wav"} for i, t in enumerate(TEST_PROMPTS)],
     }

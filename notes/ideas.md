@@ -28,3 +28,19 @@ Still to build: look_* moves for Simon (head poses exist), new pose checks for s
 
 ## Launch copy
 - **LinkedIn headline (Liz):** "Play Simon Says with Your Microduck"
+
+## Simulator settings worth a tutorial (2026-09-25)
+Found in Pollen's simulator source (`microduck-simulator/app/src`, URL options + `window.__gameApi`):
+- `?move=<ref>` / `?policy=`: load a **community-trained move** from the HF Hub (we already host the polite bow).
+  Tutorial: *"Teach Simon a new move"*: train a policy, publish it on the Hub, load it by URL, call it by voice.
+  Strongest HF tie-in of the lot.
+- `?lite=1`: decimated duck meshes. Tutorial: *"Running on a modest laptop"* (pairs with the Mac OS memory tab).
+- `?soundboard=1`: page to trigger/compare every game sound, with a ZzFX synth. Tutorial: *"Give Simon a creature
+  voice"* (see the quack idea / `research/microduck-voice-synth.md`).
+- `?touch=1`: phone/tablet controls. *"Play on your phone."*
+- Multiplayer "ghosts" (off in our embed mode): the planned finale, multiplayer Simon Says.
+- `__gameApi`: `setVariant` (colourways, used by our colour dots), `requestLoco` (legs/rollers), `resetSim`,
+  `spawnBall`, `startEntrance`, `loadCustomPolicy`/`clearCustomPolicy`. Keys: Q/E kick, R sit, G pick up,
+  C camera, Space reset.
+- **`?ball=0`** is ours: added to `sim/embed-and-jaw.patch` (the sim otherwise always keeps a ball in play). The
+  Duck Lab uses it by default for a clean stage.
