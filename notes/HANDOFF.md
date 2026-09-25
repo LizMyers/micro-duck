@@ -174,7 +174,7 @@ A. **Upstream PRs to HF speech-to-speech** (most convincing signal): 1) the tool
    per-response `max_output_tokens` (LLM/language_model.py). Optionally file an issue for the Qwen3-TTS run-on
    after short lines (28.8 s audio for "Simon says, turn left.").
 B. **Record the demo video** (shot list below) and **make the repo public** (README + video at the top).
-B2. **Portfolio case study** (after B, before/with D): video or GIF hero; one-line pitch ("Simon Says with a robot
+B2. **Portfolio case study** (after B, before/with D; draft in `notes/portfolio-simon-says.md`; Simon replaces Quiz-Genie in Featured, Quiz-Genie → new Lab page): video or GIF hero; one-line pitch ("Simon Says with a robot
    duck: HF's open-source voice agent, a webcam referee and a simulated Microduck, all on a laptop"); what Liz
    built/decided; what she found (upstream PR + issues); links to repo, PR, LinkedIn, tutorial series later.
    Reuse README text and the video; keep it short.
