@@ -82,3 +82,23 @@ Training your own move is a "Take it further" (Colab / HF Jobs).
   and load it into Simon.
 - **Simon's own voice:** quacks instead of words, beak synced to the sound (Pollen's `sounds` synth).
 - **Sim-to-real:** the same code on a real Microduck.
+
+## Field notes: short investigation posts (Liz, 2026-09-25)
+Small, self-contained posts alongside the main series. Each has the same shape: **a question, a measurement, a
+finding, and what we changed**. Most of the raw material is already in `lab/logs/` and the devlog. Home: the
+Tutorials section on lizm.dev (or a "Field notes" subsection), cross-posted as HF community articles.
+
+1. **Where does the time go in a local voice agent?** Hear / Turn / Think / Speak, measured. Finding: Think is the
+   bottleneck (1.3–2 s per uncached game line); Hear (Parakeet) is 0.05–0.3 s.
+2. **Picking a voice for your agent: Kokoro vs Qwen3-TTS.** RAM, time to first sound, run-ons, how it sounds.
+3. **Nine voices, one duck: a listening test.** All Qwen3-TTS preset voices on the same line, incl. the dialect
+   voices (eric: Sichuan, dylan: Beijing).
+4. **Local vs hosted: where should each stage run?** RAM, latency, cost, privacy; a hybrid setup (hosted Think via
+   HF Inference Providers, local Hear/Speak).
+5. **When the voice model won't stop talking.** The Qwen3-TTS run-on (28.8 s for "Simon says, turn left."), the
+   ✂️ cut-off, and the "digits at the end" hypothesis.
+6. **Scripted vs improvised: making a small model play fair.** Exact commands, improvised reactions, moods, the
+   "Sure, here's my best look up" answer, and the runaway "Ohhhh…".
+7. **Can a voice model change its tone?** Qwen3-TTS style instructions: fixed per session vs per reply.
+8. **Small models and tool calls.** Positional arguments, native `<tool_call>` blocks, and the upstream fixes.
+9. **Your webcam as a fair referee.** Left vs right, head turns vs body turns, strict traps and arms.
