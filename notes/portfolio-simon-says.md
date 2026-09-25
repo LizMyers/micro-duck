@@ -52,3 +52,17 @@ tools), debugging an open-source ML stack, contributing upstream.
   (worth mentioning in the application).
 - Don't quote a reply-time number yet: the logs mix cold starts and long chats (median 4.8 s over 173
   turns). Game lines are faster (out-of-band, cached). Measure a clean number before publishing one.
+
+### Site navigation (Liz's idea, 2026-09-25)
+```
+Liz Myers        Work ▾      Lab      Tutorials            [ Let's chat ]
+                 ├ LondonLore
+                 ├ LingoWise
+                 └ Simon Says
+```
+- **Let's chat** stays the highlighted button on the right (the call to action).
+- **Work** is clickable (home = the three featured); the dropdown is a shortcut. On mobile, a plain list.
+- **Tutorials** (not "Writing"/"Blog"): specific, fits the dev-rel story.
+- Don't launch an empty page: leave Tutorials out until part 1 is live, or open it with the series outline and
+  "first part coming soon".
+- **Lab** starts with Quiz-Genie plus any smaller experiments, as dated cards (image, one line, links).
