@@ -173,6 +173,15 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
    with: the demo video, product/UX calls she made (strict traps, scripted vs improvised lines, desk-friendly
    moves), bugs she found by playing (scoreboard flip vs speech), and the upstream speech-to-speech findings.
    First answer starts "GPU-poor and proud 🤗". Record the demo video first if possible.
+
+### Demo video shot list (agreed 2026-09-25)
+- **Record the whole browser window** (crop later; you can't add what you didn't capture). ~2 min raw → 60–90 s cut.
+- **Layout:** left = Simon + camera PiP + **Simon Says** tab (scoreboard, command, countdown); right = **Inspector**
+  (events scrolling live). Close other tabs/apps (RAM). Standard window size, e.g. full screen 1080p.
+- **Takes:** 1) say "Let's play Simon Says!" (voice start); 2) one full game, ideally fall for a trap once so Simon
+  gloats; 3) say "I want a rematch!" and play a few rounds.
+- **Sound:** both Simon's voice and Liz's mic. Cmd+Shift+5 → record window/screen → Options → microphone; if it
+  can't capture system audio (Simon), use OBS. Do a 10 s test and play it back first.
 1. **Play-test Simon Says** with Liz; read the Inspector/logs: which commands judge well, which lines misbehave.
 2. **Tune camera thresholds on Liz** (chips show the numbers; compare with `THRESHOLDS` in `pose.js`).
 3. **Hand model: hold up 1–5 fingers** (MediaPipe HandLandmarker, 21 points/hand; ~1 h + tuning; watch CPU/RAM).
