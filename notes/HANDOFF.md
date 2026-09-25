@@ -187,6 +187,9 @@ C. **Publish one tutorial**, e.g. #1 "An open voice agent on your laptop, and wh
    community article/blog post.
 D. **Community signal:** LinkedIn post with the video ("Play Simon Says with Your Microduck").
 Then draft the application (item 0), leading with Liz's dev-rel track record, with Simon as proof on HF's stack.
+**Tomorrow (2026-09-26): interface adjustments to the left two panels** (the duck/sim panel and the tabs panel
+below it), led by Liz, before the demo is recorded and before the repo goes public. Ask what she wants changed;
+change only what she names.
 **Updated timing (Liz, 2026-09-25 afternoon): weekend = record the demo video** (everything else depends on a
 compelling demo). **Monday = open the PR, make the repo public (README + video), portfolio section, LinkedIn post,
 apply.** Tutorial (C) during review. Before recording: consider pre-warming all game lines (item 6) so the first
