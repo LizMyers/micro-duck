@@ -55,7 +55,7 @@ const TRAP_OPENERS = ["Got you!", "Ha ha!", "Gotcha!", "Tricked you!"];
 
 // A different mood each time Simon loses, so his congratulations don't repeat word for word
 // (the same prompt tends to get the same sentence).
-const MOODS = ["dramatic, over-the-top", "sulky but fair", "sporting and generous", "sarcastic",
+const MOODS = ["dramatic",   // not "over-the-top": that made the model write "Ohhhh…" for 27 s "sulky but fair", "sporting and generous", "sarcastic",
   "grudging", "astonished", "theatrical, like a bad actor", "suspicious (you must have cheated!)"];
 
 // Quick acknowledgements (exact, so they're cached and instant after the first time).
@@ -122,15 +122,16 @@ export class SimonSaysGame {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
       if (this.outFixed) await this.speak(this.outFixed);
-      else await this.speak(this.outLine, { improvise: true });
+      else if (!(await this.speak(this.outLine, { improvise: true }))) await this.speak(this.outFallback);
       if (!this.outFixed) await this.speak("Simon wins!");   // the trap line already ends "I win!"
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
-      await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
+      const said = await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
         `Congratulate them in a ${mood} way, and say clearly that they win.`, { improvise: true });
+      if (!said) await this.speak("Well played. You win!");   // fallback if the improvised line stalls
       await this.speak("You win!");
       await this.speak(tally);
     }
@@ -146,9 +147,12 @@ export class SimonSaysGame {
     this.app.note(`🎲 Simon Says: game over, score ${this.score}`);
   }
 
+  // True if Simon said it (false if he never started, e.g. an improvised line that was given up on).
   async speak(text, opts) {
     const { started, done } = this.app.sayLine(text, opts);
-    if (await started) await done;
+    if (!(await started)) return false;
+    await done;
+    return true;
   }
 
   async playRound() {
@@ -209,6 +213,7 @@ export class SimonSaysGame {
       this.outFixed = !cmd.says
         ? `${TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)]} I didn't say Simon says, and you moved anyway. I win!`
         : null;
+      this.outFallback = r.wrong ? "Wrong move! I win!" : "Too slow! I win!";   // if the improvised line stalls
       this.outLine = !cmd.says ? null
         : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ` +
           `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! Duck wins!" Make up a new one like these.`

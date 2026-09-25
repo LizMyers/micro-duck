@@ -568,19 +568,27 @@ function sayLine(text, { improvise = false } = {}) {
   const done = new Promise((r) => (doneResolve = r));
   const cached = !improvise && lineCache.get(text);
   if (cached) {
-    ensureAudio().then(() => {
+    // Wait for any reply still in progress, so two lines never play on top of each other.
+    whenIdle(() => ensureAudio().then(() => {
       body.setMood("speaking");
       for (const chunk of cached) playChunk(chunk);
       startedResolve(true);
       whenQuiet(() => { body.setMood("idle"); doneResolve(); });
-    });
+    }));
     inspector.note(`🔁 Simon replays "${text}" (cached audio)`);
     return { started, done };
   }
-  const timer = setTimeout(() => startedResolve(false), 15000);
+  // No sound yet? Give up (8 s for improvised lines, 15 s for exact ones) and cancel the reply, so a
+  // runaway can't hold everything up. (Seen: "dramatic, over-the-top" made the model write "Ohhhh…"
+  // for 27 s before any audio.)
+  let mine = null;
+  const timer = setTimeout(() => {
+    if (mine && state.line === mine) { mine.cut = true; send({ type: "response.cancel" }); inspector.note(`⏱ gave up on "${text}" (no sound yet)`); }
+    startedResolve(false);
+  }, improvise ? 8000 : 15000);
   whenIdle(() => {
     // Claim the next reply only once any earlier one has finished.
-    state.line = {
+    state.line = mine = {
       text, chunks: [], samples: 0, cut: false, max: improvise ? FREE_MAX : Math.max(LINE_MAX, text.split(/\s+/).length * 0.9), improvise,   // ~2x a normal pace: never cuts real words, still catches a run-on
       onAudio: () => { clearTimeout(timer); startedResolve(true); },
       onDone: (status) => {
@@ -591,7 +599,7 @@ function sayLine(text, { improvise = false } = {}) {
     };
     const msg = (role, t) => ({ type: "message", role, content: [{ type: role === "user" ? "input_text" : "output_text", text: t }] });
     if (improvise) return send({ type: "response.create", response: {
-      conversation: "none", tool_choice: "none",
+      conversation: "none", tool_choice: "none", max_output_tokens: 40,   // a hard stop for runaway text
       instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
         "Reply with ONE short sentence to say out loud (under 15 words). No emoji, no laughing sounds like 'ha ha'.",
       input: [msg("user", text)],

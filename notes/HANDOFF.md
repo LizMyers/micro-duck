@@ -154,6 +154,13 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 - **Improvised lines repeated** word for word two games running. Now Simon's congratulations get a random mood
   from 8 (dramatic, sulky, sporting, sarcastic, grudging, astonished, theatrical, suspicious); 🎭 in the Inspector.
 
+- **"Crash" after two games = runaway text, not the second game:** the "dramatic, over-the-top" mood made Qwen
+  write "Ohhhh…" (thousands of h's) for 27 s before any audio; the game then talked over it. Fixes: mood is now
+  just "dramatic"; improvised lines give up after 8 s with no sound (response.cancel + a fixed fallback line,
+  ⏱ in Inspector); cached lines wait their turn. We also send `max_output_tokens: 40`, but the local MLX model
+  in speech-to-speech ignores per-response `max_output_tokens` (uses its global max_new_tokens):
+  **upstream candidate** (LLM/language_model.py).
+
 ### Open questions for Liz
 - Look chips: check head looks aren't mirrored the wrong way (arms are fine).
 - The Colour row label: keep or remove?
