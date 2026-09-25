@@ -167,6 +167,12 @@ nicknames or emoji. **UI is parked**: she'll redesign it in Figma and hand over 
 
 
 ## Plan for next session (in order, one at a time)
+0. **Draft the application with Liz (she asked, 2026-09-25).** Decision: apply as the **wildcard** (dev rel /
+   developer experience for voice agents), naming the voice-agents team; not the Senior ML Engineer role (too big
+   a stretch to own alone in interviews). Say openly she built it with an AI pair programmer. Evidence to lead
+   with: the demo video, product/UX calls she made (strict traps, scripted vs improvised lines, desk-friendly
+   moves), bugs she found by playing (scoreboard flip vs speech), and the upstream speech-to-speech findings.
+   First answer starts "GPU-poor and proud 🤗". Record the demo video first if possible.
 1. **Play-test Simon Says** with Liz; read the Inspector/logs: which commands judge well, which lines misbehave.
 2. **Tune camera thresholds on Liz** (chips show the numbers; compare with `THRESHOLDS` in `pose.js`).
 3. **Hand model: hold up 1–5 fingers** (MediaPipe HandLandmarker, 21 points/hand; ~1 h + tuning; watch CPU/RAM).
