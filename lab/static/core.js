@@ -38,6 +38,7 @@ export const ctx = {
   onTool: null,                    // (ev, args) => handles one of those tools
   relay: { newTurn() {}, setStage() {} },   // the lab's relay race (timings); the game page has none
   logPoses: null,                  // () => whether to log "🧍 you: …" rows now (default: always)
+  calibrateHint: null,             // under the camera before calibrating (default: "Sit normally, facing the camera")
   onCameraFrame: null,             // the lab's Copy me
   onCameraStop: null,
 };

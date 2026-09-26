@@ -35,7 +35,6 @@
         <div class="cam-pip" id="cam-pip" hidden>
           <video id="cam-video" playsinline muted hidden></video>
           <canvas id="cam-canvas" width="640" height="480" aria-label="Your webcam with pose skeleton"></canvas>
-          <div class="cam-bar"><span id="cam-status">Starting camera…</span></div>
         </div>
       </div>
 
@@ -84,6 +83,9 @@
           <span class="hint" id="ss-ready">–</span>
           <button class="ghost small" id="setup-again">Redo camera setup</button>
         </div>
+
+        <!-- What the camera sees right now (moved out of the camera box, which was crowded). -->
+        <p class="hint cam-status" id="cam-status" aria-live="polite"></p>
 
         <div class="ss-now">
           <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>

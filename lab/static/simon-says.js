@@ -425,6 +425,8 @@ export class SimonSaysGame {
     let longest = 0;   // your longest valid hold of the commanded move (shown when it's "Too slow")
     const tiltPeak = { ears: null, face: null };   // look up/down: both methods, to pick the better one
     const isTilt = /look_(up|down)/.test(cmd.pose);
+    const isTurn = /turn_(left|right)/.test(cmd.pose);
+    let narrowest = null;   // turns: the narrowest your shoulders got, as a fraction of their calibrated width
     let lostAt = null, lost = false;
     while (live() && performance.now() < deadline) {
       // Out of view for 2 s: you can't be judged, so the round doesn't count (it used to end "Too slow!").
@@ -436,6 +438,8 @@ export class SimonSaysGame {
       if (t) for (const k of ["ears", "face"]) if (tiltPeak[k] == null || t[k] * dir > tiltPeak[k] * dir) tiltPeak[k] = t[k];
       const v = dir && tracker.check(cmd.pose)?.value;
       if (typeof v === "number" && (peak == null || v * dir > peak * dir)) peak = v;
+      const w = isTurn && tracker.check(cmd.pose)?.value;
+      if (typeof w === "number" && (narrowest == null || w < narrowest)) narrowest = w;
       const since = tracker.since(cmd.pose);
       if (since != null && since >= spokeAt + REACTION_MS) longest = Math.max(longest, performance.now() - since);
       if (counts(cmd.pose)) { seen = true; break; }   // held right (or, on a trap, held the trap move): done
@@ -463,6 +467,10 @@ export class SimonSaysGame {
       // Every look up/down round, right or wrong: the data for choosing the better tilt measure.
       this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: ears method got to ${tiltPeak.ears.toFixed(2)} ` +
         `(the judge uses this, needs ${dir > 0 ? "" : "−"}${this.app.thresholds?.pitch}); face method got to ${tiltPeak.face.toFixed(2)}`);
+    } else if (isTurn && cmd.says && narrowest != null) {
+      // Every turn round, right or wrong: how far you turned, for tuning the threshold.
+      this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: your shoulders got to ${narrowest.toFixed(2)} ` +
+        `of their width; the judge needs under ${this.app.thresholds?.turned}`);
     } else if (cmd.says && !seen && peak != null) {
       const need = /look_(up|down)/.test(cmd.pose) ? this.app.thresholds?.pitch : this.app.thresholds?.look;
       this.app.note(`📏 ${LABEL[cmd.pose]}: your head got to ${peak.toFixed(2)}; the judge needs ${dir > 0 ? "" : "−"}${need}`);

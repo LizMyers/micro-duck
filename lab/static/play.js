@@ -86,6 +86,7 @@ Object.assign(ctx, {
   busyMessage: "Simon is busy in another tab: close it, then reload this page.",
   // Your moves in the Inspector only during a game, when they're evidence; otherwise every glance shows up.
   logPoses: () => !!(ctx.game?.running || ctx.game?.starting),
+  calibrateHint: "Sit up, and look at Simon",
 });
 
 // ---------- Camera setup: before Start, on the page ----------------------------------------

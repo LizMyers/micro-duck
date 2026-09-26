@@ -380,20 +380,21 @@ kbd {
 
 /* All-time scoreboard: split-flap cards */
 .ss-board { display: flex; gap: 16px; margin-bottom: 12px; }
-.ss-team { display: grid; justify-items: center; gap: 6px; }
-.ss-team b { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.ss-card { position: relative; display: block; width: 80px; height: 96px; perspective: 300px; }
+.ss-team { display: grid; justify-items: center; gap: 2px; }
+.ss-team > b { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ss-card { position: relative; display: block; width: 80px; height: 82px; perspective: 300px; }   /* 47px top half + 35px bottom half (Liz: the line lower across the digits) */
 .ss-card .half {
-  position: absolute; left: 0; right: 0; height: 50%; overflow: hidden;
+  position: absolute; left: 0; right: 0; height: 47px; overflow: hidden;
   background: var(--duck); color: var(--duck-ink); backface-visibility: hidden;
 }
 .ss-card .half b {
-  display: block; height: 96px; font: 600 60px/96px "Bricolage Grotesque", system-ui, sans-serif; text-align: center;
+  display: block; height: 86px; font: 800 76px/86px "Bricolage Grotesque", system-ui, sans-serif; text-align: center;
   letter-spacing: 0; text-transform: none; color: inherit;
+  /* No nudge: in Bricolage at 76px on an 86px line the digits are already centred (measured: 17.9px above and below). */
 }
 .ss-card .upper { top: 0; border-radius: 8px 8px 0 0; border-bottom: 1px solid rgb(0 0 0 / 30%); }
-.ss-card .lower { bottom: 0; border-radius: 0 0 8px 8px; filter: brightness(.9); }
-.ss-card .lower b { margin-top: -48px; }      /* show the lower half of the number */
+.ss-card .lower { bottom: 0; height: 35px; border-radius: 0 0 8px 8px; filter: brightness(.9); }
+.ss-card .lower b { margin-top: -47px; }      /* show the lower half of the number */
 .ss-card .upper.flap { transform-origin: 50% 100%; z-index: 2; }   /* hinged at the middle */
 .ss-card .lower.flap { transform-origin: 50% 0; z-index: 2; }
 
@@ -515,7 +516,7 @@ h2 { font-size: 18px; }
 
 /* Weights: Regular 400 for reading, Medium 500 for buttons and labels, Semi-bold 600 for titles and the
    game display. No bold 700. (Source Sans 3 is loaded as a variable font, 300–700, so these are real faces.) */
-button, .talk, .os-label, dt, .ss-team b { font-weight: 500; }
+button, .talk, .os-label, dt, .ss-team > b { font-weight: 500; }
 h2, h3, .title-bar h3, .health strong, .mac-summary strong, .ss-command { font-weight: 600; }
 
 /* Inspector (Liz): the page's typeface, not monospace, and no arrow column: time, then the message.
@@ -618,7 +619,7 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   position: absolute; left: 12px; bottom: 12px; z-index: 2; margin: 0;
   padding: 10px 12px; border-radius: 10px; background: rgb(0 0 0 / 35%); backdrop-filter: blur(4px);
 }
-.ss-board.on-sim .ss-team b { color: #fff; order: -1; }   /* labels on top */
+.ss-board.on-sim .ss-team > b { color: #fff; order: -1; font-weight: 700; }   /* labels on top (> : not the digits inside the cards) */
 /* The cards' bottom edge sits level with the camera box's (12px up): the band's 10px padding hangs below. */
 .ss-board.on-sim { bottom: 2px; }
 
@@ -734,3 +735,7 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #mac-pressure, #mac-pressure::before { text-transform: uppercase; letter-spacing: .04em; }   /* MEMORY: LOW */
 #mac-pressure { font-weight: 800; }   /* the state word, heaviest */
 #mac-pressure::before { font-weight: 500; }   /* "MEMORY:" lighter */
+
+/* The camera line in the game panel ("Seeing: Look right"); nothing to show when the camera is off. */
+.game .cam-status { margin: 10px 0 0; font-size: 15px; color: var(--ink); }
+.game .cam-status:empty { display: none; }

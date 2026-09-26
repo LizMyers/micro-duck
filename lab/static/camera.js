@@ -36,7 +36,7 @@ export async function startCamera({ forGame = false } = {}) {
   cam.on = true;
   cam.btn?.setAttribute("aria-pressed", "true");
   ctx.inspector.note("📷 camera on (video stays in this browser)");
-  status("Stand normally, then Calibrate");
+  status(ctx.calibrateHint ?? "Sit normally, facing the camera");
   // Calibrate automatically once a body is in view: every check compares you with this stance.
   // (Not when a game started the camera: that calibrated mid-countdown, 2026-09-26.)
   if (!forGame) setTimeout(() => { if (cam.on && !cam.calibrated) calibrate(); }, 2500);
@@ -58,7 +58,11 @@ export async function startCamera({ forGame = false } = {}) {
       }
       if (!on) cam.held.delete(id);
     }
-    if (cam.calibrated) status(`${Math.round(cam.tracker.fps || 0)} fps · watching`);
+    // Under the camera: the move it sees right now (more use to a player than the frame rate).
+    if (cam.calibrated) {
+      const seen = POSE_IDS.filter((id) => poses[id].ok).map((id) => POSE_LABELS[id]);
+      status(seen.length ? `Seeing: ${seen.join(" + ")}` : "Seeing: no move");
+    }
     ctx.onCameraFrame?.();
   });
 }
@@ -69,6 +73,7 @@ export function stopCamera() {
   cam.on = false;
   cam.calibrated = false;
   ctx.onCameraStop?.();
+  status("");
   if (cam.pip) cam.pip.hidden = true;
   if (cam.chips) cam.chips.hidden = true;
   cam.btn?.setAttribute("aria-pressed", "false");
