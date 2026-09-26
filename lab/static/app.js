@@ -422,7 +422,8 @@ function onAgentEvent(ev) {
       if (!state.line?.silent) botBubble();
       break;
     case "response.output_audio_transcript.delta":
-      if (state.line?.silent) { state.line.heard += ev.delta; break; }
+      if (state.line) state.line.heard += ev.delta;   // what Simon actually said (checked, or shown in the game)
+      if (state.line?.silent) break;
       botBubble().text += ev.delta;
       renderBot();
       break;
@@ -602,7 +603,7 @@ function sayLine(text, { improvise = false, silent = false } = {}) {
       onDone: (status) => {
         clearTimeout(timer);
         startedResolve(false);
-        whenQuiet(doneResolve);
+        whenQuiet(() => doneResolve(mine.heard));   // `done` gives the words he said
       },
     };
     const msg = (role, t) => ({ type: "message", role, content: [{ type: role === "user" ? "input_text" : "output_text", text: t }] });

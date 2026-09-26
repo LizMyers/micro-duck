@@ -19,10 +19,30 @@
   "file": "gotcha-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
   "seconds": 4.29
  },
- "Ha ha! I didn't say Simon says, and you moved anyway. I win!": {
-  "cut": true,
-  "file": "ha-ha-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
-  "seconds": 11.78
+ "I win!": {
+  "cut": false,
+  "file": "i-win.wav",
+  "seconds": 0.77
+ },
+ "It's five to one. Advantage me!": {
+  "cut": false,
+  "file": "it-s-five-to-one-advantage-me.wav",
+  "seconds": 2.85
+ },
+ "It's five to zero in my favor. Come on, try harder!": {
+  "cut": false,
+  "file": "it-s-five-to-zero-in-my-favor-come-on-try-harder.wav",
+  "seconds": 3.49
+ },
+ "It's four to one in my favor. Come on, try harder!": {
+  "cut": false,
+  "file": "it-s-four-to-one-in-my-favor-come-on-try-harder.wav",
+  "seconds": 3.01
+ },
+ "It's six to zero. Advantage me!": {
+  "cut": false,
+  "file": "it-s-six-to-zero-advantage-me.wav",
+  "seconds": 2.69
  },
  "Last round!": {
   "cut": false,
