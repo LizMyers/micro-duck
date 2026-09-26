@@ -28,7 +28,7 @@ const PERSONALITY =
   "invite them to play Simon Says. " +
   "Never use lists, markdown or emoji; everything you write will be spoken aloud.";
 
-const inspector = new Inspector($("inspector"));
+const inspector = new Inspector($("inspector"), { plain: true });   // no emojis on this page
 const body = new DuckBody({
   iframe: $("sim"), moodEl: $("mood"),   // (no Beak / Head / Why row on this page: status lives there instead)
 });
