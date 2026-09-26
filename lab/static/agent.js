@@ -225,7 +225,7 @@ function onAgentEvent(ev) {
     case "error": {
       const msg = ev.error?.message || ev.error?.code || "Unknown error";
       if (ev.error?.code === "session_limit_reached") {
-        toast("The agent is busy with another tab. Close other Duck Lab tabs and reload.", 8000);
+        toast(ctx.busyMessage ?? "The agent is busy with another tab. Close other Duck Lab tabs and reload.", 8000);
       } else {
         toast(`Agent error: ${msg}`);
       }

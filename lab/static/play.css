@@ -130,6 +130,22 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
   grid-area: side; display: flex; flex-direction: column; min-height: 0;
   height: calc(100vh - 32px); position: sticky; top: 16px;
 }
+/* When the RAM banner shows, the right column shrinks by its height, so its bottom (and Tap to talk)
+   stays on screen, the same distance from the bottom. (play.js sets --banner-h.) */
+/* Wide windows: the whole page fits the window, banner or not. Both columns end the same distance from
+   the bottom. Simon gets the larger share of the left column; the tab card below scrolls inside itself
+   when its content is long. (play.js sets --banner-h to the RAM banner's height, 0 when hidden.) */
+@media (min-width: 1001px) {
+  main.layout {
+    box-sizing: border-box; height: calc(100vh - var(--banner-h, 0px)); padding-bottom: 16px;
+    grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .side.split { height: auto; position: static; min-height: 0; }
+  .duck { min-height: 0; overflow: hidden; }
+  .duck .sim-wrap { aspect-ratio: auto; min-height: 0; }
+  .controls { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .controls > [role="tabpanel"] { flex: 1; min-height: 0; overflow-y: auto; }
+}
 @media (max-width: 1000px) {
   .layout { grid-template-columns: 1fr; grid-template-areas: "duck" "side" "controls"; }
   .side { height: 640px; position: static; }
@@ -478,15 +494,40 @@ kbd {
 
 /* ---------- Game page additions ---------------------------------------------------------- */
 
-/* Right column: the Inspector (why things happen) above the chat (what was said). */
-.side.split { gap: 12px; }
-.split-top { flex: 3; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.split-bottom { flex: 2; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
-  border-top: 1px solid var(--line); padding-top: 10px; }
-.split-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.split-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+/* Right column: the Inspector (why things happen) above the chat (what was said). The chat's title bar
+   is the divider between them: drag it to change their sizes (play.js remembers the split). */
+.side.split { gap: 0; padding: 0; overflow: hidden; }
+/* The side padding lives in each panel, so the title bars can run edge to edge across the card. */
+.split-top { flex: 3; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 16px; }
+.split-bottom { flex: 2; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 16px 12px; }
 .split-bottom .chat { max-height: none; flex: 1; }
-.split-bottom .talk-row { margin-top: 8px; }
+
+/* Title bars: a light tint of the duck's colour, edge to edge across the card. */
+.title-bar {
+  display: flex; align-items: center; gap: 10px; min-height: 40px;
+  margin: 0 -16px 8px; padding: 6px 16px;
+  background: var(--accent-soft); border-bottom: 1px solid var(--line);
+}
+.split-top .title-bar { border-radius: var(--radius) var(--radius) 0 0; }
+.title-bar h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; flex: 1; }
+
+.title-bar.divider { position: relative; border-top: 4px double var(--line); cursor: row-resize; user-select: none; touch-action: none; }
+/* The drag handle: a pill sitting on the double border, centred, the usual "grab me" sign. */
+.title-bar.divider::before {
+  content: ""; position: absolute; left: 50%; top: -7px; transform: translateX(-50%);
+  width: 44px; height: 8px; border-radius: 999px; background: var(--ink-2); opacity: .45;
+  transition: opacity .15s, width .15s;
+}
+.title-bar.divider:hover::before, .title-bar.divider.dragging::before { opacity: .8; width: 60px; }
+.title-bar.divider:hover { background: color-mix(in srgb, var(--accent) 18%, var(--accent-soft)); }
+.title-bar.divider button { cursor: pointer; }
+.title-bar.divider:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.title-bar.divider.dragging { background: color-mix(in srgb, var(--accent) 30%, var(--accent-soft)); }
+
+/* Tap to talk, compact: it sits under the chat without taking over. */
+.split-bottom .talk-row { margin-top: 6px; padding-top: 8px; }
+.split-bottom .talk { padding: 7px 14px; font-size: 13px; gap: 8px; }
+.split-bottom .talk .mic { width: 9px; height: 9px; }
 
 /* Camera setup: takes the Start button's place until you're calibrated. */
 .setup { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; margin: 8px 0;
@@ -494,3 +535,23 @@ kbd {
 .setup-text { margin: 0; }
 .setup-check[data-ok="true"] { color: var(--good); font-weight: 600; }
 .setup-check[data-ok="false"] { color: var(--warn); font-weight: 600; }
+
+/* One button family (Liz: the clean Copy / Clear style everywhere): white face, thin dark edge, dark text.
+   Tap to talk turns beak orange while it's listening. */
+button.primary, button.ghost, .talk,
+.split-bottom .talk {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--ink-2); border-radius: 10px;
+  font-weight: 600; font-size: 13px; padding: 6px 12px; gap: 8px;
+}
+button.small { padding: 4px 10px; }
+button.primary:hover:not(:disabled), button.ghost:hover:not(:disabled), .talk:hover:not(:disabled) { border-color: var(--ink); }
+/* Listening: the button turns beak orange (Simon's own colour, not an alarm red). */
+.talk[aria-pressed="true"] { background: var(--beak, #f08a24); color: #fff; border-color: var(--beak, #f08a24); }
+.cam-bar .ghost { background: transparent; color: #fff; border-color: rgb(255 255 255 / 40%); }
+.ram-warning .ghost { background: transparent; color: inherit; border-color: currentColor; }
+.talk-hint { margin: 0; }
+.talk-hint kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--ink-2); border-radius: 4px; background: var(--surface); }
+
+/* Simon's status, under the sim: the one place it lives on this page. */
+.simon-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.simon-status .health { flex: 1; min-width: 0; }
