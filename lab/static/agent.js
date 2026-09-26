@@ -175,11 +175,13 @@ function onAgentEvent(ev) {
       let args = {};
       try { args = JSON.parse(ev.arguments || "{}"); } catch {}
       if (ev.name === "play_simon_says") {
-        const started = ctx.game.startByVoice();
-        ctx.inspector.note(`🎲 voice: play_simon_says → ${started ? "starting a game" : "a game is already running"}`, null, "tool");
-        state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: started ? "starting" : "already playing" } });
+        const status = ctx.game.startByVoice();
+        const started = status === "starting";
+        ctx.inspector.note(`🎲 voice: play_simon_says → ${started ? "starting a game" : status}`, null, "tool");
+        state.toolOutputs.push({ call_id: ev.call_id, output: { ok: started, status } });
         if (state.botBubble) state.botBubble.acted = true;
-        state.gameStartedByVoice = true;   // the game speaks next, so no "say a few words" follow-up
+        // The game speaks next, so no "say a few words" follow-up; if it didn't start, Simon says why.
+        state.gameStartedByVoice = started;
         break;
       }
       ctx.onTool?.(ev, args);

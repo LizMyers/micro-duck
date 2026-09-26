@@ -10,7 +10,8 @@ import { sayLine, prepareLine, prewarmLines, badLines, warm } from "/static/voic
 
 // setupOnPage: the page sets up and calibrates the camera before Start (the game page); otherwise the
 // game does it by voice with a countdown before each game (the lab).
-export function makeGame({ beforeGame, setupOnPage = false } = {}) {
+// isSetUp / needSetup (game page): whether the camera is set up, and how to show the setup.
+export function makeGame({ beforeGame, setupOnPage = false, isSetUp, needSetup } = {}) {
   const body = ctx.body;
   const game = new SimonSaysGame({
     tracker: () => cam.tracker,
@@ -30,7 +31,7 @@ export function makeGame({ beforeGame, setupOnPage = false } = {}) {
       return cam.tracker?.latest?.landmarks ? null
         : "The camera can't see you: sit where your head and shoulders are in view, then start again.";
     },
-    setupOnPage,
+    setupOnPage, isSetUp, needSetup,
     sayLine,
     prepareLine,
     isBad: (text) => badLines.has(text),
