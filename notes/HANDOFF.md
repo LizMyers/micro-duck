@@ -288,3 +288,14 @@ restart for the agent rows. Write-up: [04-who-goes-first.md](04-who-goes-first.m
 - Chat bar starts level with the left tab bar (measured in play.js; drags last the visit).
 - NEXT: the Simon Says (game) tab, Liz leads. Then release 1 (microduck-simonsays repo, fresh history).
 - Working style: Liz tests UI herself (no screenshots); commit + push at checkpoints (repo private).
+
+## Game panel redesign (2026-09-26, Liz): big, bold, easy enough for a 5-year-old
+Mock: `lab/static/mock-game.html` (http://localhost:8770/static/mock-game.html): a play-through with page-slide
+transitions, plus the screens side by side. One screen per phase (`data-phase`): setup → ready → playing → over.
+- Setup is 3 steps: 1 Turn on camera, 2 Sit up and face me (live feedback from `calibrationProblem`:
+  "Over here, silly!"), 3 I'm ready!
+- Already calibrated: skip setup; Simon asks "Are you ready?" Yes by a **nod**, saying "yes", or the button.
+  (Nod = a new move: head down then up within ~1 s.)
+- No 5 round dots. Match offers instead: Simon suggests "best 2 out of 3?", "3 out of 5?", "4 out of 7?",
+  depending on how many games have been played.
+- Open: show the "Simon says" pill on screen (easier for kids, but it gives the trap away)?
