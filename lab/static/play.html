@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en" data-duck="blue">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simon Says with Simon the Microduck</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- The game page's own look: change freely, the lab (style.css) is separate. -->
+  <link rel="stylesheet" href="/static/play.css">
+</head>
+<body>
+  <div class="ram-warning" id="ram-warning" role="alert" hidden>
+    <span id="ram-warning-text">RAM running low.</span>
+    <button class="ghost small" id="ram-warning-show">Show Mac OS</button>
+    <button class="ghost small" id="ram-warning-close" aria-label="Dismiss">Dismiss</button>
+  </div>
+
+  <main class="layout">
+    <!-- Left, top: Simon -->
+    <section class="card duck" aria-labelledby="duck-h">
+      <div class="card-head">
+        <h2 id="duck-h">Simon <small>the Microduck</small></h2>
+        <div class="duck-actions">
+          <span class="mood" id="mood" data-mood="idle">Idle</span>
+        </div>
+      </div>
+      <div class="sim-wrap">
+        <iframe id="sim" title="Microduck simulator" loading="eager"></iframe>
+        <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
+        <!-- Your webcam, the referee. Video never leaves this browser. -->
+        <div class="cam-pip" id="cam-pip" hidden>
+          <video id="cam-video" playsinline muted hidden></video>
+          <canvas id="cam-canvas" width="640" height="480" aria-label="Your webcam with pose skeleton"></canvas>
+          <div class="cam-bar"><span id="cam-status">Starting camera…</span></div>
+        </div>
+      </div>
+      <dl class="body-readout">
+        <div>
+          <dt>Beak</dt>
+          <dd><span class="meter"><span id="beak-meter"></span></span><span class="num" id="beak-num">0%</span></dd>
+        </div>
+        <div>
+          <dt>Head</dt>
+          <dd><span class="head-dial" aria-hidden="true"><span id="head-dot"></span></span><span id="head-text">neutral</span></dd>
+        </div>
+        <div>
+          <dt>Why</dt>
+          <dd id="mood-why">Waiting for someone to talk.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Left, bottom: the game, Simon's settings, the Mac -->
+    <section class="card controls" aria-label="Game and settings">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-game" aria-selected="true" aria-controls="panel-game">Simon Says</button>
+        <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings">Simon settings</button>
+        <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Mac OS</button>
+      </div>
+
+      <div role="tabpanel" id="panel-game" class="game" aria-labelledby="tab-game">
+        <div class="ss-board" aria-label="All-time score">
+          <div class="ss-team"><span class="ss-card" id="ss-card-simon">0</span><b>Simon</b></div>
+          <div class="ss-team"><span class="ss-card" id="ss-card-you">0</span><b>You</b></div>
+        </div>
+
+        <!-- Camera setup first; Start takes its place once you're calibrated. -->
+        <div class="setup" id="setup">
+          <p class="setup-text" id="setup-text">First, the camera. Simon's referee watches your head and arms through your webcam
+            (video never leaves your browser). Sit square to it, with your head and shoulders in view.</p>
+          <div class="row tight">
+            <button class="primary" id="setup-camera">Turn on camera</button>
+            <button class="primary" id="setup-calibrate" hidden>I'm ready</button>
+            <span class="hint setup-check" id="setup-check" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="row tight" id="start-row" hidden>
+          <button class="primary" id="ss-start" disabled>Start game</button>
+          <span class="hint" id="ss-ready">–</span>
+          <button class="ghost small" id="setup-again">Redo camera setup</button>
+        </div>
+
+        <div class="ss-now">
+          <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>
+          <span class="ss-seconds" id="ss-seconds" aria-label="Seconds left"></span>
+        </div>
+        <div class="ss-timer-wrap" aria-hidden="true"><span id="ss-timer"></span></div>
+        <p class="ss-result" id="ss-result"></p>
+        <p class="ss-score" id="ss-score"></p>
+        <p class="hint">Commands: look up / down / left / right, turn left / right, raise your left / right / both arms.
+          Left and right are yours. Hold each move for a second. 5 rounds: one mistake and Simon wins; get all 5 right
+          and you win. Say "let's play again" for a rematch.</p>
+      </div>
+
+      <div role="tabpanel" id="panel-settings" class="os" aria-labelledby="tab-settings" hidden>
+        <div class="os-rows">
+          <div class="os-row">
+            <div class="os-label">Status</div>
+            <div class="health" id="health" data-state="unknown" role="status">
+              <span class="health-dot" aria-hidden="true"></span>
+              <strong id="health-word">?</strong>
+              <small id="health-detail">Checking…</small>
+            </div>
+            <div class="os-btns">
+              <button class="ghost small" id="simon-start" title="Starts (or restarts) Simon's voice agent: Qwen3 4B, about 1–3 minutes">Start Simon</button>
+            </div>
+          </div>
+          <div class="os-row">
+            <div class="os-label">Colour</div>
+            <div class="os-info duck-dots" id="duck-colour" role="radiogroup" aria-label="Duck colour">
+              <button class="dot" data-colour="blue" role="radio" aria-label="Sky" style="--c:#8fc3e3"></button>
+              <button class="dot" data-colour="classic" role="radio" aria-label="Cream" style="--c:#f08a24"></button>
+              <button class="dot" data-colour="purple" role="radio" aria-label="Lavender" style="--c:#b4a4d4"></button>
+              <button class="dot" data-colour="charcoal" role="radio" aria-label="Graphite" style="--c:#2f2f33"></button>
+            </div>
+            <div class="os-btns"></div>
+          </div>
+        </div>
+      </div>
+
+      <div role="tabpanel" id="panel-mac" class="mac" aria-labelledby="tab-mac" hidden>
+        <div class="mac-summary" id="mac-summary" data-pressure="normal">
+          <div class="os-label">Memory</div>
+          <strong id="mac-pressure">–</strong>
+          <small id="mac-detail">Measuring…</small>
+        </div>
+        <div class="ram-bar" id="ram-bar" aria-hidden="true"><span id="ram-used"></span></div>
+        <p class="hint" id="ram-text">–</p>
+        <ul class="mem-list" id="mem-list" aria-label="Memory used by each part"></ul>
+        <p class="hint">Numbers are each program's real memory use, the same as Activity Monitor's Memory column.
+          They can add up to more than the Mac's RAM, because macOS compresses memory and moves some to disk (swap).
+          Updates every 5 seconds.</p>
+      </div>
+    </section>
+
+    <!-- Right: the Inspector (why things happen) above the chat (what was said) -->
+    <section class="card side split" aria-label="Inspector and chat">
+      <div class="split-top inspector">
+        <div class="split-head"><h3>Inspector</h3></div>
+        <div id="inspector" class="insp-root">
+          <div class="row tight">
+            <label class="check"><input type="checkbox" id="insp-hide-audio" checked><span>Hide audio</span></label>
+            <button class="ghost small" id="insp-copy">Copy</button>
+            <button class="ghost small" id="insp-clear">Clear</button>
+          </div>
+          <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
+          <div class="insp-list" aria-live="off"></div>
+        </div>
+      </div>
+
+      <div class="split-bottom">
+        <div class="split-head"><h3>Chat</h3><button class="ghost small" id="clear-chat">Clear</button></div>
+        <div class="chat" id="chat" aria-live="polite">
+          <p class="empty" id="chat-empty">When Simon is ready, tap the button below and say hello.</p>
+        </div>
+        <div class="talk-row">
+          <button class="talk" id="talk" disabled aria-pressed="false">
+            <span class="mic" aria-hidden="true"></span>
+            <span id="talk-label">Tap to talk</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/static/play.js" type="module"></script>
+</body>
+</html>

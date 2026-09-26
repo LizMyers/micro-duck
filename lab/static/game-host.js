@@ -8,7 +8,9 @@ import { ensureAudio, setMic } from "/static/audio.js";
 import { cam, startCamera, calibrate } from "/static/camera.js";
 import { sayLine, prepareLine, prewarmLines, badLines, warm } from "/static/voice-lines.js";
 
-export function makeGame({ beforeGame } = {}) {
+// setupOnPage: the page sets up and calibrates the camera before Start (the game page); otherwise the
+// game does it by voice with a countdown before each game (the lab).
+export function makeGame({ beforeGame, setupOnPage = false } = {}) {
   const body = ctx.body;
   const game = new SimonSaysGame({
     tracker: () => cam.tracker,
@@ -28,6 +30,7 @@ export function makeGame({ beforeGame } = {}) {
       return cam.tracker?.latest?.landmarks ? null
         : "The camera can't see you: sit where your head and shoulders are in view, then start again.";
     },
+    setupOnPage,
     sayLine,
     prepareLine,
     isBad: (text) => badLines.has(text),

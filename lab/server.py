@@ -711,6 +711,12 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html")
 
 
+# The game page (Simon Says only): the same agent and modules, its own layout and look.
+@app.get("/play")
+def play() -> FileResponse:
+    return FileResponse(STATIC / "play.html")
+
+
 def port_busy(port: int) -> bool:
     with socket.socket() as s:
         return s.connect_ex(("127.0.0.1", port)) == 0
