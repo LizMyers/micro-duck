@@ -15,10 +15,25 @@ export const COMMANDS = {
 };
 
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
-const START_WINDOW = 3000;   // ms to do the move, counted from when Simon FINISHES speaking
-const MIN_WINDOW = 2000;
+const SPEAK_TIMEOUT_MS = 15000;
+const LOST_MS = 2000;   // out of the camera's view this long mid-round = the round doesn't count   // no game line takes this long (the run-on cutter stops them at 7 s)
+const START_WINDOW = 4000;   // ms to do the move, counted from when Simon FINISHES speaking
+const MIN_WINDOW = 3000;     // never less: room to react (~1 s) and hold the move (1 s)
 const ROUNDS = 5;            // a short game for testing: get all 5 right and you win
-const HOLD = 300;            // a pose must be held this long to count
+// A move counts only when held this long (Liz: "make them hold it"): no reward for a flicker, and no
+// "out" for one either. Held right: the next round starts straight away; you always get the full window.
+const HOLD = 1000;
+// A move that started this soon after Simon began talking isn't a reaction to him (nobody is that fast):
+// it's a leftover move or camera jitter, so it doesn't count. (A trap once caught Liz 0.35 s in.)
+export const REACTION_MS = 600;
+// Is the calibrated stance usable? A stance taken while turned or looking away makes normal sitting read
+// as a move (Liz, 2026-09-26: calibrated with the body turned 0.17, then "look right" all game).
+export function calibrationProblem(b) {
+  if (!b) return "I can't see you. Sit where your head and shoulders are in view.";
+  if (Math.abs(b.shoulderDepth) > 0.1) return "Turn your body to face me.";
+  if (Math.abs(b.yaw) > 0.15) return "Look straight at me.";
+  return null;
+}
 
 // Pick the next command (never the same one twice in a row).
 export function nextCommand(rand, { last = null } = {}) {
@@ -60,16 +75,46 @@ const trapLine = (opener) => `${opener} I didn't say Simon says!`;
 
 // How Simon gloats when he wins (Liz): cheeky and a little sarcastic about the player's skills,
 // funny, never mean. He makes up a new line each time; these steer the tone.
-const GLOAT = "Tease them a little sarcastically about their skills: funny, never mean. " +
-  'Examples: "Oh boy, you are out of shape!" / "Seems you haven\'t played this much!" / "Were you napping?" ' +
-  "Make up a new one like these, and end by saying you win.";
+// The local model gives the same answer to the same request every time (Liz heard one congratulation
+// word for word twice), so each request carries one example picked at random: that's the variety.
+const GLOAT_EXAMPLES = ["Oh boy, you are out of shape!", "Seems you haven't played this much!", "Were you napping?",
+  "My grandma moves faster!", "Nice try, rookie!", "Did you forget the rules?"];
+const gloat = () => "Tease them a little sarcastically about their skills: funny, never mean. " +
+  `For example: "${pickFresh(GLOAT_EXAMPLES)}" Make up a new one like that, and end by saying you win.`;
+const WIN_OPENERS = ["Aw shucks!", "Ouch!", "Fine, you got me!", "No way!", "Well, well!"];
 // Keep the game moving (Liz): at most one gloat per game (the game ends at the first mistake), and only
 // some games get one, at random, so it never feels scripted. The other times it's just "I win!".
 const ADLIB_CHANCE = 0.5;
 
+// How a game opens (Liz: "Let's play Simon Says!" every time got repetitive). The full line only for the
+// first game after the page loads; a rematch gets a short line that fits who won last, never the same
+// one twice in a row. No numbers in them, so each is saved once and plays instantly.
+const FIRST_OPENER = "Let's play Simon Says!";
+// Before the calibration countdown: a different nudge each game (Liz: "Look at me!" every time made
+// no sense, and it's a chance for some personality).
+// The first game after the page loads gets a plain line instead (Liz: the cheeky ones blindside a new
+// player, who doesn't know yet why Simon wants them to face front).
+// Alternatives in order, in case the voice model gets one wrong (it did "Let's adjust the camera, please."
+// three times running, 2026-09-26, and there was nothing else to say).
+const FIRST_SETUP = ["Let's adjust the camera, please.", "Let's set up the camera, please.", "Camera check, please."];
+const FACE_FRONT = ["Sit up straight, face forward!", "Face your webcam, please!", "Stop squirming and face front!"];
+const REMATCH = {
+  simon: ["Back for more?", "Again? You're on!", "Brave. Let's go!"],
+  you: ["Revenge time!", "Rematch! I'm ready this time.", "Okay, no more Mr Nice Duck."],
+};
+// After the score, a taunt only some of the time: heard less often, it lands better.
+const TAUNT_CHANCE = 1 / 3;
+// A random pick that's never the same as the last one.
+export function pickFresh(list, last, rand = Math.random) {
+  const options = list.length > 1 ? list.filter((t) => t !== last) : list;
+  return options[Math.floor(rand() * options.length)];
+}
+
 // A different mood each time Simon loses, so his congratulations don't repeat word for word
 // (the same prompt tends to get the same sentence).
-const MOODS = ["dramatic",   // not "over-the-top": that made the model write "Ohhhh…" for 27 s "sulky but fair", "sporting and generous", "sarcastic",
+// Not "over-the-top" (the model wrote "Ohhhh…" for 27 s) or "dramatic" (long lines the voice ran on with).
+// (Until 2026-09-26 a comment on this line swallowed the first three moods, so they were never used.)
+const MOODS = ["sulky but fair", "sporting and generous", "sarcastic",
   "grudging", "astonished", "theatrical, like a bad actor", "suspicious (you must have cheated!)"];
 
 // Quick acknowledgements (exact, so they're cached and instant after the first time).
@@ -89,20 +134,23 @@ export class SimonSaysGame {
     this.app = app;
     this.running = false;
     this.board = new Scoreboard();
+    this.lastWinner = null;
+    this.gameId = 0;          // see start(): each game has an id, so a stopped game can't keep going   // this page load only: the first game gets the full opener
+    this.lastSaid = {};       // last opener and taunt said, so neither repeats back to back
     $("ss-start").onclick = () => (this.running ? this.stop("Stopped.") : this.start());
     setInterval(() => this.showReady(), 1000);
   }
 
   // "I want a rematch!": start a game from a voice command (shows the game tab). False if already playing.
   startByVoice() {
-    if (this.running || this.app.ready()) return false;
+    if (this.running || this.starting || this.app.ready()) return false;
     document.getElementById("tab-game").click();
     setTimeout(() => this.start(), 0);
     return true;
   }
 
   showReady() {
-    if (this.running) return;
+    if (this.running || this.starting) return;   // (it re-enabled Start during setup: two games at once)
     const problem = this.app.ready();
     $("ss-start").disabled = !!problem;
     $("ss-ready").textContent = problem || this.app.warming?.() || "Ready. Face the camera, looking straight ahead.";
@@ -113,32 +161,45 @@ export class SimonSaysGame {
   linesToWarm() {
     const { simon, you } = this.board.totals;
     return [
-      "Let's play Simon Says!",
+      ...FIRST_SETUP, ...FACE_FRONT, FIRST_OPENER, ...REMATCH.simon, ...REMATCH.you,
       ...Object.keys(COMMANDS).flatMap((pose) => [line({ pose, says: true }), line({ pose, says: false })]),
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
       ...TRAP_OPENERS.map(trapLine),
       "I win!", "You win!", "Well played. You win!",
       // Only two scores are possible after the next game.
-      scoreLine(simon + 1, you),
-      scoreLine(simon, you + 1),
+      this.usableScore(simon + 1, you), ...taunts(simon + 1, you),
+      this.usableScore(simon, you + 1), ...taunts(simon, you + 1),
       ...Object.keys(LABEL).map(wrongLine),
     ];
   }
 
   async start() {
+    // One game at a time: setup (camera + countdown) takes seconds before `running` is set, and a second
+    // click or "let's play" in that gap started a second game on top (2026-09-26).
+    if (this.running || this.starting) return;
+    this.starting = true;
     $("ss-start").disabled = true;
-    this.render("Starting the camera… face it, looking straight ahead.", "");
-    const problem = await this.app.prepare();
-    $("ss-start").disabled = false;
-    if (problem) return this.render(problem, "");
+    try {
+      this.render("Starting the camera… face it, looking straight ahead.", "");
+      const problem = await this.app.prepare();
+      if (problem) return this.render(problem, "");
+      if (!(await this.calibrateWithCountdown())) return;
+    } finally {
+      this.starting = false;
+      $("ss-start").disabled = false;
+    }
+    const id = ++this.gameId;   // this game's ticket: stop() or a new game makes every older step give up
+    const live = () => this.isLive(id);
     Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0, skips: 0 });
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
-    await this.speak("Let's play Simon Says!");
+    const opener = this.lastWinner ? pickFresh(REMATCH[this.lastWinner], this.lastSaid.opener) : FIRST_OPENER;
+    this.lastSaid.opener = opener;
+    await this.speak(opener);
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
-    while (this.running && !this.out && this.round < ROUNDS) await this.playRound();
-    if (!this.running) return;
+    while (live() && !this.out && this.round < ROUNDS) await this.playRound(id);
+    if (!live()) return;
     // Who won goes on the all-time scoreboard. Simon improvises a reaction (told plainly who won),
     // then reads the result as a fixed line, so it's never unclear.
     const simonWon = this.out;
@@ -148,7 +209,6 @@ export class SimonSaysGame {
     const { simon, you } = { ...this.board.totals, [winner]: this.board.totals[winner] + 1 };
     // Numbers as words, in its own short line: the voice model dropped the end of
     // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
-    const tally = scoreLine(simon, you);
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
@@ -159,26 +219,51 @@ export class SimonSaysGame {
         const { started, done } = this.app.sayLine(this.outLine, { improvise: true });
         heard = (await started) ? await done : (await this.speak(this.outFallback), this.outFallback);
       }
+      if (!live()) return;   // stopped during the gloat: no more lines, no scoreboard change
       // Say who won, unless his made-up gloat already did (Liz: he said it twice).
       if (!/\bwins?\b/i.test(heard)) await this.speak("I win!");
-      await this.speak(tally);
+      if (!live()) return;
+      await this.sayScore(simon, you);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
       const said = await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
         `Congratulate them in a ${mood} way, and say clearly that they win. ` +
-        `You can start with something like "Aw shucks!" or "Ouch!"`, { improvise: true });
+        `You can start with "${pickFresh(WIN_OPENERS)}"`, { improvise: true });
+      if (!live()) return;
       if (!said) await this.speak("Well played. You win!");   // fallback if the improvised line stalls
       await this.speak("You win!");
-      await this.speak(tally);
+      if (!live()) return;
+      await this.sayScore(simon, you);
     }
+    if (!live()) return;
     this.board.add(winner);
+    this.lastWinner = winner;
     this.stop(null);
   }
 
+  // You left the camera's view mid-round: that round doesn't count. Wait (up to 15 s) for you to come back,
+  // then carry on with a new round; otherwise stop the game rather than judge nobody.
+  async lostSight(id) {
+    this.round--;
+    this.app.note("🧍 page: lost sight of you for 2 s, so that round doesn't count", null, "warn");
+    this.render("I can't see you!", "Come back into view: head and shoulders.");
+    const tracker = this.app.tracker();
+    for (let t = 0; t < 15000; t += 200) {
+      if (!this.isLive(id)) return;
+      if (tracker.latest?.landmarks) { this.render("There you are!", ""); await sleep(1000); return; }
+      await sleep(200);
+    }
+    this.stop("Stopped: I couldn't see you. Start again when you're back in view.");
+  }
+
+  isLive(id) { return this.running && this.gameId === id; }
+
   stop(message) {
+    if (!this.running) return;   // already over (a late step of a stopped game)
     this.running = false;
+    this.gameId++;               // any step still in flight sees it's no longer its game
     this.app.lookAt(null);
     $("ss-start").textContent = "Start game";
     if (message) this.render(message, "");
@@ -186,19 +271,72 @@ export class SimonSaysGame {
     this.app.gameOver?.();
   }
 
+  // The wording that will be used for this score (the first one the voice model doesn't get wrong).
+  usableScore(simon, you) {
+    return scoreLines(simon, you).find((t) => !this.app.isBad?.(t)) ?? scoreLine(simon, you);
+  }
+
+  // Simon sets you up before every game (Liz: "set the user up for success"): a "face front" nudge, a 3-2-1
+  // countdown, then the camera records your normal stance. A stance taken while turned or looking away
+  // makes ordinary sitting read as moves, so a bad one is retaken (up to 3 tries).
+  async calibrateWithCountdown() {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      // Spoken once; a retry just shows what to fix (repeating the line made no sense).
+      let said = null;
+      if (attempt === 1) {
+        const nudge = this.setUpOnce ? pickFresh(FACE_FRONT, this.lastSaid.nudge)
+          : FIRST_SETUP.find((t) => !this.app.isBad?.(t)) ?? FIRST_SETUP[0];
+        this.lastSaid.nudge = nudge;
+        said = this.speak(nudge);
+      }
+      for (const n of ["3", "2", "1"]) { this.render("Face the camera…", n); await sleep(800); }
+      await said;
+      const base = this.app.calibrate();
+      const problem = calibrationProblem(base);
+      if (!problem) { this.setUpOnce = true; this.render("Get ready…", ""); return true; }
+      this.app.note(`📷 page: calibration ${attempt} of 3 not usable: ${problem}`, base);
+      this.render(problem, "Let's try that again.");
+      await sleep(1500);
+    }
+    // Never refuse to play (Liz: "not working at all"): start anyway with the last stance, and say so.
+    this.app.note("📷 page: 3 calibrations not usable; starting anyway, so the judge may see moves you didn't make", null, "warn");
+    this.setUpOnce = true;
+    this.render("Starting anyway…", "Face the camera square on for the fairest game.");
+    await sleep(1500);
+    return true;
+  }
+
+  // The score every time; a taunt now and then, never the same one twice running.
+  async sayScore(simon, you) {
+    // Skip wordings the voice model gets wrong; if this one goes wrong now, say the next one instead.
+    const options = scoreLines(simon, you).filter((t) => !this.app.isBad?.(t));
+    for (const [i, text] of options.entries()) {
+      await this.speak(text);
+      if (!this.app.isBad?.(text)) break;
+      if (options[i + 1]) this.app.note(`🔁 trying another wording: "${options[i + 1]}"`);
+    }
+    if (Math.random() >= TAUNT_CHANCE) return this.app.note("🎭 no taunt this time");
+    const taunt = pickFresh(taunts(simon, you), this.lastSaid.taunt);
+    this.lastSaid.taunt = taunt;
+    await this.speak(taunt);
+  }
+
   // True if Simon said it (false if he never started, e.g. an improvised line that was given up on).
   async speak(text, opts) {
     const { started, done } = this.app.sayLine(text, opts);
     if (!(await started)) return false;
-    await done;
+    // If the agent stops mid-line (crash, disconnect), `done` may never come: don't wait forever.
+    const finished = await Promise.race([done.then(() => true), sleep(SPEAK_TIMEOUT_MS).then(() => false)]);
+    if (!finished) this.app.note(`⏱ page: "${text.slice(0, 60)}" didn't finish within ${SPEAK_TIMEOUT_MS / 1000} s; carrying on`, null, "warn");
     return true;
   }
 
-  async playRound() {
+  async playRound(id) {
+    const live = () => this.isLive(id);
     const tracker = this.app.tracker();
     // Back to neutral first (up to 3 s), so the last move can't count for this one.
-    for (let t = 0; t < 3000 && MOVING.some((p) => tracker.held(p, HOLD)); t += 100) await sleep(100);
-    if (!this.running) return;
+    for (let t = 0; t < 3000 && MOVING.some((p) => tracker.held(p, 300)); t += 100) await sleep(100);
+    if (!live()) return;
 
     const cmd = nextCommand(Math.random, { last: this.last });
     this.last = cmd.pose;
@@ -212,7 +350,7 @@ export class SimonSaysGame {
       return;
     }
     this.skips = 0;
-    if (!this.running) return;
+    if (!live()) return;
     this.round++;
     if (this.round === ROUNDS) await this.speak("Last round!");
     this.render(text, "");
@@ -228,17 +366,52 @@ export class SimonSaysGame {
     if (demo) this.app.lookAt(MIRROR[cmd.pose]);
 
     // Watch from the first word (moving early on a trap still counts), but the clock only starts
-    // when Simon has finished the sentence: then you get `window` ms.
+    // when Simon has finished the sentence: then you get the full `window` ms. A move counts only when
+    // held for HOLD ms and started at least REACTION_MS after Simon began (earlier = leftover or jitter).
+    const spokeAt = performance.now();
     let deadline = Infinity;
     done.then(() => { deadline = performance.now() + this.window; });
     let seen = false, wrong = null;
+    const ignored = new Set();
+    const counts = (p) => {
+      const since = tracker.since(p);
+      if (since == null) return false;
+      if (since < spokeAt + REACTION_MS) {
+        if (tracker.held(p, 300) && !ignored.has(p)) {
+          ignored.add(p);
+          this.app.note(`🧍 ignored ${LABEL[p]}: it started ${((since - spokeAt) / 1000).toFixed(2)} s after Simon began, too early to be a reaction`);
+        }
+        return false;
+      }
+      return tracker.held(p, HOLD);
+    };
     // Arm checks are strict, so both arms on "raise your left arm" is a wrong move, and vice versa.
     const others = MOVING.filter((p) => p !== cmd.pose);
-    while (this.running && performance.now() < deadline) {
-      if (tracker.held(cmd.pose, HOLD)) { seen = true; if (!cmd.says) break; }
-      if (seen && cmd.says) break;
-      if (wrong && !cmd.says) break;   // strict traps: any move is out
-      wrong ??= others.find((p) => tracker.held(p, HOLD)) ?? null;
+    // Head moves only: how far you got towards the commanded one, shown when it's "Too slow" (for tuning).
+    const dir = { look_up: 1, look_down: -1, look_left: 1, look_right: -1 }[cmd.pose];
+    let peak = null;
+    let longest = 0;   // your longest valid hold of the commanded move (shown when it's "Too slow")
+    const tiltPeak = { ears: null, face: null };   // look up/down: both methods, to pick the better one
+    const isTilt = /look_(up|down)/.test(cmd.pose);
+    let lostAt = null, lost = false;
+    while (live() && performance.now() < deadline) {
+      // Out of view for 2 s: you can't be judged, so the round doesn't count (it used to end "Too slow!").
+      if (!tracker.latest?.landmarks) {
+        lostAt ??= performance.now();
+        if (performance.now() - lostAt > LOST_MS) { lost = true; break; }
+      } else lostAt = null;
+      const t = isTilt && tracker.tilt?.();
+      if (t) for (const k of ["ears", "face"]) if (tiltPeak[k] == null || t[k] * dir > tiltPeak[k] * dir) tiltPeak[k] = t[k];
+      const v = dir && tracker.check(cmd.pose)?.value;
+      if (typeof v === "number" && (peak == null || v * dir > peak * dir)) peak = v;
+      const since = tracker.since(cmd.pose);
+      if (since != null && since >= spokeAt + REACTION_MS) longest = Math.max(longest, performance.now() - since);
+      if (counts(cmd.pose)) { seen = true; break; }   // held right (or, on a trap, held the trap move): done
+      if (!cmd.says && (wrong = others.find(counts) ?? null)) break;   // strict traps: any held move is out
+      if (cmd.says) wrong = others.find(counts) ?? wrong;   // a wrong move only counts if you never get it right
+      // "Hold it…" while the right move is on but not yet held for a second.
+      const holding = cmd.says && tracker.since(cmd.pose) != null && tracker.since(cmd.pose) >= spokeAt + REACTION_MS;
+      $("ss-result").textContent = holding ? "Hold it…" : "";
       const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
       $("ss-timer").style.width = `${(left / this.window) * 100}%`;
       $("ss-seconds").textContent = (left / 1000).toFixed(1);
@@ -247,9 +420,21 @@ export class SimonSaysGame {
     $("ss-timer").style.width = "0%";
     $("ss-seconds").textContent = "";
     if (demo) this.app.lookAt(null);
-    if (!this.running) return;
+    if (!live()) return;
 
+    if (lost) return this.lostSight(id);
     const r = judge(cmd.says, seen, seen ? null : wrong);
+    if (cmd.says && !seen && longest > 0) {
+      this.app.note(`🧍 you held ${LABEL[cmd.pose]} for ${(longest / 1000).toFixed(1)} s at most; it needs ${HOLD / 1000} s`);
+    }
+    if (isTilt && cmd.says && tiltPeak.ears != null) {
+      // Every look up/down round, right or wrong: the data for choosing the better tilt measure.
+      this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: ears method got to ${tiltPeak.ears.toFixed(2)} ` +
+        `(the judge uses this, needs ${dir > 0 ? "" : "−"}${this.app.thresholds?.pitch}); face method got to ${tiltPeak.face.toFixed(2)}`);
+    } else if (cmd.says && !seen && peak != null) {
+      const need = /look_(up|down)/.test(cmd.pose) ? this.app.thresholds?.pitch : this.app.thresholds?.look;
+      this.app.note(`📏 ${LABEL[cmd.pose]}: your head got to ${peak.toFixed(2)}; the judge needs ${dir > 0 ? "" : "−"}${need}`);
+    }
     if (r.point) {
       this.score++;
       if (this.score % 2 === 0) this.window = Math.max(MIN_WINDOW, Math.round(this.window * 0.9));
@@ -262,9 +447,9 @@ export class SimonSaysGame {
       // trap lines once said "you stepped left on your own"). Then a made-up gloat adds the cheek.
       this.outFallback = "I win!";   // if the improvised line stalls
       this.outLine = !cmd.says
-        ? `You said "${COMMANDS[cmd.pose]}" without "Simon says" first, and the player fell for it and moved. ${GLOAT}`
-        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ${GLOAT}`
-        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player was too slow to do it. ${GLOAT}`;
+        ? `You said "${COMMANDS[cmd.pose]}" without "Simon says" first, and the player fell for it and moved. ${gloat()}`
+        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ${gloat()}`
+        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player was too slow to do it. ${gloat()}`;
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
@@ -332,26 +517,33 @@ function flip(card, from, to) {
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
   "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
 // The score, said in the first person: players may give their duck another name (Liz), so he never
-// says "Simon". Cheeky when he's ahead, a good sport when he's behind. Each score always gets the
-// same line (picked by the total), so it can be saved once and replayed, but it changes game to game.
+// says "Simon". Each score always gets the same line (picked by the total), so it can be saved once.
+// The taunt is a separate short line, picked at random (see sayScore): the voice model said the first
+// few words of two-sentence versions ("Seven for me, zero for you. Come on, show me what you've got!")
+// and then went silent for 10 s. Taunts contain no numbers, so each is saved once and reused.
 const AHEAD = [
-  (me, you) => `It's ${me} to ${you}. Advantage me!`,
-  (me, you) => `${cap(me)} for me, ${you} for you. Come on, show me what you've got!`,
-  (me, you) => `It's ${me} to ${you} in my favor. Come on, try harder!`,
+  (me, you) => `It's ${me} to ${you}.`,
+  (me, you) => `${cap(me)} for me, ${you} for you.`,
+  (me, you) => `It's ${me} to ${you} in my favor.`,
 ];
-const LEVEL = [
-  (me) => `${cap(me)} all. Anybody's game!`,
-  (me) => `${cap(me)} each. All square!`,
-];
-const BEHIND = [
-  (me, you) => `You lead ${you} to ${me}. Not for long!`,
-  (me, you) => `${cap(you)} for you, ${me} for me. I'm coming for you!`,
-];
+const LEVEL = [(me) => `${cap(me)} all.`, (me) => `${cap(me)} each.`];
+const BEHIND = [(me, you) => `You lead ${you} to ${me}.`, (me, you) => `${cap(you)} for you, ${me} for me.`];
+// Cheeky when he's ahead, a good sport when he's behind.
+const TAUNTS = {
+  ahead: ["Advantage me!", "Come on, try harder!", "Show me what you've got!", "Getting comfortable up here.", "Are you even trying?"],
+  level: ["Anybody's game!", "All square!"],
+  behind: ["Not for long!", "I'm coming for you!"],
+};
+const side = (simon, you) => (simon > you ? "ahead" : simon === you ? "level" : "behind");
 const cap = (t) => t[0].toUpperCase() + t.slice(1);
-export function scoreLine(simon, you) {
-  const set = simon > you ? AHEAD : simon === you ? LEVEL : BEHIND;
+export function scoreLine(simon, you) { return scoreLines(simon, you)[0]; }
+// Every wording of this score, the usual one first. If the voice model gets one wrong (runs on or
+// mumbles; it always does the same for the same sentence), the game uses the next.
+export function scoreLines(simon, you) {
+  const set = { ahead: AHEAD, level: LEVEL, behind: BEHIND }[side(simon, you)];
   const pick = set === LEVEL ? simon : simon + you;   // a level total is always even, so use one side
-  return set[pick % set.length](words(simon), words(you));
+  return set.map((_, i) => set[(pick + i) % set.length](words(simon), words(you)));
 }
+export const taunts = (simon, you) => TAUNTS[side(simon, you)];
 
 export function words(n) { return NUMBER_WORDS[n] ?? String(n); }

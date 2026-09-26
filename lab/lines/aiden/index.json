@@ -1,4 +1,74 @@
 {
+ "Advantage me!": {
+  "cut": false,
+  "file": "advantage-me.wav",
+  "seconds": 0.93
+ },
+ "Again? You're on!": {
+  "cut": false,
+  "file": "again-you-re-on.wav",
+  "seconds": 1.34
+ },
+ "All square!": {
+  "cut": false,
+  "file": "all-square.wav",
+  "seconds": 0.67
+ },
+ "Anybody's game!": {
+  "cut": false,
+  "file": "anybody-s-game.wav",
+  "seconds": 1.34
+ },
+ "Are you even trying?": {
+  "cut": false,
+  "file": "are-you-even-trying.wav",
+  "seconds": 1.41
+ },
+ "Back for more?": {
+  "cut": false,
+  "file": "back-for-more.wav",
+  "seconds": 0.67
+ },
+ "Brave. Let's go!": {
+  "cut": false,
+  "file": "brave-let-s-go.wav",
+  "seconds": 2.21
+ },
+ "Camera check, please.": {
+  "cut": false,
+  "file": "camera-check-please.wav",
+  "seconds": 1.09
+ },
+ "Come on, try harder!": {
+  "cut": false,
+  "file": "come-on-try-harder.wav",
+  "seconds": 1.25
+ },
+ "Eight for me, two for you.": {
+  "cut": false,
+  "file": "eight-for-me-two-for-you.wav",
+  "seconds": 2.05
+ },
+ "Face your webcam, please!": {
+  "cut": false,
+  "file": "face-your-webcam-please.wav",
+  "seconds": 1.41
+ },
+ "Four for me, zero for you.": {
+  "cut": false,
+  "file": "four-for-me-zero-for-you.wav",
+  "seconds": 2.46
+ },
+ "Fourteen for me, two for you.": {
+  "cut": false,
+  "file": "fourteen-for-me-two-for-you.wav",
+  "seconds": 1.89
+ },
+ "Getting comfortable up here.": {
+  "cut": false,
+  "file": "getting-comfortable-up-here.wav",
+  "seconds": 1.41
+ },
  "Good!": {
   "cut": false,
   "file": "good.wav",
@@ -24,35 +94,195 @@
   "file": "i-win.wav",
   "seconds": 0.77
  },
+ "I'm coming for you!": {
+  "cut": false,
+  "file": "i-m-coming-for-you.wav",
+  "seconds": 1.09
+ },
+ "It's eight to one.": {
+  "cut": false,
+  "file": "it-s-eight-to-one.wav",
+  "seconds": 0.67
+ },
+ "It's eight to three in my favor.": {
+  "cut": false,
+  "file": "it-s-eight-to-three-in-my-favor.wav",
+  "seconds": 2.59
+ },
+ "It's eighteen to three.": {
+  "cut": false,
+  "file": "it-s-eighteen-to-three.wav",
+  "seconds": 1.15
+ },
+ "It's eighteen to two in my favor.": {
+  "cut": false,
+  "file": "it-s-eighteen-to-two-in-my-favor.wav",
+  "seconds": 1.79
+ },
+ "It's eleven to three in my favor.": {
+  "cut": false,
+  "file": "it-s-eleven-to-three-in-my-favor.wav",
+  "seconds": 1.63
+ },
+ "It's eleven to two in my favor.": {
+  "cut": false,
+  "file": "it-s-eleven-to-two-in-my-favor.wav",
+  "seconds": 1.73
+ },
+ "It's fifteen to three.": {
+  "cut": false,
+  "file": "it-s-fifteen-to-three.wav",
+  "seconds": 1.31
+ },
+ "It's fifteen to two in my favor.": {
+  "cut": false,
+  "file": "it-s-fifteen-to-two-in-my-favor.wav",
+  "seconds": 1.95
+ },
  "It's five to one. Advantage me!": {
   "cut": false,
   "file": "it-s-five-to-one-advantage-me.wav",
   "seconds": 2.85
+ },
+ "It's five to zero in my favor.": {
+  "cut": false,
+  "file": "it-s-five-to-zero-in-my-favor.wav",
+  "seconds": 1.82
  },
  "It's five to zero in my favor. Come on, try harder!": {
   "cut": false,
   "file": "it-s-five-to-zero-in-my-favor-come-on-try-harder.wav",
   "seconds": 3.49
  },
+ "It's four to one in my favor.": {
+  "cut": false,
+  "file": "it-s-four-to-one-in-my-favor.wav",
+  "seconds": 1.41
+ },
  "It's four to one in my favor. Come on, try harder!": {
   "cut": false,
   "file": "it-s-four-to-one-in-my-favor-come-on-try-harder.wav",
   "seconds": 3.01
+ },
+ "It's fourteen to three in my favor.": {
+  "cut": false,
+  "file": "it-s-fourteen-to-three-in-my-favor.wav",
+  "seconds": 1.63
+ },
+ "It's nine to three.": {
+  "cut": false,
+  "file": "it-s-nine-to-three.wav",
+  "seconds": 0.93
+ },
+ "It's nine to two in my favor.": {
+  "cut": false,
+  "file": "it-s-nine-to-two-in-my-favor.wav",
+  "seconds": 2.53
+ },
+ "It's nine to zero. Advantage me!": {
+  "cut": false,
+  "file": "it-s-nine-to-zero-advantage-me.wav",
+  "seconds": 2.53
+ },
+ "It's seven to one in my favor.": {
+  "cut": false,
+  "file": "it-s-seven-to-one-in-my-favor.wav",
+  "seconds": 2.21
+ },
+ "It's seven to two.": {
+  "cut": false,
+  "file": "it-s-seven-to-two.wav",
+  "seconds": 1.15
+ },
+ "It's seventeen to four.": {
+  "cut": false,
+  "file": "it-s-seventeen-to-four.wav",
+  "seconds": 1.79
+ },
+ "It's seventeen to three in my favor.": {
+  "cut": false,
+  "file": "it-s-seventeen-to-three-in-my-favor.wav",
+  "seconds": 2.27
+ },
+ "It's six to two in my favor.": {
+  "cut": false,
+  "file": "it-s-six-to-two-in-my-favor.wav",
+  "seconds": 2.11
+ },
+ "It's six to zero.": {
+  "cut": false,
+  "file": "it-s-six-to-zero.wav",
+  "seconds": 1.41
  },
  "It's six to zero. Advantage me!": {
   "cut": false,
   "file": "it-s-six-to-zero-advantage-me.wav",
   "seconds": 2.69
  },
+ "It's sixteen to two.": {
+  "cut": false,
+  "file": "it-s-sixteen-to-two.wav",
+  "seconds": 0.99
+ },
+ "It's ten to two.": {
+  "cut": false,
+  "file": "it-s-ten-to-two.wav",
+  "seconds": 0.83
+ },
+ "It's thirteen to two.": {
+  "cut": false,
+  "file": "it-s-thirteen-to-two.wav",
+  "seconds": 1.25
+ },
+ "It's three to zero.": {
+  "cut": false,
+  "file": "it-s-three-to-zero.wav",
+  "seconds": 1.09
+ },
+ "It's twelve to three.": {
+  "cut": false,
+  "file": "it-s-twelve-to-three.wav",
+  "seconds": 0.99
+ },
+ "It's twelve to two in my favor.": {
+  "cut": false,
+  "file": "it-s-twelve-to-two-in-my-favor.wav",
+  "seconds": 1.63
+ },
+ "It's two to one.": {
+  "cut": false,
+  "file": "it-s-two-to-one.wav",
+  "seconds": 0.83
+ },
+ "It's two to zero in my favor.": {
+  "cut": false,
+  "file": "it-s-two-to-zero-in-my-favor.wav",
+  "seconds": 1.73
+ },
  "Last round!": {
   "cut": false,
   "file": "last-round.wav",
   "seconds": 0.77
  },
+ "Let's adjust the camera, please.": {
+  "cut": false,
+  "file": "let-s-adjust-the-camera-please.wav",
+  "seconds": 1.73
+ },
  "Let's play Simon Says!": {
   "cut": false,
   "file": "let-s-play-simon-says.wav",
   "seconds": 1.73
+ },
+ "Let's set up the camera, please.": {
+  "cut": false,
+  "file": "let-s-set-up-the-camera-please.wav",
+  "seconds": 1.57
+ },
+ "Look at me!": {
+  "cut": false,
+  "file": "look-at-me.wav",
+  "seconds": 0.99
  },
  "Look down!": {
   "cut": false,
@@ -79,10 +309,40 @@
   "file": "nice-one.wav",
   "seconds": 0.7
  },
+ "Nine for me, one for you.": {
+  "cut": false,
+  "file": "nine-for-me-one-for-you.wav",
+  "seconds": 2.37
+ },
+ "Not for long!": {
+  "cut": false,
+  "file": "not-for-long.wav",
+  "seconds": 0.93
+ },
  "OK!": {
   "cut": false,
   "file": "ok.wav",
   "seconds": 0.35
+ },
+ "Okay, no more Mr Nice Duck.": {
+  "cut": false,
+  "file": "okay-no-more-mr-nice-duck.wav",
+  "seconds": 2.3
+ },
+ "One each.": {
+  "cut": false,
+  "file": "one-each.wav",
+  "seconds": 0.61
+ },
+ "One for me, zero for you.": {
+  "cut": false,
+  "file": "one-for-me-zero-for-you.wav",
+  "seconds": 2.05
+ },
+ "One for you, zero for me.": {
+  "cut": false,
+  "file": "one-for-you-zero-for-me.wav",
+  "seconds": 2.05
  },
  "Raise both arms!": {
   "cut": false,
@@ -98,6 +358,26 @@
   "cut": false,
   "file": "raise-your-right-arm.wav",
   "seconds": 1.18
+ },
+ "Rematch! I'm ready this time.": {
+  "cut": false,
+  "file": "rematch-i-m-ready-this-time.wav",
+  "seconds": 2.46
+ },
+ "Revenge time!": {
+  "cut": false,
+  "file": "revenge-time.wav",
+  "seconds": 0.99
+ },
+ "Seventeen for me, two for you.": {
+  "cut": false,
+  "file": "seventeen-for-me-two-for-you.wav",
+  "seconds": 1.82
+ },
+ "Show me what you've got!": {
+  "cut": false,
+  "file": "show-me-what-you-ve-got.wav",
+  "seconds": 0.93
  },
  "Simon says, look down.": {
   "cut": false,
@@ -125,9 +405,9 @@
   "seconds": 2.46
  },
  "Simon says, raise your left arm.": {
-  "cut": true,
+  "cut": false,
   "file": "simon-says-raise-your-left-arm.wav",
-  "seconds": 5.57
+  "seconds": 2.69
  },
  "Simon says, raise your right arm.": {
   "cut": false,
@@ -143,6 +423,31 @@
   "cut": false,
   "file": "simon-says-turn-right.wav",
   "seconds": 2.05
+ },
+ "Sit up straight, face forward!": {
+  "cut": false,
+  "file": "sit-up-straight-face-forward.wav",
+  "seconds": 1.98
+ },
+ "Sixteen for me, three for you.": {
+  "cut": false,
+  "file": "sixteen-for-me-three-for-you.wav",
+  "seconds": 2.14
+ },
+ "Stop squirming and face front!": {
+  "cut": false,
+  "file": "stop-squirming-and-face-front.wav",
+  "seconds": 2.05
+ },
+ "Ten for me, zero for you.": {
+  "cut": false,
+  "file": "ten-for-me-zero-for-you.wav",
+  "seconds": 1.98
+ },
+ "Three for me, one for you.": {
+  "cut": false,
+  "file": "three-for-me-one-for-you.wav",
+  "seconds": 1.82
  },
  "Too slow!": {
   "cut": false,

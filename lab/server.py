@@ -101,6 +101,11 @@ LOG_PATTERNS = [
      lambda m: {"tts_s": float(m.group(1))}),
     ("total", re.compile(r"Last speech detected to first speech out: ([\d.]+)s"),
      lambda m: {"total_s": float(m.group(1))}),
+    # Why the agent stopped something (back end). The page shows these in the Inspector, in plain words.
+    ("barge_in", re.compile(r"speech during response: cancelled"), None),
+    ("llm_cancelled", re.compile(r"LLM generation cancelled \(interruption\)"), None),
+    ("tts_cancelled", re.compile(r"TTS generation cancelled \(interruption\)"), None),
+    ("stale_dropped", re.compile(r"stale response complete"), None),
 ]
 READY_LINE = "Uvicorn running on"
 
@@ -451,6 +456,34 @@ def save_line(voice: str, line: SavedLine) -> dict:
         (folder / "index.json").write_text(json.dumps(index, indent=1, sort_keys=True) + "\n")
     lab_log(f"Saved Simon's line \"{line.text}\" ({voice}, {line.seconds:.1f} s{', cut: worth a listen' if line.cut else ''})")
     return {"ok": True, "file": name}
+
+
+# Wordings the voice model gets wrong (runs on or mumbles), per voice, in lines/<voice>/bad.json. This voice
+# model makes the same audio for the same sentence every time, so retrying doesn't help: the page uses
+# another wording instead. Delete an entry (or the file) to let Simon try that wording again.
+class BadLine(BaseModel):
+    text: str
+    reason: str
+
+
+@app.get("/api/lines/{voice}/bad")
+def bad_lines(voice: str) -> dict:
+    try:
+        return json.loads((voice_dir(voice) / "bad.json").read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+@app.post("/api/lines/{voice}/bad")
+def mark_bad(voice: str, line: BadLine) -> dict:
+    folder = voice_dir(voice)
+    with lines_lock:
+        folder.mkdir(parents=True, exist_ok=True)
+        bad = bad_lines(voice)
+        bad[line.text] = line.reason
+        (folder / "bad.json").write_text(json.dumps(bad, indent=1, sort_keys=True) + "\n")
+    lab_log(f"Simon won't use \"{line.text}\" again ({voice}): {line.reason}", level="warn")
+    return {"ok": True}
 
 
 class StartRequest(BaseModel):

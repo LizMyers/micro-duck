@@ -16,6 +16,8 @@ Each milestone file records what we ran, what broke, how we fixed it, and what w
 | 0 | Plan & reasoning | [00-plan.md](00-plan.md) | done |
 | 1 | Open voice agent running locally on a Mac | [01-local-voice-agent.md](01-local-voice-agent.md) | done |
 | 2 | Duck Lab: voice-controlled sim duck | [02-duck-lab-and-voice-moves.md](02-duck-lab-and-voice-moves.md) | done |
+| – | Saved voice lines | [03-saved-voice-lines.md](03-saved-voice-lines.md) | done |
+| – | Who goes first: dropped turns, silent takes, Inspector for both ends | [04-who-goes-first.md](04-who-goes-first.md) | done |
 | 3 | Creature voice: a TTS that quacks | – | – |
 | 3 | Embodiment in sim: moves, beak, barge-in | 03-embodiment.md | – |
 | 4 | Ship: Space, upstream PR, blog, video | 04-ship.md | – |
