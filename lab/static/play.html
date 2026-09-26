@@ -26,6 +26,11 @@
       <div class="sim-wrap">
         <iframe id="sim" title="Microduck simulator" loading="eager"></iframe>
         <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
+        <!-- The all-time scoreboard, on the sim: bottom left, facing your camera box on the right. -->
+        <div class="ss-board on-sim" aria-label="All-time score">
+          <div class="ss-team"><span class="ss-card" id="ss-card-simon">0</span><b>Simon</b></div>
+          <div class="ss-team"><span class="ss-card" id="ss-card-you">0</span><b>You</b></div>
+        </div>
         <!-- Your webcam, the referee. Video never leaves this browser. -->
         <div class="cam-pip" id="cam-pip" hidden>
           <video id="cam-video" playsinline muted hidden></video>
@@ -33,15 +38,7 @@
           <div class="cam-bar"><span id="cam-status">Starting camera…</span></div>
         </div>
       </div>
-      <!-- Simon's status: the one place it lives on this page. -->
-      <div class="simon-status">
-        <div class="health" id="health" data-state="unknown" role="status">
-          <span class="health-dot" aria-hidden="true"></span>
-          <strong id="health-word">?</strong>
-          <small id="health-detail">Checking…</small>
-        </div>
-        <button class="ghost small" id="simon-start" title="Starts (or restarts) Simon's voice agent: Qwen3 4B, about 1–3 minutes">Start Simon</button>
-      </div>
+
     </section>
 
     <!-- Left, bottom: the game, Simon's settings, the Mac -->
@@ -50,13 +47,20 @@
         <button role="tab" id="tab-game" aria-selected="true" aria-controls="panel-game">Simon Says</button>
         <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings">Simon settings</button>
         <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Mac OS</button>
+        <span class="tab-ink" aria-hidden="true"></span>
       </div>
 
       <div role="tabpanel" id="panel-game" class="game" aria-labelledby="tab-game">
-        <div class="ss-board" aria-label="All-time score">
-          <div class="ss-team"><span class="ss-card" id="ss-card-simon">0</span><b>Simon</b></div>
-          <div class="ss-team"><span class="ss-card" id="ss-card-you">0</span><b>You</b></div>
+        <!-- Simon's status, the game panel's first line (the one place it lives on this page). -->
+        <div class="simon-status">
+          <div class="health" id="health" data-state="unknown" role="status">
+            <span class="health-dot" aria-hidden="true"></span>
+            <strong id="health-word">?</strong>
+            <small id="health-detail">Checking…</small>
+          </div>
+          <button class="ghost small" id="simon-start" title="Starts (or restarts) Simon's voice agent: Qwen3 4B, about 1–3 minutes">Start Simon</button>
         </div>
+
 
         <!-- Camera setup first; Start takes its place once you're calibrated. -->
         <div class="setup" id="setup">

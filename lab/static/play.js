@@ -48,10 +48,7 @@ class SimonSettings {
     this.status = "unknown";
     this.busy = false;
     this.startingSince = null;
-    $("simon-start").onclick = () => {
-      const running = this.status === "ready" || this.status === "starting";
-      startAgent(MODEL, running ? "you pressed Restart Simon" : "you pressed Start Simon");
-    };
+    $("simon-start").onclick = () => startAgent(MODEL, "you pressed Start Simon");
     setInterval(() => { if (this.status === "starting") this.render(); }, 1000);
   }
   connected() {}
@@ -70,7 +67,9 @@ class SimonSettings {
     $("health").dataset.state = st;
     $("health-word").textContent = word;
     $("health-detail").textContent = detail({ secs });
-    $("simon-start").textContent = st === "ready" || st === "starting" || st === "busy" ? "Restart Simon" : "Start Simon";
+    // Only when Simon isn't running (asleep, crashed, or the server lost): a player never needs Restart.
+    $("simon-start").hidden = st === "ready" || st === "starting" || st === "busy";
+    $("simon-start").textContent = "Start Simon";
   }
 }
 
@@ -177,14 +176,27 @@ $("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); 
 }
 
 // ---------- The rest of the page ------------------------------------------------------------
+// Tabs, with a duck-yellow underline that slides to the active one.
+function moveInk(tablist) {
+  const ink = tablist.querySelector(".tab-ink"), on = tablist.querySelector('[aria-selected="true"]');
+  if (!ink || !on) return;
+  ink.style.width = `${on.offsetWidth}px`;
+  ink.style.transform = `translateX(${on.offsetLeft}px)`;
+}
 for (const tab of document.querySelectorAll('[role="tab"]')) {
   tab.onclick = () => {
-    for (const t of tab.closest('[role="tablist"]').querySelectorAll('[role="tab"]')) {
+    const list = tab.closest('[role="tablist"]');
+    for (const t of list.querySelectorAll('[role="tab"]')) {
       const on = t === tab;
       t.setAttribute("aria-selected", String(on));
       $(t.getAttribute("aria-controls")).hidden = !on;
     }
+    moveInk(list);
   };
+}
+for (const list of document.querySelectorAll('[role="tablist"]')) {
+  moveInk(list);
+  new ResizeObserver(() => moveInk(list)).observe(list);   // stays under its tab when fonts load or the page resizes
 }
 
 // Duck colour: the simulator's duck and the page's colours follow the same choice (remembered).
@@ -249,4 +261,4 @@ if (state.options.sim_url) $("sim").src = state.options.sim_url;
 else $("sim-missing").hidden = false;
 listenToServer();
 onAgentStatus(await (await fetch("/api/status")).json());
-if (state.agentStatus === "stopped") toast("Simon is asleep: open Simon settings and press Start Simon.", 8000);
+if (state.agentStatus === "stopped") toast("Simon is asleep: press Start Simon on the Simon Says tab.", 8000);

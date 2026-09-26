@@ -575,3 +575,47 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .card.duck { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 .card.duck .sim-wrap { flex: 1; border-radius: 0; min-height: 0; }
 .card.duck .simon-status { margin: 0; padding: 10px 16px; border-top: 1px solid var(--line); }
+
+/* Left column as one card: Simon (sim + status) flows straight into the tabs, no gap between them. */
+.card.duck { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; box-shadow: none; }
+.card.controls { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -16px; border-top: 0; box-shadow: none; }
+
+/* No lines inside the left card: the status strip and the tab bar do the dividing. */
+.card.duck .simon-status { border-top: 0; }
+
+/* The tabs live in a title bar, like the Inspector and Chat: theme colour, labels in capitals, and a
+   duck-yellow underline that slides to the active tab (play.js moves it). */
+.controls .tabs {
+  position: relative; margin: -16px -16px 14px; padding: 0 12px; gap: 2px; border-bottom: 0;
+  background: var(--duck); min-height: 44px; align-items: stretch; overflow: visible;
+}
+.controls .tabs [role="tab"] {
+  color: color-mix(in srgb, var(--duck-ink) 72%, transparent); text-transform: uppercase; letter-spacing: .06em;
+  font-weight: 600; font-size: 15px; padding: 10px 12px; border: 0; margin: 0; transition: color .2s;
+}
+.controls .tabs [role="tab"]:hover { color: var(--duck-ink); }
+.controls .tabs [role="tab"][aria-selected="true"] { color: var(--duck-ink); }
+.tab-ink {
+  position: absolute; bottom: 0; left: 0; height: 4px; width: 0; border-radius: 4px 4px 0 0;
+  background: #ffd23f; transition: transform .35s cubic-bezier(.3, 1.4, .5, 1), width .35s cubic-bezier(.3, 1.4, .5, 1);
+}
+@media (prefers-reduced-motion: reduce) { .tab-ink { transition: none; } }
+
+/* Simon's status strip on the theme colour, flowing into the blue tab bar: white text, the coloured dot
+   still shows the state (a white ring keeps it visible on blue). */
+.card.duck .simon-status { background: var(--duck); color: var(--duck-ink); }
+.card.duck .simon-status .health strong, .card.duck .simon-status #health-detail { color: var(--duck-ink); }
+.card.duck .simon-status .health-dot { box-shadow: 0 0 0 2px var(--duck-ink); }
+.card.duck .simon-status button { background: var(--surface); color: var(--ink); border-color: var(--surface); }
+
+/* Simon's status as the game panel's first line: dot, READY…, a sentence, and Start Simon only when needed. */
+.game .simon-status { margin: 0 0 12px; padding: 0; }
+.game .simon-status .health strong { font-size: 18px; }
+.game .simon-status #health-detail { font-size: 15px; color: var(--ink); }
+
+/* The scoreboard on the sim: bottom left, level with the camera box (bottom right), always shown. */
+.ss-board.on-sim {
+  position: absolute; left: 12px; bottom: 12px; z-index: 2; margin: 0;
+  padding: 10px 12px; border-radius: 10px; background: rgb(0 0 0 / 35%); backdrop-filter: blur(4px);
+}
+.ss-board.on-sim .ss-team b { color: #fff; }
