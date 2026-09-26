@@ -51,7 +51,7 @@ const LABEL = {
   left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
 };
 
-const TRAP_OPENERS = ["Ha ha!", "Gotcha!", "Tricked you!"];   // not "Got you!": same as Gotcha (Liz)
+const TRAP_OPENERS = ["Gotcha!", "Tricked you!"];   // not "Got you!" (same as Gotcha) or "Ha ha!" (the voice always runs on)
 
 // Spoken results (the screen shows the same thing).
 const TRAP_OK = "Good! Simon didn't say.";
@@ -142,9 +142,13 @@ export class SimonSaysGame {
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      if (this.outFixed) await this.speak(this.outFixed);
-      else if (!(await this.speak(this.outLine, { improvise: true }))) await this.speak(this.outFallback);
-      if (!this.outFixed) await this.speak("I win!");   // the trap line already ends "I win!"
+      if (this.outFixed) await this.speak(this.outFixed);   // the trap line already ends "I win!"
+      else {
+        const { started, done } = this.app.sayLine(this.outLine, { improvise: true });
+        const heard = (await started) ? await done : (await this.speak(this.outFallback), this.outFallback);
+        // Say who won, unless his made-up gloat already did (Liz: he said it twice).
+        if (!/\bwins?\b/i.test(heard)) await this.speak("I win!");
+      }
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
