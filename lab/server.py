@@ -40,6 +40,10 @@ from pydantic import BaseModel
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
 PROMPTS = HERE / "prompts"
+# Simon's fixed game lines, made once by the voice model and saved per voice (lines/<voice>/*.wav plus
+# index.json), so every game, every reload and every fresh clone plays the same audio instantly.
+# Why: notes/03-saved-voice-lines.md.
+LINES = HERE / "lines"
 MOVES = HERE / "moves"
 # Community-trained Microduck moves we host locally (policy downloaded on start;
 # the manifest is ours because the Hub repo doesn't include one).
@@ -398,6 +402,57 @@ def fetch_moves() -> None:
             lab_log(f"Couldn't download move {name}: {e}", level="warn")
 
 
+class SavedLine(BaseModel):
+    text: str
+    wav_b64: str
+    seconds: float
+    cut: bool = False   # the voice model ran on and the line was cut: worth a listen
+
+
+lines_lock = threading.Lock()
+
+
+def voice_dir(voice: str) -> Path:
+    if not re.fullmatch(r"[a-z0-9_-]{1,40}", voice):
+        raise HTTPException(400, "Bad voice name")
+    return LINES / voice
+
+
+def read_index(folder: Path) -> dict:
+    try:
+        return json.loads((folder / "index.json").read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def line_file(text: str) -> str:
+    # "Simon says, look up." -> "simon-says-look-up.wav"
+    return (re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:80] or "line") + ".wav"
+
+
+@app.get("/api/lines/{voice}")
+def saved_lines(voice: str) -> list:
+    folder = voice_dir(voice)
+    # A line whose file you deleted (a bad take) is left out, so Simon makes it again.
+    return [{"text": t, **e, "url": f"/lines/{voice}/{e['file']}"}
+            for t, e in read_index(folder).items() if (folder / e["file"]).exists()]
+
+
+@app.post("/api/lines/{voice}")
+def save_line(voice: str, line: SavedLine) -> dict:
+    import base64
+    folder = voice_dir(voice)
+    with lines_lock:
+        folder.mkdir(parents=True, exist_ok=True)
+        index = read_index(folder)
+        name = line_file(line.text)
+        (folder / name).write_bytes(base64.b64decode(line.wav_b64))
+        index[line.text] = {"file": name, "seconds": round(line.seconds, 2), "cut": line.cut}
+        (folder / "index.json").write_text(json.dumps(index, indent=1, sort_keys=True) + "\n")
+    lab_log(f"Saved Simon's line \"{line.text}\" ({voice}, {line.seconds:.1f} s{', cut: worth a listen' if line.cut else ''})")
+    return {"ok": True, "file": name}
+
+
 class StartRequest(BaseModel):
     model: str
     why: str = "you pressed Start"
@@ -611,6 +666,8 @@ async def events() -> StreamingResponse:
 
 app.mount("/moves", StaticFiles(directory=MOVES), name="moves")
 app.mount("/prompts", StaticFiles(directory=PROMPTS), name="prompts")
+LINES.mkdir(exist_ok=True)
+app.mount("/lines", StaticFiles(directory=LINES), name="lines")
 if SIM_DIST.exists():
     app.mount("/sim", StaticFiles(directory=SIM_DIST, html=True), name="sim")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

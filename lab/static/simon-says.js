@@ -51,7 +51,11 @@ const LABEL = {
   left_arm_up: "your left arm", right_arm_up: "your right arm", both_arms_up: "both arms",
 };
 
-const TRAP_OPENERS = ["Got you!", "Ha ha!", "Gotcha!", "Tricked you!"];
+const TRAP_OPENERS = ["Ha ha!", "Gotcha!", "Tricked you!"];   // not "Got you!": same as Gotcha (Liz)
+
+// Spoken results (the screen shows the same thing).
+const TRAP_OK = "Good! Simon didn't say.";
+const wrongLine = (pose) => `Wrong move! That was ${LABEL[pose]}.`;
 
 // A different mood each time Simon loses, so his congratulations don't repeat word for word
 // (the same prompt tends to get the same sentence).
@@ -91,7 +95,24 @@ export class SimonSaysGame {
     if (this.running) return;
     const problem = this.app.ready();
     $("ss-start").disabled = !!problem;
-    $("ss-ready").textContent = problem || "Ready. Face the camera, looking straight ahead.";
+    $("ss-ready").textContent = problem || this.app.warming?.() || "Ready. Face the camera, looking straight ahead.";
+  }
+
+  // Every fixed line the game can say, most-needed first, for pre-warming (app.js). Improvised
+  // reactions are left out: they're new each time, so they can't be cached.
+  linesToWarm() {
+    const { simon, you } = this.board.totals;
+    return [
+      "Let's play Simon Says!",
+      ...Object.keys(COMMANDS).flatMap((pose) => [line({ pose, says: true }), line({ pose, says: false })]),
+      ...OKS, TRAP_OK, "Last round!", "Too slow!",
+      ...TRAP_OPENERS.map((o) => `${o} I didn't say Simon says, and you moved anyway. I win!`),
+      "I win!", "You win!", "Wrong move! I win!", "Too slow! I win!", "Well played. You win!",
+      // Only two scores are possible after the next game.
+      scoreLine(simon + 1, you),
+      scoreLine(simon, you + 1),
+      ...Object.keys(LABEL).map(wrongLine),
+    ];
   }
 
   async start() {
@@ -100,7 +121,7 @@ export class SimonSaysGame {
     const problem = await this.app.prepare();
     $("ss-start").disabled = false;
     if (problem) return this.render(problem, "");
-    Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0 });
+    Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0, skips: 0 });
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
@@ -117,13 +138,13 @@ export class SimonSaysGame {
     const { simon, you } = { ...this.board.totals, [winner]: this.board.totals[winner] + 1 };
     // Numbers as words, in its own short line: the voice model dropped the end of
     // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
-    const tally = `The score is Simon ${words(simon)}, you ${words(you)}.`;
+    const tally = scoreLine(simon, you);
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
       if (this.outFixed) await this.speak(this.outFixed);
       else if (!(await this.speak(this.outLine, { improvise: true }))) await this.speak(this.outFallback);
-      if (!this.outFixed) await this.speak("Simon wins!");   // the trap line already ends "I win!"
+      if (!this.outFixed) await this.speak("I win!");   // the trap line already ends "I win!"
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
@@ -145,6 +166,7 @@ export class SimonSaysGame {
     $("ss-start").textContent = "Start game";
     if (message) this.render(message, "");
     this.app.note(`🎲 Simon Says: game over, score ${this.score}`);
+    this.app.gameOver?.();
   }
 
   // True if Simon said it (false if he never started, e.g. an improvised line that was given up on).
@@ -163,8 +185,19 @@ export class SimonSaysGame {
 
     const cmd = nextCommand(Math.random, { last: this.last });
     this.last = cmd.pose;
-    this.round++;
     const text = line(cmd);
+    // Fairness (Liz): you're judged from the moment Simon finishes, so he must say the command as one
+    // clean sentence. Commands only ever play from complete, checked audio (made silently first if
+    // needed). If he can't say it cleanly, the round doesn't count and he picks another.
+    if (!(await this.app.prepareLine(text))) {
+      this.app.note(`🎲 skipped "${text}": Simon couldn't say it cleanly, so it doesn't count`);
+      if (++this.skips >= 3) { this.render("Simon didn't answer. Is the model READY?", ""); return this.stop(null); }
+      return;
+    }
+    this.skips = 0;
+    if (!this.running) return;
+    this.round++;
+    if (this.round === ROUNDS) await this.speak("Last round!");
     this.render(text, "");
     this.app.note(`🎲 round ${this.round}: "${text}" (${cmd.says ? "do it" : "trap: don't move"})`);
 
@@ -216,14 +249,17 @@ export class SimonSaysGame {
       this.outFallback = r.wrong ? "Wrong move! I win!" : "Too slow! I win!";   // if the improvised line stalls
       this.outLine = !cmd.says ? null
         : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ` +
-          `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! Duck wins!" Make up a new one like these.`
+          `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! I win!" Make up a new one like these.`
         : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. ` +
-          `Gloat that they were too slow. Examples: "Too slow, friend! I win!" / "Snooze you lose! Duck wins!" Make up a new one like these.`;
+          `Gloat that they were too slow. Examples: "Snooze you lose! I win!" / "Better luck next time, friend! I win!" Make up a new one like these.`;
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
-    // Say out loud that the move was registered, before the next command.
-    if (r.point && this.round < ROUNDS) await this.speak(OKS[Math.floor(Math.random() * OKS.length)]);
+    // Say the result out loud, so you can follow the game without looking at the screen (Liz).
+    // All fixed lines: cached, so they play instantly. (A trap you fell for is covered by Simon's
+    // "I didn't say Simon says" line at the end.)
+    if (r.point && this.round < ROUNDS) await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK);
+    else if (!r.point && cmd.says) await this.speak(r.wrong ? wrongLine(r.wrong) : "Too slow!");
   }
 
   render(big, small) {
@@ -282,4 +318,27 @@ function flip(card, from, to) {
 // Small numbers as words for the voice ("3" -> "three"); bigger ones stay as digits.
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
   "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+// The score, said in the first person: players may give their duck another name (Liz), so he never
+// says "Simon". Cheeky when he's ahead, a good sport when he's behind. Each score always gets the
+// same line (picked by the total), so it can be saved once and replayed, but it changes game to game.
+const AHEAD = [
+  (me, you) => `It's ${me} to ${you}. Advantage me!`,
+  (me, you) => `${cap(me)} for me, ${you} for you. Come on, show me what you've got!`,
+  (me, you) => `It's ${me} to ${you} in my favor. Come on, try harder!`,
+];
+const LEVEL = [
+  (me) => `${cap(me)} all. Anybody's game!`,
+  (me) => `${cap(me)} each. All square!`,
+];
+const BEHIND = [
+  (me, you) => `You lead ${you} to ${me}. Not for long!`,
+  (me, you) => `${cap(you)} for you, ${me} for me. I'm coming for you!`,
+];
+const cap = (t) => t[0].toUpperCase() + t.slice(1);
+export function scoreLine(simon, you) {
+  const set = simon > you ? AHEAD : simon === you ? LEVEL : BEHIND;
+  const pick = set === LEVEL ? simon : simon + you;   // a level total is always even, so use one side
+  return set[pick % set.length](words(simon), words(you));
+}
+
 export function words(n) { return NUMBER_WORDS[n] ?? String(n); }
