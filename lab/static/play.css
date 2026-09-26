@@ -382,18 +382,18 @@ kbd {
 .ss-board { display: flex; gap: 16px; margin-bottom: 12px; }
 .ss-team { display: grid; justify-items: center; gap: 6px; }
 .ss-team b { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.ss-card { position: relative; display: block; width: 64px; height: 76px; perspective: 300px; }
+.ss-card { position: relative; display: block; width: 80px; height: 96px; perspective: 300px; }
 .ss-card .half {
   position: absolute; left: 0; right: 0; height: 50%; overflow: hidden;
   background: var(--duck); color: var(--duck-ink); backface-visibility: hidden;
 }
 .ss-card .half b {
-  display: block; height: 76px; font: 600 48px/76px "Bricolage Grotesque", system-ui, sans-serif; text-align: center;
+  display: block; height: 96px; font: 600 60px/96px "Bricolage Grotesque", system-ui, sans-serif; text-align: center;
   letter-spacing: 0; text-transform: none; color: inherit;
 }
 .ss-card .upper { top: 0; border-radius: 8px 8px 0 0; border-bottom: 1px solid rgb(0 0 0 / 30%); }
 .ss-card .lower { bottom: 0; border-radius: 0 0 8px 8px; filter: brightness(.9); }
-.ss-card .lower b { margin-top: -38px; }      /* show the lower half of the number */
+.ss-card .lower b { margin-top: -48px; }      /* show the lower half of the number */
 .ss-card .upper.flap { transform-origin: 50% 100%; z-index: 2; }   /* hinged at the middle */
 .ss-card .lower.flap { transform-origin: 50% 0; z-index: 2; }
 
@@ -526,10 +526,10 @@ h2, h3, .title-bar h3, .health strong, .mac-summary strong, .ss-command { font-w
 .insp-dir { display: none; }
 .insp-sum { grid-column: 2; }
 .insp-row pre { margin-left: 3.6em; font-size: 13px; }
-/* Inspector: larger text (the page's 15px reading size) and a tighter gap after the time. */
+/* Inspector: larger text (the page's 15px reading size); the time column fits the longer times, with a clear gap. */
 .insp-list { font-size: 15px; line-height: 1.45; }
-.insp-row summary { grid-template-columns: 2.6em auto; column-gap: 4px; }
-.insp-row pre { margin-left: 2.9em; font-size: 15px; }
+.insp-row summary { grid-template-columns: 4em auto; column-gap: 10px; }
+.insp-row pre { margin-left: calc(4em + 12px); font-size: 15px; }
 
 /* Title-bar actions: plain words, a pipe between them, no button shapes. */
 .title-bar .bar-link, .ram-warning .bar-link {
@@ -618,7 +618,9 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   position: absolute; left: 12px; bottom: 12px; z-index: 2; margin: 0;
   padding: 10px 12px; border-radius: 10px; background: rgb(0 0 0 / 35%); backdrop-filter: blur(4px);
 }
-.ss-board.on-sim .ss-team b { color: #fff; }
+.ss-board.on-sim .ss-team b { color: #fff; order: -1; }   /* labels on top */
+/* The cards' bottom edge sits level with the camera box's (12px up): the band's 10px padding hangs below. */
+.ss-board.on-sim { bottom: 2px; }
 
 /* Mac OS tab: reading size (15px), dark text, everything left aligned (numbers sit next to their names). */
 .mac, .mac .hint, .mac small, .mac-summary small, #ram-text, .mem-head, .mem-head .num, .mem-list small, .mem-list .top {
