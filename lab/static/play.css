@@ -570,3 +570,8 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* "or hold Space": readable, not a footnote. */
 .talk-hint { font-size: 15px; color: var(--ink); }
 .talk-hint kbd { font: 600 13px "Bricolage Grotesque", system-ui, sans-serif; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--ink-2); background: var(--surface); }
+
+/* Simon's card: the simulator fills it edge to edge; the status line sits underneath. */
+.card.duck { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.card.duck .sim-wrap { flex: 1; border-radius: 0; min-height: 0; }
+.card.duck .simon-status { margin: 0; padding: 10px 16px; border-top: 1px solid var(--line); }
