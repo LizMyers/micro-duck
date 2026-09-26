@@ -86,6 +86,7 @@ test("game page: a voice start can't skip camera setup (it did, and every move w
   const game = new SimonSaysGame(app);
   const status = game.startByVoice();
   assert.match(status, /camera isn't set up/);
+  assert.doesNotMatch(status, /the player turns/);   // worded for Simon to pass on, not a note
   assert.equal(asked, 1);                       // the page showed the setup
   await game.start();                           // a click can't skip it either
   assert.equal(count(app.notes, "game started"), 0);
