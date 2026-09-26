@@ -37,7 +37,7 @@ export function makeGame({ beforeGame } = {}) {
     lookAt: (dir) => body.lookAt(dir),
     // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
     celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
-    note: (text, data) => ctx.inspector.note(text, data),
+    note: (text, data, kind) => ctx.inspector.note(text, data, kind),
     // After a game, carry on pre-warming whatever is still missing (and the next game's two scores).
     gameOver: () => setTimeout(() => prewarmLines(game.linesToWarm()), 1500),
   });

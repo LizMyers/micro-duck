@@ -23,10 +23,11 @@ function fakeApp({ body = true } = {}) {
   const app = {
     notes, tracker: () => tracker, trackerObj: tracker,
     ready: () => null, prepare: async () => null,
-    calibrate: () => ({ yaw: 0, pitch: 0, shoulderDepth: 0, facePitch: 0 }),
+    calibrate: () => { app.calibrations++; return { yaw: 0, pitch: 0, shoulderDepth: 0, facePitch: 0 }; },
     sayLine: () => ({ started: Promise.resolve(true), done: Promise.resolve("") }),
     prepareLine: async () => true, isBad: () => false, thresholds: { pitch: 0.12, look: 0.2 },
     lookAt() {}, celebrate() {}, gameOver() {}, note: (t) => notes.push(t),
+    calibrations: 0,
   };
   return app;
 }
@@ -62,6 +63,18 @@ test("leaving the camera's view mid-round voids the round instead of 'Too slow!'
   await sleep(4500);
   assert.ok(count(app.notes, "lost sight of you") >= 1, app.notes.join("\n"));
   assert.equal(count(app.notes, "Too slow"), 0);
+  game.stop("test over");
+  await started;
+});
+
+test("a head move stuck on between rounds recalibrates (a bad stance can't hide a real move)", async () => {
+  const app = fakeApp();
+  app.trackerObj.held = (pose) => pose === "look_up";   // "look up" reads as on the whole time
+  const game = new SimonSaysGame(app);
+  const started = game.start();
+  await sleep(7000);                   // setup (2.4 s) + the 3 s neutral wait before round 1
+  assert.ok(count(app.notes, "recalibrated") >= 1, app.notes.join("\n"));
+  assert.ok(app.calibrations >= 2);    // the countdown's, then the correction
   game.stop("test over");
   await started;
 });

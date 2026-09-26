@@ -16,7 +16,8 @@ export const COMMANDS = {
 
 const SAYS_CHANCE = 0.7;     // how often it's a real "Simon says" (the rest are traps)
 const SPEAK_TIMEOUT_MS = 15000;
-const LOST_MS = 2000;   // out of the camera's view this long mid-round = the round doesn't count   // no game line takes this long (the run-on cutter stops them at 7 s)
+const LOST_MS = 2000;
+const HEAD_MOVES = ["look_up", "look_down", "look_left", "look_right"];   // out of the camera's view this long mid-round = the round doesn't count   // no game line takes this long (the run-on cutter stops them at 7 s)
 const START_WINDOW = 4000;   // ms to do the move, counted from when Simon FINISHES speaking
 const MIN_WINDOW = 3000;     // never less: room to react (~1 s) and hold the move (1 s)
 const ROUNDS = 5;            // a short game for testing: get all 5 right and you win
@@ -346,6 +347,14 @@ export class SimonSaysGame {
     // Back to neutral first (up to 3 s), so the last move can't count for this one.
     for (let t = 0; t < 3000 && MOVING.some((p) => tracker.held(p, 300)); t += 100) await sleep(100);
     if (!live()) return;
+    // Self-correcting referee: a head move still "on" after that wait isn't a move, it's how you're sitting
+    // (a calibration taken with the head tilted down kept "look up" on all game, 2026-09-26, and the real
+    // look up was ignored as "too early"). So recalibrate to how you're sitting now.
+    const stuck = HEAD_MOVES.find((p) => tracker.held(p, 3000));
+    if (stuck) {
+      this.app.calibrate();
+      this.app.note(`📷 page: ${LABEL[stuck]} stayed on while you waited, so I recalibrated to how you're sitting now`, null, "warn");
+    }
 
     const cmd = nextCommand(Math.random, { last: this.last });
     this.last = cmd.pose;
