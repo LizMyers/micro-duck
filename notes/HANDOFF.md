@@ -254,3 +254,28 @@ restart for the agent rows. Write-up: [04-who-goes-first.md](04-who-goes-first.m
   = the game; page = setup and instructions. "What to do where" becomes a section of the write-up.
 - **A race condition is still there** (Liz, before lunch): get her log and find it first.
 - Committed ("Simon Says: turn-taking, honest voice checks…", not pushed): everything up to V2. Devlog: notes/04-who-goes-first.md.
+
+## V2 / release 1 spec (Liz, 2026-09-26 afternoon)
+- **Staged releases, two repos.** `micro-duck` stays private (workshop: lab, notes, history). Release 1 is a
+  new public repo, name `microduck-simon-says` (Claude's suggestion for search; Liz's options: md-/mduck-simon-says),
+  with fresh history: the game page, only the modules it needs, a slim server, saved voice lines, README + video.
+  Later releases add more (e.g. Follow Me, tutorials). Punchlist 4b becomes "extract the game"; 5 and 11 apply
+  to the new repo.
+- **Page:** a new page for players (e.g. `/play`); the lab stays as it is.
+  - Left: Simon (sim) + tabs **Simon Says** (open by default) · **Simon OS** · **Mac OS**.
+  - Right: split vertically: **Inspector** top, **Chat** bottom (with Tap to talk). (Claude recommended the split;
+    confirm with Liz.)
+  - Simon OS: Start/Restart only, fixed model Qwen3 4B. No model picker.
+  - Gone: Brain, Voice & personality, Conversation tab, Agent log, Follow Me, Copy me.
+  - Camera setup moves into the page (not a spoken line).
+- **README "Taking it further":** model choice, Kokoro vs Qwen3-TTS, the second tilt measure, hand model,
+  more games. Liz: "No fun if we've already done all the enhancements."
+- Mac-only is honest: the agent uses MLX (Apple Silicon). "Mac OS" tab could become "System" if a PC build comes.
+
+## Progress 2026-09-26 evening: /play built
+- `/play` (play.html / play.css / play.js) on the same server and shared modules; the lab is untouched.
+- Right panel done with Liz: Inspector above chat, draggable golden divider with duck-yellow handle,
+  Simon-yellow log and bubbles, plain-word actions with pipes, hold Space to talk, one status line under the sim.
+- Type: Bricolage Grotesque only; 13/15/18 + game display; text never darker than #232323; no emojis in
+  the Inspector; actions in capitals. Liz tests UI changes herself (no screenshots).
+- Next: the left panel (Simon Says tab, Simon settings, Mac OS), then release 1 to `microduck-simon-says`.
