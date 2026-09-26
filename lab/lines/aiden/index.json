@@ -14,10 +14,10 @@
   "file": "got-it.wav",
   "seconds": 0.38
  },
- "Gotcha! I didn't say Simon says, and you moved anyway. I win!": {
-  "cut": true,
-  "file": "gotcha-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
-  "seconds": 4.29
+ "Gotcha! I didn't say Simon says!": {
+  "cut": false,
+  "file": "gotcha-i-didn-t-say-simon-says.wav",
+  "seconds": 2.37
  },
  "I win!": {
   "cut": false,
@@ -149,15 +149,10 @@
   "file": "too-slow.wav",
   "seconds": 0.93
  },
- "Too slow! I win!": {
+ "Tricked you! I didn't say Simon says!": {
   "cut": false,
-  "file": "too-slow-i-win.wav",
-  "seconds": 2.05
- },
- "Tricked you! I didn't say Simon says, and you moved anyway. I win!": {
-  "cut": false,
-  "file": "tricked-you-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
-  "seconds": 6.3
+  "file": "tricked-you-i-didn-t-say-simon-says.wav",
+  "seconds": 2.3
  },
  "Turn left!": {
   "cut": false,
@@ -173,11 +168,6 @@
   "cut": false,
   "file": "well-played-you-win.wav",
   "seconds": 1.79
- },
- "Wrong move! I win!": {
-  "cut": true,
-  "file": "wrong-move-i-win.wav",
-  "seconds": 3.65
  },
  "Wrong move! That was both arms.": {
   "cut": false,
