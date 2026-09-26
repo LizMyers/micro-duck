@@ -98,17 +98,21 @@
       </div>
 
       <div role="tabpanel" id="panel-settings" class="settings" aria-labelledby="tab-settings" hidden>
-        <p class="settings-lead">Everything runs on this Mac: no cloud, no API keys. Here's what's inside, in the order a conversation flows.</p>
+        <h3 class="settings-title">Everything runs on this Mac: no cloud, no API keys.</h3>
+        <p class="settings-lead">Here's what's inside, in the order a conversation flows.</p>
         <table class="inside">
+          <thead>
+            <tr><th scope="col">Step</th><th scope="col">What it does</th><th scope="col">Model</th><th scope="col">Runs</th></tr>
+          </thead>
           <tbody>
-            <tr><th scope="row">Listen</th><td><span class="job">Notices when you start and stop talking</span>Silero VAD</td><td class="where">on this Mac</td></tr>
-            <tr><th scope="row">Turn-taking</th><td><span class="job">Decides whether you've finished or are just pausing</span><a href="https://huggingface.co/pipecat-ai/smart-turn-v3" target="_blank" rel="noopener">Smart Turn v3.2</a> (Pipecat)</td><td class="where">on this Mac</td></tr>
-            <tr><th scope="row">Hear</th><td><span class="job">Turns your speech into text</span><a href="https://huggingface.co/mlx-community/parakeet-tdt-0.6b-v3" target="_blank" rel="noopener">Parakeet TDT 0.6B v3</a> (NVIDIA, MLX)</td><td class="where">on this Mac</td></tr>
-            <tr><th scope="row">Think</th><td><span class="job">Decides what to say, and when to start a game</span><a href="https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-4bit" target="_blank" rel="noopener">Qwen3 4B Instruct, 4-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
-            <tr><th scope="row">Speak</th><td><span class="job">Turns the words into his voice, Aiden</span><a href="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-6bit" target="_blank" rel="noopener">Qwen3-TTS 1.7B CustomVoice, 6-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
-            <tr><th scope="row">See</th><td><span class="job">The referee: watches your head and arms</span>MediaPipe Pose Landmarker (lite)</td><td class="where">in your browser</td></tr>
-            <tr><th scope="row">Move</th><td><span class="job">His body: physics and walking</span><a href="https://huggingface.co/spaces/pollen-robotics/microduck-simulator" target="_blank" rel="noopener">Microduck simulator</a> (Pollen Robotics): MuJoCo physics, ONNX walking policy</td><td class="where">in your browser</td></tr>
-            <tr><th scope="row">Glue</th><td><span class="job">Connects the voice parts into one live agent</span><a href="https://github.com/huggingface/speech-to-speech" target="_blank" rel="noopener">speech-to-speech</a> (Hugging Face)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Listen</th><td>Notices when you start and stop talking</td><td class="model">Silero VAD</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Turn-taking</th><td>Decides whether you've finished or are just pausing</td><td class="model"><a href="https://huggingface.co/pipecat-ai/smart-turn-v3" target="_blank" rel="noopener">Smart Turn v3.2</a> (Pipecat)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Hear</th><td>Turns your speech into text</td><td class="model"><a href="https://huggingface.co/mlx-community/parakeet-tdt-0.6b-v3" target="_blank" rel="noopener">Parakeet TDT 0.6B v3</a> (NVIDIA, MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Think</th><td>Decides what to say, and when to start a game</td><td class="model"><a href="https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-4bit" target="_blank" rel="noopener">Qwen3 4B Instruct, 4-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Speak</th><td>Turns the words into his voice, Aiden</td><td class="model"><a href="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-6bit" target="_blank" rel="noopener">Qwen3-TTS 1.7B CustomVoice, 6-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">See</th><td>The referee: watches your head and arms</td><td class="model">MediaPipe Pose Landmarker (lite)</td><td class="where">in your browser</td></tr>
+            <tr><th scope="row">Move</th><td>His body: physics and walking</td><td class="model"><a href="https://huggingface.co/spaces/pollen-robotics/microduck-simulator" target="_blank" rel="noopener">Microduck simulator</a> (Pollen Robotics): MuJoCo physics, ONNX walking policy</td><td class="where">in your browser</td></tr>
+            <tr><th scope="row">Glue</th><td>Connects the voice parts into one live agent</td><td class="model"><a href="https://github.com/huggingface/speech-to-speech" target="_blank" rel="noopener">speech-to-speech</a> (Hugging Face)</td><td class="where">on this Mac</td></tr>
           </tbody>
         </table>
         </div>
