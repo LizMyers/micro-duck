@@ -26,3 +26,10 @@ cut it off: worth a listen.
 - Pre-warmed lines are made silently, so nobody hears them: we check the transcript matches the words we
   asked for before keeping (and now saving) one.
 - The lines are committed to the repo on purpose, so a fresh clone gets the same Simon straight away.
+
+## Why we kept the bigger voice model (Liz, 2026-09-26)
+Qwen3-TTS is much more expressive than Kokoro, and that's the win: Simon's teasing and celebrating only
+land if the voice can act. It costs more RAM and is slower to make each line (1.3–2 s before the first
+sound). Saved lines take the slowness off the table for every fixed line, so we get the expressive voice
+*and* instant commands; only the rare made-up gloat pays the wait. That trade is the heart of tutorial #2
+("Picking a voice for your agent").

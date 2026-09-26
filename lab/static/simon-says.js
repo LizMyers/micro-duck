@@ -56,6 +56,16 @@ const TRAP_OPENERS = ["Gotcha!", "Tricked you!"];   // not "Got you!" (same as G
 // Spoken results (the screen shows the same thing).
 const TRAP_OK = "Good! Simon didn't say.";
 const wrongLine = (pose) => `Wrong move! That was ${LABEL[pose]}.`;
+const trapLine = (opener) => `${opener} I didn't say Simon says!`;
+
+// How Simon gloats when he wins (Liz): cheeky and a little sarcastic about the player's skills,
+// funny, never mean. He makes up a new line each time; these steer the tone.
+const GLOAT = "Tease them a little sarcastically about their skills: funny, never mean. " +
+  'Examples: "Oh boy, you are out of shape!" / "Seems you haven\'t played this much!" / "Were you napping?" ' +
+  "Make up a new one like these, and end by saying you win.";
+// Keep the game moving (Liz): at most one gloat per game (the game ends at the first mistake), and only
+// some games get one, at random, so it never feels scripted. The other times it's just "I win!".
+const ADLIB_CHANCE = 0.5;
 
 // A different mood each time Simon loses, so his congratulations don't repeat word for word
 // (the same prompt tends to get the same sentence).
@@ -106,8 +116,8 @@ export class SimonSaysGame {
       "Let's play Simon Says!",
       ...Object.keys(COMMANDS).flatMap((pose) => [line({ pose, says: true }), line({ pose, says: false })]),
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
-      ...TRAP_OPENERS.map((o) => `${o} I didn't say Simon says, and you moved anyway. I win!`),
-      "I win!", "You win!", "Wrong move! I win!", "Too slow! I win!", "Well played. You win!",
+      ...TRAP_OPENERS.map(trapLine),
+      "I win!", "You win!", "Well played. You win!",
       // Only two scores are possible after the next game.
       scoreLine(simon + 1, you),
       scoreLine(simon, you + 1),
@@ -142,20 +152,23 @@ export class SimonSaysGame {
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
-      if (this.outFixed) await this.speak(this.outFixed);   // the trap line already ends "I win!"
-      else {
+      const adlib = Math.random() < ADLIB_CHANCE;
+      this.app.note(adlib ? "🎭 Simon ad-libs a gloat this game" : "🎭 no ad-lib this game: straight to \"I win!\"");
+      let heard = "";
+      if (adlib) {
         const { started, done } = this.app.sayLine(this.outLine, { improvise: true });
-        const heard = (await started) ? await done : (await this.speak(this.outFallback), this.outFallback);
-        // Say who won, unless his made-up gloat already did (Liz: he said it twice).
-        if (!/\bwins?\b/i.test(heard)) await this.speak("I win!");
+        heard = (await started) ? await done : (await this.speak(this.outFallback), this.outFallback);
       }
+      // Say who won, unless his made-up gloat already did (Liz: he said it twice).
+      if (!/\bwins?\b/i.test(heard)) await this.speak("I win!");
       await this.speak(tally);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
       const said = await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
-        `Congratulate them in a ${mood} way, and say clearly that they win.`, { improvise: true });
+        `Congratulate them in a ${mood} way, and say clearly that they win. ` +
+        `You can start with something like "Aw shucks!" or "Ouch!"`, { improvise: true });
       if (!said) await this.speak("Well played. You win!");   // fallback if the improvised line stalls
       await this.speak("You win!");
       await this.speak(tally);
@@ -245,25 +258,21 @@ export class SimonSaysGame {
       // Simon gloats (the end of the game is spoken in start()).
       // What happened, for Simon to gloat about in his own words (a new sentence every time).
       // Examples steer the logic; "make up a new one" keeps the variety.
-      // Traps get a fixed sentence (Liz: the improvised ones got the logic muddled, e.g. "you stepped left
-      // on your own"), with a rotating opener for a little variety. Exact, so it's cached after first use.
-      this.outFixed = !cmd.says
-        ? `${TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)]} I didn't say Simon says, and you moved anyway. I win!`
-        : null;
-      this.outFallback = r.wrong ? "Wrong move! I win!" : "Too slow! I win!";   // if the improvised line stalls
-      this.outLine = !cmd.says ? null
-        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ` +
-          `Gloat that they did the wrong move. Examples: "Wrong move! I said ${COMMANDS[cmd.pose]}. I win!" / "Oops, not that one! I win!" Make up a new one like these.`
-        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player didn't do it in time. ` +
-          `Gloat that they were too slow. Examples: "Snooze you lose! I win!" / "Better luck next time, friend! I win!" Make up a new one like these.`;
+      // Why they lost is always a fixed line, said first (below), so the logic is never muddled (Liz: made-up
+      // trap lines once said "you stepped left on your own"). Then a made-up gloat adds the cheek.
+      this.outFallback = "I win!";   // if the improvised line stalls
+      this.outLine = !cmd.says
+        ? `You said "${COMMANDS[cmd.pose]}" without "Simon says" first, and the player fell for it and moved. ${GLOAT}`
+        : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ${GLOAT}`
+        : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player was too slow to do it. ${GLOAT}`;
     }
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say the result out loud, so you can follow the game without looking at the screen (Liz).
-    // All fixed lines: cached, so they play instantly. (A trap you fell for is covered by Simon's
-    // "I didn't say Simon says" line at the end.)
+    // All fixed lines: cached, so they play instantly.
     if (r.point && this.round < ROUNDS) await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK);
-    else if (!r.point && cmd.says) await this.speak(r.wrong ? wrongLine(r.wrong) : "Too slow!");
+    else if (!r.point) await this.speak(!cmd.says ? trapLine(TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)])
+      : r.wrong ? wrongLine(r.wrong) : "Too slow!");
   }
 
   render(big, small) {
