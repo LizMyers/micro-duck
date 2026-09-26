@@ -1,20 +1,23 @@
-// Duck Lab: a browser client for Hugging Face's speech-to-speech agent.
+// Duck Lab: the workshop page for Hugging Face's speech-to-speech agent and Simon the duck.
 //
-// The page speaks the OpenAI Realtime protocol over a WebSocket, straight to the agent:
-//   we send  → session.update (settings), input_audio_buffer.append (20 ms of mic audio)
-//   we get   ← speech_started/stopped, transcripts, response.output_audio.delta (reply audio)
-// Timings for each stage come from the lab server, which reads the agent's log.
+// The shared parts live in their own modules (voice-lines, turn-taking, agent, audio, camera, chat,
+// game-host); this file adds what only the lab has: personalities and the model picker, the relay race
+// (where the time goes in each turn), the model's raw log, duck moves by voice, Copy me, skates and
+// duck colours. The game page (play.js) uses the same modules without these.
 
+import { $, state, ctx, toast, fmt } from "/static/core.js";
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
-import { PoseTracker, POSE_IDS, POSE_LABELS, THRESHOLDS } from "/static/pose.js";
 import { TOOLS, runTool, TOOL_LABELS, perform, setTrace } from "/static/duck-tools.js";
 import { SimonOS } from "/static/simon-os.js";
 import { MacOS } from "/static/mac-os.js";
-import { SimonSaysGame } from "/static/simon-says.js";
-
-const RATE = 24000;            // Audio sample rate we ask the agent for, in and out.
-const FRAME = 480;             // 20 ms of audio at 24 kHz.
+import { send, sessionUpdate, whenIdle, sayOnly } from "/static/agent.js";
+import { setMic } from "/static/audio.js";
+import { addAction, finishAction, clearChat } from "/static/chat.js";
+import { cam, startCamera, stopCamera, calibrate } from "/static/camera.js";
+import { lineCache, saved } from "/static/voice-lines.js";
+import { startAgent, stopAgent, listenToServer, onAgentStatus } from "/static/server-link.js";
+import { makeGame } from "/static/game-host.js";
 
 const PRESETS = {
   "Helpful & brief":
@@ -28,103 +31,33 @@ const PRESETS = {
     "and easily delighted. Keep replies to one short sentence. No lists, markdown or emoji.",
 };
 
-// Added to every personality: small models happily *say* "I'm sitting!" without
-// actually calling the tool, so we spell out that they have a body to move.
-const BODY_RULES =
-  "\n\nYou have a small robot duck body you can really move with your tools: " +
-  "sit_down, stand_up, step_forward, step_back, turn_left, turn_right, bow, kick_left_leg, " +
-  "kick_right_leg, skates_on, skates_off. Whenever someone asks you to move (sit, stand, step, walk, " +
-  "turn, spin, bow, kick, lift a leg, skate), you MUST call the matching tool. " +
-  "Never just say you are doing it. Keep what you say about it to a few words. " +
-  // Small models happily claim to see. Simon can't: the webcam referee runs separately in the page.
-  "You cannot see: you have no eyes or camera. A separate camera referee judges the players' moves; " +
-  "you only hear what people say. If asked what you can see, say you can't see. " +
-  "If someone wants to play Simon Says, a rematch, or another game, call play_simon_says.";
-
-// Starting a game by voice ("I want a rematch!"). The page runs the game; the model just starts it.
-const GAME_TOOL = {
-  type: "function", name: "play_simon_says",
-  description: "Start a game of Simon Says with the player (also for a rematch or playing again).",
-  parameters: { type: "object", properties: {}, required: [] },
-};
-
-const $ = (id) => document.getElementById(id);
 const ui = {
   model: $("model"), modelNote: $("model-note"), switchModel: $("switch-model"), switchHint: $("switch-hint"),
   voice: $("voice"), preset: $("preset"), instructions: $("instructions"), apply: $("apply"),
-  talk: $("talk"), talkLabel: $("talk-label"), muteWhileSpeaking: $("mute-while-speaking"),
-  chat: $("chat"), chatEmpty: $("chat-empty"), clearChat: $("clear-chat"),
-  total: $("total"), log: $("log"), toast: $("toast"),
+  talk: $("talk"), muteWhileSpeaking: $("mute-while-speaking"), clearChat: $("clear-chat"),
+  total: $("total"), log: $("log"),
 };
 
 const inspector = new Inspector($("inspector"));
-
 setTrace((text, detail) => inspector.note(`🦆 ${text}`, detail, "tool"));
-
 const body = new DuckBody({
   iframe: $("sim"), moodEl: $("mood"), whyEl: $("mood-why"),
   beakBar: $("beak-meter"), beakNum: $("beak-num"), headDot: $("head-dot"), headText: $("head-text"),
 });
 
-const state = {
-  options: null,
-  agentStatus: "stopped",
-  ws: null,
-  audio: null,          // { ctx, micNode, micStream }
-  micOn: false,
-  testing: false,
-  playing: [],          // scheduled reply audio sources
-  playhead: 0,          // when the next reply chunk should start (AudioContext time)
-  userBubbles: new Map(),
-  botBubble: null,
-  turn: null,           // timings for the current turn
-  warm: false,          // has the agent answered at least once since starting?
-  waiters: [],          // resolve functions waiting for a response.done
-  toolOutputs: [],      // results to report back once the current response is done
-  followUps: 0,         // spoken follow-ups requested after tools, this turn
-};
+Object.assign(ctx, {
+  inspector, body,
+  instructions: () => ui.instructions.value,
+  voice: () => ui.voice.value,
+  muteWhileSpeaking: () => ui.muteWhileSpeaking.checked,
+  tools: TOOLS,
+  onTool: runDuckMove,
+  relay: { newTurn, setStage },
+  onCameraFrame: () => { if (copy.on) copyHead(); },
+  onCameraStop: () => setCopy(false),
+});
 
-// ---------- Small helpers ----------------------------------------------------------------
-
-function toast(msg, ms = 4000) {
-  ui.toast.textContent = msg;
-  ui.toast.hidden = false;
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => (ui.toast.hidden = true), ms);
-}
-
-function fmt(seconds) {
-  if (seconds == null || Number.isNaN(seconds)) return "–";
-  return seconds < 1 ? `${Math.round(seconds * 1000)} ms` : `${seconds.toFixed(2)} s`;
-}
-
-function floatToBase64Pcm16(float32) {
-  const pcm = new Int16Array(float32.length);
-  for (let i = 0; i < float32.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32[i]));
-    pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-  }
-  const bytes = new Uint8Array(pcm.buffer);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(bin);
-}
-
-function base64Pcm16ToFloat(b64) {
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const pcm = new Int16Array(bytes.buffer, 0, bytes.length >> 1);
-  const out = new Float32Array(pcm.length);
-  for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 0x8000;
-  return out;
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// ---------- Lab server: options, agent start/stop, live events ---------------------------
+// ---------- Personalities, voices and the model picker (remembered in this browser) ---------------
 
 async function loadOptions() {
   state.options = await (await fetch("/api/options")).json();
@@ -178,68 +111,13 @@ function restorePrefs() {
   } catch {}
 }
 
-async function startAgent(model = ui.model.value, why = "you pressed Start") {
-  savePrefs();
-  ui.switchModel.disabled = true;
-  disconnect();
-  const res = await fetch("/api/agent/start", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, why }),
-  });
-  if (!res.ok) toast(`Couldn't start the agent: ${(await res.json()).detail}`);
+function showVoice() {
+  $("os-voice").textContent = `${ui.voice.selectedOptions[0]?.text || "–"} · personality: ${ui.preset.value}`;
 }
 
-async function stopAgent() {
-  disconnect();
-  await fetch("/api/agent/stop", { method: "POST" });
-}
-
-function listenToLab() {
-  const es = new EventSource("/api/events");  // reconnects by itself if the lab restarts
-  es.onopen = () => os.connected();
-  es.onerror = () => os.disconnected();
-  es.onmessage = (e) => {
-    const ev = JSON.parse(e.data);
-    if (ev.type === "status") onAgentStatus(ev);
-    else if (ev.type === "lab") os.onLab(ev);
-    else if (ev.type === "log") appendLog(ev.line);
-    else if (ev.type === "stage") {
-      onStage(ev);
-      const { type, stage, t, ...rest } = ev;
-      if (AGENT_WHY[stage]) inspector.note(`🧠 agent: ${AGENT_WHY[stage]}`, null, "warn");
-      else inspector.note(`stage: ${stage}`, rest);
-    }
-  };
-}
-
-// Back end: the agent's own reasons for stopping something, from its log (server.py LOG_PATTERNS).
-// Rows marked 🧠 agent come from HF's speech-to-speech; 🛑 ⚠️ 🔇 ✂️ 🔥 rows come from this page.
-const AGENT_WHY = {
-  barge_in: "heard speech while replying, so it cancelled the reply and flushed its queue",
-  llm_cancelled: "stopped writing a reply part-way (interrupted)",
-  tts_cancelled: "stopped the voice mid-line (interrupted)",
-  stale_dropped: "threw away a reply that was out of date (you'd spoken or it was cancelled since it started)",
-};
-
-function onAgentStatus(ev) {
-  const prev = state.agentStatus;
-  state.agentStatus = ev.status;
-  state.agentModel = ev.model;
-  const model = state.options?.models.find((m) => m.id === ev.model);
-  const label = model ? model.label : "";
-  os.onStatus(ev, label);
-  showModelNote();
-  setTalkLabel();
-  if (ev.status === "error" && ev.error) toast(ev.error, 10000);
-  if (ev.status === "ready" && prev !== "ready") {
-    state.warm = false;
-    connect();
-  }
-  if (ev.status !== "ready") disconnect();
-}
-
-// The model's raw log, made scannable: keep the time and the message, drop the date and the
-// long module name (it's in the tooltip), and colour warnings and errors.
+// ---------- The model's raw log, made scannable -----------------------------------------------
+// Keep the time and the message, drop the date and the long module name (it's in the tooltip), and
+// colour warnings and errors.
 // "2026-09-24 11:29:44,912 - [pipeline 0] speech_to_speech.api...response - INFO - Response done"
 const LOG_LINE = /^\d{4}-\d\d-\d\d (\d\d:\d\d:\d\d),\d+ - (?:\[pipeline \d+\] )?(\S+) - (DEBUG|INFO|WARNING|ERROR|CRITICAL) - (.*)$/;
 
@@ -261,7 +139,7 @@ function appendLog(line) {
   if (atBottom) ui.log.scrollTop = ui.log.scrollHeight;
 }
 
-// ---------- The relay race ----------------------------------------------------------------
+// ---------- The relay race: where the time goes in each turn ---------------------------------
 
 const STAGES = ["listening", "turn", "stt", "thinking", "voice"];
 
@@ -333,701 +211,45 @@ function onStage(ev) {
   }
 }
 
-// ---------- Talking to the agent (Realtime WebSocket) -------------------------------------
-
-function sessionUpdate(interrupt = true) {
-  return {
-    type: "session.update",
-    session: {
-      type: "realtime",
-      instructions: ui.instructions.value + BODY_RULES,
-      tools: [...TOOLS, GAME_TOOL],
-      tool_choice: "auto",
-      audio: {
-        input: {
-          format: { type: "audio/pcm", rate: RATE },
-          turn_detection: { type: "server_vad", interrupt_response: interrupt },
-        },
-        output: { format: { type: "audio/pcm", rate: RATE }, voice: ui.voice.value },
-      },
-    },
-  };
-}
-
-function connect() {
-  if (state.ws) return;
-  const ws = new WebSocket(state.options.agent_url);
-  state.ws = ws;
-  ws.onopen = () => {
-    inspector.note(`Connected to the agent at ${state.options.agent_url}`);
-    const settings = sessionUpdate();
-    ws.send(JSON.stringify(settings));
-    inspector.message("out", settings);
-    ui.talk.disabled = false;
-  };
-  ws.onmessage = (e) => {
-    const ev = JSON.parse(e.data);
-    inspector.message("in", ev);
-    // The model serves one page at a time; a second page is told so, then closed (code 1008).
-    if (ev.type === "error" && ev.error?.type === "session_limit_reached") setBusy(true);
-    else if (ev.type === "session.created" || ev.type === "session.updated") setBusy(false);
-    if (ev.type === "session.updated" && state.quietUpdates > 0) state.quietUpdates--;   // just the interrupt switch
-    else if (ev.type === "session.updated") setTimeout(() => loadSavedLines().then(() => prewarmLines(game.linesToWarm())), 500);
-    onAgentEvent(ev);
-  };
-  ws.onclose = (e) => {
-    if (state.ws === ws) state.ws = null;
-    ui.talk.disabled = true;
-    setMic(false);
-    if (e.code === 1008) setBusy(true);
-    // If the model is still up (e.g. the socket dropped), try again: slowly while another tab has it.
-    if (state.agentStatus === "ready") setTimeout(connect, state.modelBusy ? 5000 : 1500);
-  };
-}
-
-function disconnect() {
-  const ws = state.ws;
-  state.ws = null;
-  if (ws) ws.close();
-  stopPlayback();
-}
-
-function send(obj) {
-  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-    state.ws.send(JSON.stringify(obj));
-    inspector.message("out", obj);
-  } else if (obj.type !== "input_audio_buffer.append") {
-    inspector.note(`not sent (not connected): ${obj.type}`, obj, "err");
-  }
-}
-
-function onAgentEvent(ev) {
-  switch (ev.type) {
-    case "input_audio_buffer.speech_started":
-      state.followUps = 0;
-      warm.heardYou = true;   // you come first: pre-warming pauses
-      state.userSpeaking = true;
-      // Busy making a background line: he nods so you know he heard, finishes it, then answers.
-      if (state.line?.silent && !game.running) {
-        ["down", null, "down", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 250));
-        inspector.note(`🙂 page: Simon nods: he heard you, finishes "${state.line.text}", then answers`, null, "tool");
-      }
-      // Barge-in: if you start talking while it's replying, it stops.
-      const wasTalking = isPlaying() || (state.botBubble && !state.botBubble.done);
-      stopPlayback();
-      if (state.botBubble && !state.botBubble.done) finishBotBubble("interrupted");
-      if (wasTalking) body.setMood("interrupted", { holdMs: 700, then: "listening" });
-      else body.setMood("listening");
-      if (!state.turn || state.turn.done) newTurn();
-      break;
-    case "input_audio_buffer.speech_stopped":
-      if (state.turn) state.turn.stoppedAt = performance.now();
-      state.userSpeaking = false;
-      body.setMood("thinking");
-      break;
-    case "conversation.item.input_audio_transcription.delta":
-      userBubble(ev.item_id).text += ev.delta;
-      renderUser(ev.item_id);
-      break;
-    case "conversation.item.input_audio_transcription.completed":
-      userBubble(ev.item_id).text = ev.transcript;
-      userBubble(ev.item_id).final = true;
-      renderUser(ev.item_id);
-      state.lastHeard = ev.transcript;
-      watchForReply(ev.transcript);
-      break;
-    case "response.created":
-      state.responding = true;
-      if (ev.response?.conversation_id) replied();   // an answer to you (game lines use conversation "none")
-      if (!state.line?.silent) botBubble();
-      break;
-    case "response.output_audio_transcript.delta":
-      if (state.line) state.line.heard += ev.delta;   // what Simon actually said (checked, or shown in the game)
-      if (state.line?.silent) break;
-      botBubble().text += ev.delta;
-      renderBot();
-      break;
-    case "response.output_audio.delta":
-      if (state.turn && !state.turn.firstAudioAt) state.turn.firstAudioAt = performance.now();
-      if (state.line) {
-        const l = state.line;
-        if (l.cut) break;
-        l.onAudio(); l.onAudio = () => {};
-        const samples = base64Pcm16ToFloat(ev.delta);
-        l.chunks.push(samples);
-        l.samples += samples.length;
-        const said = l.improvise ? l.heard || "(made-up line)" : l.text;   // improvised: l.text is the prompt, not the words
-        if (l.samples > l.max * RATE) {   // the voice model ran on: stop it
-          l.cut = true;
-          send({ type: "response.cancel" });
-          inspector.note(`✂️ page: cut "${said}" at ${l.max.toFixed(1)} s: the voice model ran on`, null, "warn");
-          markBad(l, "ran on");
-        } else if (!l.loudChecked && l.samples >= MUMBLE_CHECK_S * RATE) {
-          // Real speech gets loud within the first second; a mumble never does (6–1 score line: 5.6 s of
-          // flat hum, never above a fifth of a normal line's loudness). Catch it now, not at the run-on cutter.
-          l.loudChecked = true;
-          const peak = peakLoudness(l.chunks);
-          if (peak < MUMBLE_PEAK) {
-            l.cut = l.mumbled = true;
-            send({ type: "response.cancel" });
-            if (!l.silent) stopPlayback();
-            inspector.note(`🔇 page: mumble: "${said}" never got loud in ${MUMBLE_CHECK_S} s (peak ${peak.toFixed(3)}, ` +
-              `speech is above ${MUMBLE_PEAK}), so I stopped it` + (l.improvise ? "" : " and won't use this wording again"), null, "warn");
-            markBad(l, "mumbled");
-            break;
-          }
-        }
-        if (l.silent) break;   // pre-warming: keep the audio, don't play it
-        if (body.mood !== "speaking") body.setMood("speaking");
-        playChunk(samples);
-        break;
-      }
-      if (body.mood !== "speaking") body.setMood("speaking");
-      playChunk(base64Pcm16ToFloat(ev.delta));
-      break;
-    case "response.function_call_arguments.done": {
-      // The model wants the duck to move. Start the move, tell the model
-      // straight away that it has started (the agent won't talk again until it
-      // hears back), and follow up only if the move turns out to fail.
-      let args = {};
-      try { args = JSON.parse(ev.arguments || "{}"); } catch {}
-      if (ev.name === "play_simon_says") {
-        const started = game.startByVoice();
-        inspector.note(`🎲 voice: play_simon_says → ${started ? "starting a game" : "a game is already running"}`, null, "tool");
-        state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: started ? "starting" : "already playing" } });
-        if (state.botBubble) state.botBubble.acted = true;
-        state.gameStartedByVoice = true;   // the game speaks next, so no "say a few words" follow-up
-        break;
-      }
-      const chip = addAction(ev.name, args);
-      if (state.botBubble) state.botBubble.acted = true;
-      inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
-      state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: "started", doing: TOOL_LABELS[ev.name]?.(args) } });
-      runTool(body.rl, ev.name, args).then((r) => {
-        finishAction(chip, r);
-        inspector.note(`🦆 duck finished: ${ev.name} ${r.ok ? "✓" : "✗"}`, r, "tool");
-        if (!r.ok) whenIdle(() => {
-          send({ type: "conversation.item.create", item: { type: "message", role: "system", content: [
-            { type: "input_text", text: `The ${ev.name} move failed: ${r.error}` }] } });
-          sayOnly("Tell the user briefly and honestly that the move didn't work. Don't call any tools.");
-        });
-      });
-      break;
-    }
-    case "response.done": {
-      const status = ev.response?.status;
-      const reason = ev.response?.status_details?.reason;
-      if (status === "cancelled") noteCancel(reason);
-      // The agent often stops a line because it heard you before the page does: pause pre-warming now,
-      // or the next background line pushes in front of you and your turn gets dropped.
-      if (reason === "turn_detected") warm.heardYou = true;
-      if (state.line) {
-        const l = state.line;
-        state.line = null;
-        const wentQuiet = l.chunks.length > 0 && noteSilence(l);
-        const keep = !l.improvise && l.chunks.length && status === "completed" && !l.cut   // a cut take ran on or mumbled
-          && (!l.silent || sameWords(l.heard, l.text))   // nobody hears a pre-warmed line, so check it
-          && !wentQuiet;   // a take that goes silent would stay silent every time it replays
-        if (wentQuiet) markBad(l, "went silent");
-        if (!l.improvise && (l.cut || wentQuiet)) inspector.note(`💾 page: not saved "${l.text}": it ${l.mumbled ? "mumbled" : wentQuiet ? "went silent" : "ran on"}`, null, "warn");
-        if (keep) { lineCache.set(l.text, l.chunks); saveLine(l.text, l.chunks, l.cut); }
-        else if (l.silent) inspector.note(`🔥 not kept: asked for "${l.text}", Simon said "${l.heard}"`);
-        l.onDone(status);
-      }
-      const spoke = !!state.botBubble?.text;
-      state.responding = false;
-      if (state.toolOutputs.length) {
-        for (const o of state.toolOutputs.splice(0)) {
-          send({ type: "conversation.item.create",
-            item: { type: "function_call_output", call_id: o.call_id, output: JSON.stringify(o.output) } });
-        }
-        // It acted without saying anything: let it say a few words, once.
-        if (status === "completed" && !spoke && state.followUps < 1 && !state.testing && !state.gameStartedByVoice) {
-          state.followUps++;
-          sayOnly("Say a few words about what you just did. Don't call any tools.");
-        }
-      }
-      state.gameStartedByVoice = false;
-      // You've had your answer: carry on pre-warming (a game you just started pauses it again).
-      if (!state.line && warm.paused && status === "completed") setTimeout(resumeWarm, 2000);
-      flushIdle();
-      finishBotBubble(status === "cancelled" ? "interrupted" : null);
-      if (state.turn) { setStage("voice", "done"); state.turn.done = true; }
-      state.warm = true;
-      whenQuiet(() => { if (body.mood === "speaking" || body.mood === "thinking") body.setMood("idle"); });
-      const waiters = state.waiters.splice(0);
-      for (const w of waiters) w(status);
-      break;
-    }
-    case "error": {
-      const msg = ev.error?.message || ev.error?.code || "Unknown error";
-      if (ev.error?.code === "session_limit_reached") {
-        toast("The agent is busy with another tab. Close other Duck Lab tabs and reload.", 8000);
-      } else {
-        toast(`Agent error: ${msg}`);
-      }
-      break;
-    }
-  }
-}
-
-// ---------- Chat bubbles ------------------------------------------------------------------
-
-function addBubble(cls) {
-  ui.chatEmpty.hidden = true;
-  const el = document.createElement("div");
-  el.className = `bubble ${cls}`;
-  ui.chat.append(el);
-  return el;
-}
-
-function addAction(name, args) {
-  const el = addBubble("action pending");
-  el.textContent = `🦆 ${TOOL_LABELS[name] ? TOOL_LABELS[name](args) : name}…`;
-  ui.chat.scrollTop = ui.chat.scrollHeight;
-  return el;
-}
-
-function finishAction(el, r) {
-  el.classList.remove("pending");
-  const facts = [];
-  if (r.moved_cm !== undefined) facts.push(`moved ${Math.abs(r.moved_cm)} cm`);
-  if (r.turned_degrees !== undefined) facts.push(`turned ${Math.abs(r.turned_degrees)}°`);
-  el.textContent = el.textContent.replace(/…$/, "") +
-    (r.ok ? ` ✓${facts.length ? ` (${facts.join(", ")})` : ""}` : ` ✗ ${r.error}`);
-  el.classList.toggle("failed", !r.ok);
-}
-
-// Ask for a spoken reply that can't trigger another move.
-function sayOnly(instructions) {
-  send({ type: "response.create", response: { tool_choice: "none", instructions: ui.instructions.value + "\n\n" + instructions } });
-}
-
-// Simon Says lines. Simon speaks an exact line, out-of-band (conversation "none"), so game lines never
-// grow his conversation history. Each line's audio is kept the first time, so repeats play instantly
-// with no model involved. Two guards, from the logs:
-// - the model sometimes *answered* a line instead of repeating it ("Look up!" -> "Sure, here's my
-//   best look up."), so the request shows it two examples of repeating word for word;
-// - the voice model sometimes runs on (28.8 s of audio for "Simon says, turn left."), so a line is
-//   cut off after LINE_MAX seconds.
-// `started` resolves true at the first sound (false if none within 15 s); `done` when it has played.
-const LINE_MAX = 3.5;
-const FREE_MAX = 7;            // made-up lines are under 10 words now (~4 s); a 13-word one ran on to 10 s (was 10)
-const lineCache = new Map();   // text -> Float32Array chunks
-
-// improvise: instead of an exact line, `text` describes what happened and Simon makes up one short
-// sentence about it (variety for free; never cached). Used for reactions, never for commands.
-// silent: make the audio and cache it without playing it (pre-warming, below).
-function sayLine(text, { improvise = false, silent = false } = {}) {
-  let startedResolve, doneResolve;
-  const started = new Promise((r) => (startedResolve = r));
-  const done = new Promise((r) => (doneResolve = r));
-  const cached = !improvise && lineCache.get(text);
-  if (cached) {
-    // Wait for any reply still in progress, so two lines never play on top of each other.
-    whenIdle(() => ensureAudio().then(() => {
-      body.setMood("speaking");
-      for (const chunk of cached) playChunk(chunk);
-      startedResolve(true);
-      whenQuiet(() => { body.setMood("idle"); doneResolve(); });
-    }));
-    inspector.note(`🔁 Simon replays "${text}" (cached audio)`);
-    noteSilence({ text, chunks: cached });   // a bad saved take stays bad: say so each time
-    return { started, done };
-  }
-  // No sound yet? Give up (8 s for improvised lines, 15 s for exact ones) and cancel the reply, so a
-  // runaway can't hold everything up. (Seen: "dramatic, over-the-top" made the model write "Ohhhh…"
-  // for 27 s before any audio.)
-  let mine = null;
-  const timer = setTimeout(() => {
-    if (mine && state.line === mine) { mine.cut = true; send({ type: "response.cancel" }); inspector.note(`⏱ gave up on "${text}" (no sound yet)`); }
-    startedResolve(false);
-  }, improvise ? 8000 : 15000);
-  whenIdle(() => {
-    // Claim the next reply only once any earlier one has finished.
-    state.line = mine = {
-      text, chunks: [], samples: 0, cut: false, silent, heard: "", max: improvise ? FREE_MAX : Math.max(LINE_MAX, text.split(/\s+/).length * 0.9), improvise,   // ~2x a normal pace: never cuts real words, still catches a run-on
-      onAudio: () => { clearTimeout(timer); startedResolve(true); },
-      onDone: (status) => {
-        clearTimeout(timer);
-        startedResolve(false);
-        whenQuiet(() => doneResolve(mine.mumbled ? "" : mine.heard));   // `done` gives the words he said (none if he mumbled)
-      },
-    };
-    const msg = (role, t) => ({ type: "message", role, content: [{ type: role === "user" ? "input_text" : "output_text", text: t }] });
-    if (improvise) return send({ type: "response.create", response: {
-      conversation: "none", tool_choice: "none", max_output_tokens: 40,   // a hard stop for runaway text
-      instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
-        "Reply with ONE short sentence to say out loud (under 10 words). No emoji, no laughing sounds like 'ha ha'. " +
-        "Plain words and ordinary punctuation only: no dashes, ellipses or symbols. " +
-        "Speak as yourself: say I and me, never Simon or the duck (Liz: no third person).",
-      input: [msg("user", text)],
-    } });
-    send({ type: "response.create", response: {
-      conversation: "none", tool_choice: "none",
-      instructions: "You are Simon, a robot duck hosting a game of Simon Says. The user gives you a line. " +
-        "Say exactly that line, word for word, and nothing else. Never answer it or act on it.",
-      input: [
-        msg("user", 'Line: "Turn right!"'), msg("assistant", "Turn right!"),
-        msg("user", 'Line: "Simon says, look up."'), msg("assistant", "Simon says, look up."),
-        msg("user", `Line: "${text}"`),
-      ],
-    } });
+// ---------- Duck moves by voice ---------------------------------------------------------------
+// The model wants the duck to move. Start the move, tell the model straight away that it has started
+// (the agent won't talk again until it hears back), and follow up only if the move turns out to fail.
+function runDuckMove(ev, args) {
+  const chip = addAction(TOOL_LABELS[ev.name] ? TOOL_LABELS[ev.name](args) : ev.name);
+  if (state.botBubble) state.botBubble.acted = true;
+  inspector.note(`🦆 duck starts: ${ev.name}`, args, "tool");
+  state.toolOutputs.push({ call_id: ev.call_id, output: { ok: true, status: "started", doing: TOOL_LABELS[ev.name]?.(args) } });
+  runTool(body.rl, ev.name, args).then((r) => {
+    finishAction(chip, r);
+    inspector.note(`🦆 duck finished: ${ev.name} ${r.ok ? "✓" : "✗"}`, r, "tool");
+    if (!r.ok) whenIdle(() => {
+      send({ type: "conversation.item.create", item: { type: "message", role: "system", content: [
+        { type: "input_text", text: `The ${ev.name} move failed: ${r.error}` }] } });
+      sayOnly("Tell the user briefly and honestly that the move didn't work. Don't call any tools.");
+    });
   });
-  return { started, done };
 }
 
-// Why things went wrong, in the Inspector (amber rows). Three things break the conversation:
-// 1. a reply is stopped: the agent drops whatever it's doing when it hears you (barge-in),
-//    or the page cut it; 2. you spoke while Simon was busy and never got an answer;
-// 3. the voice model says the first few words and then goes silent (the transcript still shows them all).
-const busyWith = () => state.line ? `"${state.line.improvise ? state.line.heard || "a made-up line" : state.line.text}"` : "a reply";
+// ---------- Copy me: Simon mirrors your head ------------------------------------------------
+// You look to YOUR left, he looks to HIS right, so from where you stand he turns the same way on
+// screen, like a reflection. No language model involved: the camera's verdict goes straight to the head.
+const MIRROR = { up: "up", down: "down", left: "right", right: "left" };
+const copy = { on: false, copied: null };
 
-function noteCancel(reason) {
-  if (reason === "turn_detected") {
-    inspector.note(`🛑 page: stopped ${busyWith()}: the agent heard you start talking, and it drops whatever it's doing when you speak` +
-      (state.line?.silent ? " (this was a silent pre-warm, so nobody heard it)" : ""), null, "warn");
-  } else if (!state.line?.cut) {   // a cut already says why (✂️ or ⏱)
-    inspector.note(`🛑 page: stopped ${busyWith()} (${reason || "no reason given"})`, null, "warn");
-  }
+function copyHead() {
+  const seen = ["up", "down", "left", "right"].find((d) => cam.tracker.held(`look_${d}`, 300)) ?? null;
+  if (seen === copy.copied) return;
+  copy.copied = seen;
+  body.lookAt(seen && MIRROR[seen]);
+  inspector.note(seen ? `🪞 you look ${seen} → Simon looks to his ${MIRROR[seen]}` : "🪞 you look ahead → Simon too");
 }
 
-const REPLY_WAIT = 10;   // seconds: long prompts can take 9–13 s to answer, see HANDOFF
-let replyWatch = null;
-function watchForReply(heard) {
-  clearTimeout(replyWatch?.timer);
-  if (game.running) return;   // during a game you talk to the camera, not the agent
-  const busy = state.responding ? busyWith() : null;
-  replyWatch = { timer: setTimeout(() => {
-    inspector.note(`⚠️ page: no answer to "${heard}" after ${REPLY_WAIT} s` + (busy
-      ? `. When you spoke, Simon was busy making ${busy}, and the agent dropped your turn. Say it again.`
-      : ". The agent may still be thinking (long conversations are slow) or it dropped your turn."), null, "warn");
-    replyWatch = null;
-  }, REPLY_WAIT * 1000) };
-}
-function replied() { clearTimeout(replyWatch?.timer); replyWatch = null; }
-
-// Where the sound stops: the voice model sometimes says a few words and then pads with silence.
-function noteSilence(l) {
-  const all = l.chunks.length === 1 ? l.chunks[0] : Float32Array.from(l.chunks.flatMap((c) => [...c]));
-  const win = RATE / 20;   // 50 ms
-  let end = 0;
-  for (let i = all.length - win; i >= 0; i -= win) {
-    let sum = 0;
-    for (let j = i; j < i + win; j++) sum += all[j] * all[j];
-    if (Math.sqrt(sum / win) > 0.01) { end = i + win; break; }
-  }
-  const total = all.length / RATE, sound = end / RATE;
-  if (total - sound > 1.5) {
-    const said = l.improvise ? l.heard : l.text;
-    inspector.note(`🔇 page: "${said}": ${sound.toFixed(1)} s of sound, then ${(total - sound).toFixed(1)} s of silence. ` +
-      "The voice model probably dropped the words after that (the transcript still shows them all).", null, "warn");
-    return true;
-  }
-  return false;
-}
-
-// Mumble check: the loudest 250 ms of the first second. Clean lines peak at 0.10–0.2; the 6–1 mumble at 0.04.
-// 0.08 also stopped "Let's adjust the camera, please." (0.065) three times: maybe just a soft start, so the
-// line is set nearer the real mumble. A true mumble that slips through is still caught by the other checks.
-const MUMBLE_CHECK_S = 1;
-const MUMBLE_PEAK = 0.05;
-function peakLoudness(chunks) {
-  const all = chunks.length === 1 ? chunks[0] : Float32Array.from(chunks.flatMap((c) => [...c]));
-  const win = RATE / 4;
-  let peak = 0;
-  for (let i = 0; i + win <= all.length; i += win) {
-    let sum = 0;
-    for (let j = i; j < i + win; j++) sum += all[j] * all[j];
-    peak = Math.max(peak, Math.sqrt(sum / win));
-  }
-  return peak;
-}
-
-// Wordings this voice gets wrong. The voice model makes the same audio for the same sentence every time,
-// so trying again doesn't help: the game picks another wording (scores) instead. Saved on the server
-// (lab/lines/<voice>/bad.json) so Simon remembers after a reload. Made-up lines are new each time: not listed.
-const badLines = new Map();   // text -> reason
-function markBad(l, reason) {
-  if (l.improvise || badLines.has(l.text)) return;
-  badLines.set(l.text, reason);
-  lineCache.delete(l.text);
-  fetch(`/api/lines/${voiceKey()}/bad`, { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: l.text, reason }) }).catch(() => {});
-}
-
-// Saved lines: every line that makes it into the cache is also saved to disk (lab/lines/<voice>/, via
-// the server), and loaded back when the page connects. So the first game after a reload, a restart or
-// a fresh clone plays every fixed line instantly, and always with the same take. To redo a bad take,
-// delete its .wav: Simon makes it again. Why: notes/03-saved-voice-lines.md.
-const saved = { voice: null };
-const voiceKey = () => ui.voice.value.toLowerCase();
-
-function wavBytes(chunks) {
-  const n = chunks.reduce((a, c) => a + c.length, 0);
-  const view = new DataView(new ArrayBuffer(44 + n * 2));
-  const str = (o, t) => [...t].forEach((c, i) => view.setUint8(o + i, c.charCodeAt(0)));
-  str(0, "RIFF"); view.setUint32(4, 36 + n * 2, true); str(8, "WAVEfmt ");
-  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);   // PCM, mono
-  view.setUint32(24, RATE, true); view.setUint32(28, RATE * 2, true);
-  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
-  str(36, "data"); view.setUint32(40, n * 2, true);
-  let o = 44;
-  for (const c of chunks) for (const x of c) { const s = Math.max(-1, Math.min(1, x)); view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2; }
-  return new Uint8Array(view.buffer);
-}
-
-async function saveLine(text, chunks, cut) {
-  const bytes = wavBytes(chunks);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  const seconds = (bytes.length - 44) / 2 / RATE;
-  try {
-    const r = await fetch(`/api/lines/${voiceKey()}`, { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, wav_b64: btoa(bin), seconds, cut }) });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    inspector.note(`💾 saved "${text}" (${seconds.toFixed(1)} s${cut ? ", cut: worth a listen" : ""})`);
-  } catch (e) {
-    inspector.note(`💾 couldn't save "${text}": ${e.message}`);
-  }
-}
-
-// Load this voice's saved lines into the cache (once per voice).
-async function loadSavedLines() {
-  const voice = voiceKey();
-  if (saved.voice === voice) return;
-  saved.voice = voice;
-  try {
-    const list = await (await fetch(`/api/lines/${voice}`)).json();
-    let n = 0;
-    await Promise.all(list.map(async (e) => {
-      const buf = await (await fetch(e.url)).arrayBuffer();
-      const pcm = new Int16Array(buf, 44, (buf.byteLength - 44) >> 1);   // our own WAVs: 44-byte header, 16-bit mono
-      const out = new Float32Array(pcm.length);
-      for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 0x8000;
-      if (!lineCache.has(e.text)) { lineCache.set(e.text, [out]); n++; }
-    }));
-    badLines.clear();
-    for (const [t, why] of Object.entries(await (await fetch(`/api/lines/${voice}/bad`)).json())) { badLines.set(t, why); lineCache.delete(t); }
-    inspector.note(`💾 loaded ${n} saved lines for ${voice}` + (badLines.size ? `; ${badLines.size} wordings to avoid (they ${[...new Set(badLines.values())].join(" or ")})` : ""));
-  } catch (e) {
-    saved.voice = null;
-    inspector.note(`💾 couldn't load saved lines: ${e.message}`);
-  }
-}
-
-// Pre-warming: as soon as the model is ready, Simon makes every fixed game line once, silently, and
-// the audio is cached. Then even the first game plays every command instantly (an uncached line
-// takes 1.3–2 s to think). It stops if a game starts or the mic goes on; the rest get cached in play.
-const warm = { running: false, done: 0, total: 0, heardYou: false, paused: false };
-// Pause, don't drop (Liz): the agent drops whatever it's doing when you speak, even a silent background
-// line nobody can hear. So interrupting is switched off (interrupt_response: false) while a background
-// line is being made, and back on afterwards, so talking over Simon out loud still stops him. Tested
-// 2026-09-26: the line finishes and you're answered ~2 s after your words (before: line thrown away).
-function setInterrupt(on) {
-  if ((state.interrupt ?? true) === on) return;
-  state.interrupt = on;
-  state.quietUpdates = (state.quietUpdates || 0) + 1;
-  send(sessionUpdate(on));
-  inspector.note(on ? "🔀 page: interrupting back on (Simon stops if you talk over him)"
-    : "🔀 page: interrupting off while Simon makes a background line (it finishes, then you get your turn)", null, "tool");
-}
-
-// You come first: while you're talking, or waiting for an answer, no background line may start.
-const youFirst = () => warm.heardYou || state.userSpeaking || !!replyWatch;
-function resumeWarm() {
-  if (warm.running || game.running || state.userSpeaking || replyWatch) return;
-  prewarmLines(game.linesToWarm());
-}
-function sameWords(a, b) {
-  const norm = (t) => t.toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
-  return norm(a) === norm(b);
-}
-// Make sure a line is cached (made silently and checked, if it isn't yet). True if it's ready to play.
-async function prepareLine(text) {
-  if (lineCache.has(text)) return true;
-  const { done } = sayLine(text, { silent: true });
-  await Promise.race([done, sleep(20000)]);
-  return lineCache.has(text);
-}
-
-async function prewarmLines(lines) {
-  if (warm.running) return;
-  const todo = [...new Set(lines)].filter((t) => !lineCache.has(t) && !badLines.has(t));
-  if (!todo.length) return;
-  Object.assign(warm, { running: true, done: 0, total: todo.length, heardYou: false, paused: false });
-  inspector.note(`🔥 pre-warming ${todo.length} game lines (silent)`);
-  const t0 = performance.now();
-  for (const text of todo) {
-    if (!state.ws || game.running || youFirst()) {
-      warm.paused = true;
-      inspector.note(`🔥 pre-warm paused at ${warm.done} of ${warm.total} (${game.running ? "a game started" : state.ws ? "you spoke: you go first" : "not connected"}); ` +
-        "it carries on once you've had your answer, or after the game");
-      break;
-    }
-    setInterrupt(false);
-    const { done } = sayLine(text, { silent: true });
-    await Promise.race([done, sleep(20000)]);
-    warm.done++;
-    if (lineCache.has(text)) inspector.note(`🔥 ${warm.done}/${warm.total} "${text}"`);
-  }
-  setInterrupt(true);
-  if (warm.done === warm.total) inspector.note(`🔥 pre-warm finished: ${todo.filter((t) => lineCache.has(t)).length} of ${todo.length} lines cached in ${((performance.now() - t0) / 1000).toFixed(0)} s`);
-  warm.running = false;
-}
-
-// Some messages must wait until the agent isn't in the middle of a reply.
-const idleQueue = [];
-function whenIdle(fn) {
-  if (!state.responding) fn(); else idleQueue.push(fn);
-}
-function flushIdle() {
-  while (!state.responding && idleQueue.length) idleQueue.shift()();
-}
-
-function userBubble(id) {
-  if (!state.userBubbles.has(id)) {
-    state.userBubbles.set(id, { el: addBubble(`user pending${state.testing ? " test" : ""}`), text: "", final: false });
-  }
-  return state.userBubbles.get(id);
-}
-
-function renderUser(id) {
-  const b = state.userBubbles.get(id);
-  b.el.textContent = b.text || "…";
-  b.el.classList.toggle("pending", !b.final);
-  ui.chat.scrollTop = ui.chat.scrollHeight;
-}
-
-function botBubble() {
-  if (!state.botBubble || state.botBubble.done) {
-    state.botBubble = { el: addBubble(`bot pending${state.testing ? " test" : ""}`), text: "", done: false };
-  }
-  return state.botBubble;
-}
-
-function renderBot() {
-  const b = state.botBubble;
-  b.el.textContent = b.text || "…";
-  ui.chat.scrollTop = ui.chat.scrollHeight;
-}
-
-function finishBotBubble(tag) {
-  const b = state.botBubble;
-  if (!b || b.done) return;
-  b.done = true;
-  b.el.classList.remove("pending");
-  if (!b.text) {
-    if (b.acted) { b.el.remove(); state.botBubble = null; return; }
-    b.el.textContent = "(no reply)";
-  }
-  if (tag) {
-    const t = document.createElement("span");
-    t.className = "tag";
-    t.textContent = tag === "interrupted" ? "✋ interrupted" : tag;
-    b.el.append(t);
-  }
-  state.lastReply = b.text;
-}
-
-// ---------- Audio: microphone in, reply out -----------------------------------------------
-
-async function ensureAudio() {
-  if (state.audio) return state.audio;
-  const ctx = new AudioContext({ sampleRate: RATE });
-  await ctx.audioWorklet.addModule("/static/capture-worklet.js");
-  state.audio = { ctx, micNode: null, micStream: null };
-  return state.audio;
-}
-
-async function ensureMic() {
-  const audio = await ensureAudio();
-  if (audio.micNode) return audio;
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-  });
-  const src = audio.ctx.createMediaStreamSource(stream);
-  const node = new AudioWorkletNode(audio.ctx, "capture");
-  node.port.onmessage = (e) => {
-    if (!state.micOn || state.testing) return;
-    // Without headphones the mic hears the reply and thinks you're interrupting.
-    // Sending silence instead keeps the agent's clock ticking without the echo.
-    const quiet = ui.muteWhileSpeaking.checked && isPlaying();
-    if (quiet !== state.micMuted) {
-      state.micMuted = quiet;
-      inspector.note(quiet ? "🔇 mic muted while the duck speaks (sending silence)" : "🎙 mic live again");
-    }
-    send({ type: "input_audio_buffer.append", audio: floatToBase64Pcm16(quiet ? new Float32Array(FRAME) : e.data) });
-  };
-  src.connect(node);
-  audio.micNode = node;
-  audio.micStream = stream;
-  return audio;
-}
-
-async function setMic(on) {
-  if (on) {
-    try {
-      const audio = await ensureMic();
-      await audio.ctx.resume();
-    } catch (err) {
-      toast("Couldn't use the microphone. Allow microphone access for this page in Chrome's address bar.");
-      return;
-    }
-  }
-  state.micOn = on;
-  ui.talk.setAttribute("aria-pressed", String(on));
-  setTalkLabel();
-}
-
-function setBusy(busy) {
-  if (state.modelBusy === busy) return;
-  state.modelBusy = busy;
-  inspector.note(busy ? "Model busy: another Duck Lab tab is connected to it" : "Connected to the model", null, busy ? "err" : undefined);
-  os.setBusy(busy);
-  setTalkLabel();
-}
-
-// The talk button says why it's disabled, so the status is visible from every tab.
-function setTalkLabel() {
-  ui.talkLabel.textContent = state.micOn ? "Listening… tap to stop"
-    : state.agentStatus === "ready" && state.modelBusy ? "Model busy: close other Duck Lab tabs"
-    : state.agentStatus === "ready" ? "Tap to talk"
-    : state.agentStatus === "starting" ? "Model loading…"
-    : state.agentStatus === "error" ? "Model crashed"
-    : "Model stopped";
-}
-
-function isPlaying() {
-  return state.audio && state.playhead > state.audio.ctx.currentTime;
-}
-
-// Run fn once the reply has finished playing.
-function whenQuiet(fn) {
-  if (!isPlaying()) return fn();
-  setTimeout(() => whenQuiet(fn), 100);
-}
-
-function playChunk(samples) {
-  const { ctx } = state.audio || {};
-  if (!ctx) return;
-  const buf = ctx.createBuffer(1, samples.length, RATE);
-  buf.copyToChannel(samples, 0);
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.connect(body.attachAudio(ctx));
-  // A small cushion (60 ms) on the first chunk so playback doesn't stutter.
-  const startAt = Math.max(state.playhead, ctx.currentTime + 0.06);
-  src.start(startAt);
-  state.playhead = startAt + buf.duration;
-  state.playing.push(src);
-  src.onended = () => { state.playing = state.playing.filter((s) => s !== src); };
-}
-
-function stopPlayback() {
-  for (const s of state.playing) { try { s.stop(); } catch {} }
-  state.playing = [];
-  if (state.audio) state.playhead = state.audio.ctx.currentTime;
+function setCopy(on) {
+  copy.on = on;
+  copy.copied = null;
+  if (!on) body.lookAt(null);
+  $("copy-me").setAttribute("aria-pressed", String(on));
+  $("copy-me").textContent = on ? "Copy me: on" : "Copy me: off";
 }
 
 // ---------- Wire up the page ---------------------------------------------------------------
@@ -1043,99 +265,9 @@ for (const tab of document.querySelectorAll('[role="tab"]')) {
   };
 }
 
-// ---------- Webcam referee (pose tracking runs entirely in this browser) ----------
-const cam = {
-  tracker: null, on: false, held: new Set(), copy: false, copied: null,
-  btn: $("camera"), pip: $("cam-pip"), chips: $("pose-chips"), status: $("cam-status"),
-};
-for (const id of POSE_IDS) {
-  const li = document.createElement("li");
-  li.dataset.pose = id;
-  // Each chip shows the live measurement next to its name, so thresholds can be tuned on a real person.
-  li.innerHTML = `${POSE_LABELS[id]} <span class="num">–</span>`;
-  cam.chips.append(li);
-}
-
-// forGame: the game runs its own calibration (face-front line + countdown), so don't also calibrate here.
-async function startCamera({ forGame = false } = {}) {
-  cam.pip.hidden = false;
-  cam.chips.hidden = false;
-  cam.status.textContent = "Starting camera… (allow access)";
-  cam.tracker ??= new PoseTracker();
-  try {
-    await cam.tracker.start($("cam-video"), $("cam-canvas"));
-  } catch (e) {
-    cam.status.textContent = cam.tracker.error || "Camera failed";
-    inspector.note(`📷 camera failed: ${cam.tracker.error || e.message}`, null, "err");
-    return;
-  }
-  cam.on = true;
-  cam.btn.setAttribute("aria-pressed", "true");
-  inspector.note("📷 camera on (video stays in this browser)");
-  cam.status.textContent = "Stand normally, then Calibrate";
-  // Calibrate automatically once a body is in view: every check compares you with this stance.
-  // (Not when a game started the camera: that calibrated mid-countdown, 2026-09-26.)
-  if (!forGame) setTimeout(() => { if (cam.on && !cam.calibrated) calibrate(); }, 2500);
-  cam.unsubscribe = cam.tracker.onFrame(({ poses }) => {
-    for (const li of cam.chips.children) {
-      const id = li.dataset.pose;
-      const p = poses[id];
-      li.querySelector(".num").textContent = p.value == null ? "–" : p.value.toFixed(2);
-      li.title = `${POSE_LABELS[id]}: ${p.reason}`;
-      const on = cam.tracker.held(id, 300);
-      li.classList.toggle("on", on);
-      if (on && !cam.held.has(id)) { cam.held.add(id); inspector.note(`🧍 you: ${POSE_LABELS[id]}`); }
-      if (!on) cam.held.delete(id);
-    }
-    if (cam.calibrated) cam.status.textContent = `${Math.round(cam.tracker.fps || 0)} fps · watching`;
-    if (cam.copy) copyHead();
-  });
-}
-
-// Copy me: Simon mirrors your head. You look to YOUR left, he looks to HIS right, so from where
-// you stand he turns the same way on screen, like a reflection. No language model involved:
-// the camera's verdict goes straight to the head.
-const MIRROR = { up: "up", down: "down", left: "right", right: "left" };
-
-function copyHead() {
-  const seen = ["up", "down", "left", "right"].find((d) => cam.tracker.held(`look_${d}`, 300)) ?? null;
-  if (seen === cam.copied) return;
-  cam.copied = seen;
-  body.lookAt(seen && MIRROR[seen]);
-  inspector.note(seen ? `🪞 you look ${seen} → Simon looks to his ${MIRROR[seen]}` : "🪞 you look ahead → Simon too");
-}
-
-function setCopy(on) {
-  cam.copy = on;
-  cam.copied = null;
-  if (!on) body.lookAt(null);
-  $("copy-me").setAttribute("aria-pressed", String(on));
-  $("copy-me").textContent = on ? "Copy me: on" : "Copy me: off";
-}
-
-function stopCamera() {
-  cam.unsubscribe?.();
-  cam.tracker?.stop();
-  cam.on = false;
-  cam.calibrated = false;
-  setCopy(false);
-  cam.pip.hidden = true;
-  cam.chips.hidden = true;
-  cam.btn.setAttribute("aria-pressed", "false");
-  inspector.note("📷 camera off");
-}
-
-function calibrate() {
-  const base = cam.tracker?.calibrate();
-  cam.calibrated = !!base;
-  cam.status.textContent = base ? "Calibrated ✓" : "Can't see you: step back so head and shoulders show";
-  inspector.note(base ? "📷 calibrated to your normal stance" : "📷 calibration failed (no body in view)", base);
-  return base;
-}
-
 cam.btn.onclick = () => (cam.on ? stopCamera() : startCamera());
 $("calibrate").onclick = calibrate;
-$("copy-me").onclick = () => setCopy(!cam.copy);
+$("copy-me").onclick = () => setCopy(!copy.on);
 
 // Skates toggle: mirrors the duck's actual state, however it was switched.
 const skatesBtn = $("skates");
@@ -1153,12 +285,12 @@ setInterval(() => {
 }, 300);
 
 ui.model.onchange = () => { showModelNote(); savePrefs(); };
-function showVoice() {
-  $("os-voice").textContent = `${ui.voice.selectedOptions[0]?.text || "–"} · personality: ${ui.preset.value}`;
-}
 $("os-change-voice").onclick = () => $("tab-voice").click();
-ui.switchModel.onclick = () => startAgent(ui.model.value, "you switched model");
-const os = new SimonOS({ startAgent, stopAgent, selectedModel: () => ui.model.value, toast });
+ui.switchModel.onclick = () => { savePrefs(); ui.switchModel.disabled = true; startAgent(ui.model.value, "you switched model"); };
+ctx.os = new SimonOS({
+  startAgent: (model, why) => { savePrefs(); return startAgent(model, why); },
+  stopAgent, selectedModel: () => ui.model.value, toast,
+});
 new MacOS();
 
 // Duck colour: the simulator's duck and the page's colours follow the same choice (remembered).
@@ -1170,42 +302,14 @@ function setDuckColour(name) {
   try { localStorage.setItem("duck-colour", name); } catch {}
 }
 {
-  let saved = "blue";
-  try { saved = localStorage.getItem("duck-colour") || "blue"; } catch {}
-  setDuckColour(saved);
+  let savedColour = "blue";
+  try { savedColour = localStorage.getItem("duck-colour") || "blue"; } catch {}
+  setDuckColour(savedColour);
   for (const d of document.querySelectorAll("#duck-colour .dot")) d.onclick = () => setDuckColour(d.dataset.colour);
 }
-const game = new SimonSaysGame({
-  tracker: () => cam.tracker,
-  ready: () => state.agentStatus !== "ready" || state.modelBusy ? "Waiting for the model: STATUS must be READY." : null,
-  // Starting a game turns the camera on and calibrates it (it calibrates itself 2.5 s after starting).
-  prepare: async () => {
-    await ensureAudio(); await state.audio.ctx.resume(); await setMic(false); setCopy(false);
-    // The illusion that Simon sees you: wherever he has wandered, the view swings round in front of
-    // him, head level, so he's looking straight out at the player. (Next: walk him to his spot.)
-    body.setMood("idle");
-    body.lookAt(null);
-    body.faceCamera();
-    if (!cam.on) await startCamera({ forGame: true });
-    if (!cam.on) return "The camera didn't start: allow camera access, then start again.";
-    // Wait until the camera sees a body; calibrating is the game's job (its countdown).
-    for (let t = 0; t < 8000 && !cam.tracker?.latest?.landmarks; t += 200) await sleep(200);
-    return cam.tracker?.latest?.landmarks ? null
-      : "The camera can't see you: sit where your head and shoulders are in view, then start again.";
-  },
-  sayLine,
-  prepareLine,
-  isBad: (text) => badLines.has(text),
-  thresholds: THRESHOLDS,
-  calibrate,
-  warming: () => (warm.running ? `Warming up Simon's lines: ${warm.done} of ${warm.total}. You can start any time.` : null),
-  lookAt: (dir) => body.lookAt(dir),
-  // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
-  celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
-  note: (text, data) => inspector.note(text, data),
-  // After a game, carry on pre-warming whatever is still missing (and the next game's two scores).
-  gameOver: () => setTimeout(() => prewarmLines(game.linesToWarm()), 1500),
-});
+
+ctx.game = makeGame({ beforeGame: () => setCopy(false) });
+
 ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
 ui.apply.onclick = () => {
   savePrefs();
@@ -1216,14 +320,9 @@ ui.apply.onclick = () => {
 ui.voice.onchange = () => { lineCache.clear(); saved.voice = null; savePrefs(); send(sessionUpdate()); showVoice(); };
 ui.muteWhileSpeaking.onchange = savePrefs;
 ui.talk.onclick = () => setMic(!state.micOn);
-ui.clearChat.onclick = () => {
-  ui.chat.querySelectorAll(".bubble").forEach((b) => b.remove());
-  state.userBubbles.clear();
-  state.botBubble = null;
-  ui.chatEmpty.hidden = false;
-};
+ui.clearChat.onclick = clearChat;
 
 await loadOptions();
-listenToLab();
+listenToServer({ status: showModelNote, log: appendLog, stage: onStage });
 const s = await (await fetch("/api/status")).json();
-onAgentStatus(s);
+onAgentStatus(s, showModelNote);
