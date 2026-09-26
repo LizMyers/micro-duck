@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '(.tool_input.file_path // \"\") + \" \" + (.tool_input.command // \"\")' | grep -q PUNCHLIST_STATUS && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"notes/PUNCHLIST_STATUS.md changed - also update the punchlist artifact so the visual tracker stays in sync. Republish to https://claude.ai/artifact/6oWuMUvKte4XSXJnZRZuqE (from a new session: Artifact action read with that url, edit, then publish with url).\"}}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}
