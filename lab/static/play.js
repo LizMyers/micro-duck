@@ -226,7 +226,7 @@ function setDuckColour(name) {
   for (const d of document.querySelectorAll("#duck-colour .dot")) d.onclick = () => setDuckColour(d.dataset.colour);
 }
 
-new MacOS();
+new MacOS({ labels: { "Duck Lab server": "Simon's server" } });
 // The RAM banner's height, for play.css: the right column shrinks by it so nothing goes off screen.
 {
   const banner = $("ram-warning");

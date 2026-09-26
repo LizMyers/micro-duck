@@ -717,3 +717,18 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .mac-summary[data-pressure="warning"] + .ram-bar span, .mac-summary[data-pressure="critical"] + .ram-bar span { background: var(--duck); }
 .mem-list li[data-name="Model"] .mem-bar span { background: var(--duck-dark); }
 .ram-bar, .mem-bar { background: color-mix(in srgb, var(--duck) 15%, var(--surface)); border-color: color-mix(in srgb, var(--duck) 30%, var(--surface)); }
+
+/* No status dots on this page. Memory's state is one heading in one style: "Memory: low". */
+.health-dot { display: none; }
+.mac-summary .os-label { display: none; }
+#mac-pressure { font-size: 18px; font-weight: 600; letter-spacing: 0; color: var(--ink) !important; text-transform: lowercase; }
+#mac-pressure::before { content: "Memory: "; text-transform: none; }
+.mac-summary[data-pressure] strong { color: var(--ink); }
+/* The memory heading's colour says the state: blue when ok, orange when low, red when critical
+   (deep shades, so they read well on white). */
+.mac-summary[data-pressure="normal"] #mac-pressure { color: var(--duck-dark) !important; }
+.mac-summary[data-pressure="warning"] #mac-pressure { color: #c9650a !important; }
+.mac-summary[data-pressure="critical"] #mac-pressure { color: #b3261e !important; }
+#mac-pressure, #mac-pressure::before { text-transform: uppercase; letter-spacing: .04em; }   /* MEMORY: LOW */
+#mac-pressure { font-weight: 800; }   /* the state word, heaviest */
+#mac-pressure::before { font-weight: 500; }   /* "MEMORY:" lighter */
