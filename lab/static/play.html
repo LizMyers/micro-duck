@@ -14,7 +14,7 @@
   <div class="ram-warning" id="ram-warning" role="alert" hidden>
     <span id="ram-warning-text">RAM running low.</span>
     <span class="bar-actions">
-      <button class="bar-link" id="ram-warning-show">Show Mac OS</button>
+      <button class="bar-link" id="ram-warning-show">Show memory</button>
       <span class="bar-sep" aria-hidden="true">|</span>
       <button class="bar-link" id="ram-warning-close">Dismiss</button>
     </span>
@@ -45,9 +45,16 @@
     <section class="card controls" aria-label="Game and settings">
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-game" aria-selected="true" aria-controls="panel-game">Simon Says</button>
-        <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings">Simon settings</button>
-        <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Mac OS</button>
+        <button role="tab" id="tab-mac" aria-selected="false" aria-controls="panel-mac">Memory</button>
+        <button role="tab" id="tab-settings" aria-selected="false" aria-controls="panel-settings">Info</button>
         <span class="tab-ink" aria-hidden="true"></span>
+        <!-- Simon's colour, at the end of the bar it colours. -->
+        <div class="duck-dots bar-dots" id="duck-colour" title="Simon's colour" role="radiogroup" aria-label="Duck colour">
+            <button class="dot" data-colour="blue" role="radio" aria-label="Sky" style="--c:#8fc3e3"></button>
+            <button class="dot" data-colour="classic" role="radio" aria-label="Cream" style="--c:#f08a24"></button>
+            <button class="dot" data-colour="purple" role="radio" aria-label="Lavender" style="--c:#b4a4d4"></button>
+            <button class="dot" data-colour="charcoal" role="radio" aria-label="Graphite" style="--c:#2f2f33"></button>
+          </div>
       </div>
 
       <div role="tabpanel" id="panel-game" class="game" aria-labelledby="tab-game">
@@ -90,18 +97,20 @@
           and you win. Say "let's play again" for a rematch.</p>
       </div>
 
-      <div role="tabpanel" id="panel-settings" class="os" aria-labelledby="tab-settings" hidden>
-        <div class="os-rows">
-          <div class="os-row">
-            <div class="os-label">Colour</div>
-            <div class="os-info duck-dots" id="duck-colour" role="radiogroup" aria-label="Duck colour">
-              <button class="dot" data-colour="blue" role="radio" aria-label="Sky" style="--c:#8fc3e3"></button>
-              <button class="dot" data-colour="classic" role="radio" aria-label="Cream" style="--c:#f08a24"></button>
-              <button class="dot" data-colour="purple" role="radio" aria-label="Lavender" style="--c:#b4a4d4"></button>
-              <button class="dot" data-colour="charcoal" role="radio" aria-label="Graphite" style="--c:#2f2f33"></button>
-            </div>
-            <div class="os-btns"></div>
-          </div>
+      <div role="tabpanel" id="panel-settings" class="settings" aria-labelledby="tab-settings" hidden>
+        <p class="settings-lead">Everything runs on this Mac: no cloud, no API keys. Here's what's inside, in the order a conversation flows.</p>
+        <table class="inside">
+          <tbody>
+            <tr><th scope="row">Listen</th><td><span class="job">Notices when you start and stop talking</span>Silero VAD</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Turn-taking</th><td><span class="job">Decides whether you've finished or are just pausing</span><a href="https://huggingface.co/pipecat-ai/smart-turn-v3" target="_blank" rel="noopener">Smart Turn v3.2</a> (Pipecat)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Hear</th><td><span class="job">Turns your speech into text</span><a href="https://huggingface.co/mlx-community/parakeet-tdt-0.6b-v3" target="_blank" rel="noopener">Parakeet TDT 0.6B v3</a> (NVIDIA, MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Think</th><td><span class="job">Decides what to say, and when to start a game</span><a href="https://huggingface.co/mlx-community/Qwen3-4B-Instruct-2507-4bit" target="_blank" rel="noopener">Qwen3 4B Instruct, 4-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">Speak</th><td><span class="job">Turns the words into his voice, Aiden</span><a href="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-6bit" target="_blank" rel="noopener">Qwen3-TTS 1.7B CustomVoice, 6-bit</a> (MLX)</td><td class="where">on this Mac</td></tr>
+            <tr><th scope="row">See</th><td><span class="job">The referee: watches your head and arms</span>MediaPipe Pose Landmarker (lite)</td><td class="where">in your browser</td></tr>
+            <tr><th scope="row">Move</th><td><span class="job">His body: physics and walking</span><a href="https://huggingface.co/spaces/pollen-robotics/microduck-simulator" target="_blank" rel="noopener">Microduck simulator</a> (Pollen Robotics): MuJoCo physics, ONNX walking policy</td><td class="where">in your browser</td></tr>
+            <tr><th scope="row">Glue</th><td><span class="job">Connects the voice parts into one live agent</span><a href="https://github.com/huggingface/speech-to-speech" target="_blank" rel="noopener">speech-to-speech</a> (Hugging Face)</td><td class="where">on this Mac</td></tr>
+          </tbody>
+        </table>
         </div>
       </div>
 
