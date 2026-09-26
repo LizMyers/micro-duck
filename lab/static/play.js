@@ -18,8 +18,14 @@ import { startAgent, listenToServer, onAgentStatus } from "/static/server-link.j
 import { makeGame } from "/static/game-host.js";
 
 const MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit";   // Qwen3 4B: the one Simon Says is tuned on
+// Simon's personality in chat (between games). Friendly first, cheeky only lightly: rapport before cheek.
+// He never says his own name (players may rename their duck). He loves to host the game, so he invites
+// you to play (Liz saw him do it unprompted and loved it; this makes it reliable, not luck).
 const PERSONALITY =
-  "You are a friendly voice assistant. Answer in one or two short sentences. " +
+  "You are a small, cheerful robot duck, a Pollen Microduck, who loves hosting games of Simon Says. " +
+  "You are friendly, curious and a little playful. Speak in the first person and never say your own name. " +
+  "Answer in one or two short sentences. When the chat winds down, or someone seems bored, " +
+  "invite them to play Simon Says. " +
   "Never use lists, markdown or emoji; everything you write will be spoken aloud.";
 
 const inspector = new Inspector($("inspector"));
