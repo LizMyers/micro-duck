@@ -38,7 +38,7 @@ test("two starts at once (double click, or click + voice) make one game", async 
   const app = fakeApp();
   const game = new SimonSaysGame(app);
   game.start(); game.start();          // the second arrives during setup
-  assert.equal(game.startByVoice(), false);   // and so does a voice "let's play"
+  assert.equal(game.startByVoice(), "already playing");   // and so does a voice "let's play"
   await sleep(3000);                   // setup: countdown 3 × 0.8 s
   assert.equal(count(app.notes, "game started"), 1);
   game.stop("test over");
@@ -77,4 +77,20 @@ test("a head move stuck on between rounds recalibrates (a bad stance can't hide 
   assert.ok(app.calibrations >= 2);    // the countdown's, then the correction
   game.stop("test over");
   await started;
+});
+
+test("game page: a voice start can't skip camera setup (it did, and every move went unseen)", async () => {
+  const app = fakeApp();
+  let asked = 0;
+  Object.assign(app, { setupOnPage: true, isSetUp: () => false, needSetup: () => asked++ });
+  const game = new SimonSaysGame(app);
+  const status = game.startByVoice();
+  assert.match(status, /camera isn't set up/);
+  assert.equal(asked, 1);                       // the page showed the setup
+  await game.start();                           // a click can't skip it either
+  assert.equal(count(app.notes, "game started"), 0);
+  app.isSetUp = () => true;                     // once set up, the voice start works
+  assert.equal(game.startByVoice(), "starting");
+  await sleep(100);
+  game.stop("test over");
 });

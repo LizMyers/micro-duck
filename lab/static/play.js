@@ -202,7 +202,11 @@ new MacOS();
   new ResizeObserver(setH).observe(banner);
   setH();
 }
-ctx.game = makeGame({ setupOnPage: true });
+ctx.game = makeGame({
+  setupOnPage: true,
+  isSetUp: () => cam.on && cam.calibrated,
+  needSetup: () => { $("tab-game").click(); showSetup(true); if (cam.on) turnOnCamera(); },
+});
 $("talk").onclick = () => setMic(!state.micOn);
 
 // Hold the space bar to talk (a walkie-talkie). Tap to talk still works as a toggle. Not during a game:

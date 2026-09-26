@@ -143,11 +143,19 @@ export class SimonSaysGame {
   }
 
   // "I want a rematch!": start a game from a voice command (shows the game tab). False if already playing.
+  // Returns what happened, for the model to say: "starting", or why not.
   startByVoice() {
-    if (this.running || this.starting || this.app.ready()) return false;
-    document.getElementById("tab-game").click();
+    if (this.running || this.starting) return "already playing";
+    if (this.app.ready()) return "not ready yet";
+    document.getElementById("tab-game")?.click();
+    // The game page sets up the camera on the page first; a voice start must not skip it (2026-09-26:
+    // it did, so the camera was never calibrated and every move went unseen).
+    if (this.app.setupOnPage && !this.app.isSetUp?.()) {
+      this.app.needSetup?.();
+      return "the camera isn't set up yet: the player turns it on and presses I'm ready on the Simon Says tab, then asks again";
+    }
     setTimeout(() => this.start(), 0);
-    return true;
+    return "starting";
   }
 
   showReady() {
@@ -186,6 +194,7 @@ export class SimonSaysGame {
       if (problem) return this.render(problem, "");
       // The game page does camera setup on the page before Start appears (Liz: a spoken "Let's adjust
       // the camera" can't show what to do); the lab still sets up by voice with a countdown.
+      if (this.app.setupOnPage && !this.app.isSetUp?.()) { this.app.needSetup?.(); return; }
       if (!this.app.setupOnPage && !(await this.calibrateWithCountdown())) return;
     } finally {
       this.starting = false;
