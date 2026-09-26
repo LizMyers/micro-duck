@@ -25,7 +25,9 @@ const PRESSURE = {
 };
 
 export class MacOS {
-  constructor() {
+  // labels: a page's own names for the parts (the game page says "Simon's server", not "Duck Lab server").
+  constructor({ labels = {} } = {}) {
+    this.labels = { ...LABEL, ...labels };
     this.dismissedUntil = 0;
     $("ram-warning-show").onclick = () => { $("tab-mac").click(); this.hideWarning(); };
     $("ram-warning-close").onclick = () => { this.dismissedUntil = Date.now() + 5 * 60_000; this.hideWarning(); };
@@ -71,7 +73,7 @@ export class MacOS {
         <div class="mem-head"><b></b><span class="num"></span></div>
         <div class="mem-bar"><span style="width:${pct}%"></span></div>
         <small class="what"></small>${top ? '<small class="top"></small>' : ""}`;
-      li.querySelector("b").textContent = single ? g.top[0].name : (LABEL[g.name] || g.name);
+      li.querySelector("b").textContent = single ? g.top[0].name : (this.labels[g.name] || g.name);
       li.querySelector(".num").textContent = GB(g.mb);
       li.querySelector(".what").textContent = WHAT[g.name] || "";
       // The biggest apps in this part, one per line: the name in semi-bold, its size beside it.
