@@ -94,6 +94,13 @@ test("turn right is NOT turn left", () => {
   only(check(lm, base), "turn_right");
 });
 
+test("a 45-degree turn counts (shoulders about 0.77 of their width: flickered at the old 0.75)", () => {
+  const { lm, set, base } = turned("right");
+  set(LM.leftShoulder, 0.577, 0.5, -0.2);
+  set(LM.rightShoulder, 0.423, 0.5, 0.2);
+  only(check(lm, base), "turn_right");
+});
+
 test("turn direction falls back to the head when shoulder depth is unclear", () => {
   const { lm, set, base } = turned("left");
   set(LM.leftShoulder, 0.54, 0.5, 0);

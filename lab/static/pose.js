@@ -44,7 +44,8 @@ export const THRESHOLDS = {
   look: 0.2,       // head turn: nose offset from the ear midpoint, in ear-widths
   pitch: 0.12,     // head tilt: nose height relative to the ears, in ear-widths (0.15 missed Liz's natural
                    // look down, 2026-09-26; safe to loosen now a move must be held for 1 s)
-  turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width
+  turned: 0.8,     // body turn: shoulders look narrower than this fraction of their calibrated width
+                   // (0.75 flickered at Liz's 45° turn, 2026-09-26; 0.8 is about a 37° turn)
 };
 
 const VISIBLE = 0.5;
@@ -125,7 +126,9 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   // The player stays seated at the same distance, so narrow shoulders mean a turn. (It used to be
   // width relative to shoulders-to-nose height, but looking up raised the nose and faked a turn.)
   const turnRatio = width;
-  const turned = turnRatio < T.turned;
+  // Moving back shrinks everything, turning only the shoulders: if shoulders-to-nose shrank too, it isn't a turn.
+  const steppedBack = m.shoulderToNose / baseline.shoulderToNose < 0.9;
+  const turned = turnRatio < T.turned && !steppedBack;
 
   // Look left / right: the head turns but the body doesn't.
   const yaw = m.yaw - baseline.yaw;
