@@ -82,10 +82,12 @@ export class MacOS {
     if (!low || this.visible || Date.now() < this.dismissedUntil) return this.hideWarning();
     const chrome = r.groups.find((g) => g.name === "Chrome");
     const biggest = [...(r.groups.find((g) => g.name === "Other apps")?.top || [])][0];
-    $("ram-warning-text").textContent =
-      `RAM running low (${r.free_percent}% free). Time to close other tabs` +
-      (biggest ? ` and apps (${biggest.name} uses ${GB(biggest.mb)})` : "") +
-      (chrome ? `. Chrome uses ${GB(chrome.mb)}.` : ".");
+    // A short headline, then one plain sentence: what's free and what would help most.
+    const lead = document.createElement("strong");
+    lead.textContent = "Memory is running low.";
+    const helps = [biggest && `${biggest.name} (${GB(biggest.mb)})`, chrome && `a few Chrome tabs (${GB(chrome.mb)})`].filter(Boolean);
+    $("ram-warning-text").replaceChildren(lead,
+      ` ${r.free_percent}% free.` + (helps.length ? ` Closing ${helps.join(" or ")} would help.` : " Closing other apps would help."));
     $("ram-warning").dataset.level = r.pressure;
     $("ram-warning").hidden = false;
   }

@@ -6,15 +6,18 @@
   <title>Simon Says with Simon the Microduck</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300..700&display=swap" rel="stylesheet">
   <!-- The game page's own look: change freely, the lab (style.css) is separate. -->
   <link rel="stylesheet" href="/static/play.css">
 </head>
 <body>
   <div class="ram-warning" id="ram-warning" role="alert" hidden>
     <span id="ram-warning-text">RAM running low.</span>
-    <button class="ghost small" id="ram-warning-show">Show Mac OS</button>
-    <button class="ghost small" id="ram-warning-close" aria-label="Dismiss">Dismiss</button>
+    <span class="bar-actions">
+      <button class="bar-link" id="ram-warning-show">Show Mac OS</button>
+      <span class="bar-sep" aria-hidden="true">|</span>
+      <button class="bar-link" id="ram-warning-close">Dismiss</button>
+    </span>
   </div>
 
   <main class="layout">
@@ -124,8 +127,9 @@
       <div class="split-top inspector insp-root" id="inspector">
         <div class="title-bar">
           <h3>Inspector</h3>
-          <button class="ghost small" id="insp-copy">Copy</button>
-          <button class="ghost small" id="insp-clear">Clear</button>
+          <button class="bar-link" id="insp-copy">Copy</button>
+          <span class="bar-sep" aria-hidden="true">|</span>
+          <button class="bar-link" id="insp-clear">Clear</button>
         </div>
         <div class="insp-list" aria-live="off"></div>
       </div>
@@ -135,7 +139,7 @@
         <div class="title-bar divider" id="chat-head" role="separator" aria-orientation="horizontal"
              aria-label="Resize the Inspector and chat" tabindex="0" title="Drag to resize · double-click to reset">
           <h3>Chat</h3>
-          <button class="ghost small" id="clear-chat">Clear</button>
+          <button class="bar-link" id="clear-chat">Clear</button>
         </div>
         <div class="chat" id="chat" aria-live="polite">
           <p class="empty" id="chat-empty">When Simon is ready, tap the button below (or hold Space) and say hello.</p>

@@ -45,8 +45,11 @@ function summarize(ev) {
 }
 
 export class Inspector {
-  constructor(root) {
+  // plain: show rows without their leading emoji (the game page: calmer, easier to read). The records
+  // (and Copy) keep the full text.
+  constructor(root, { plain = false } = {}) {
     this.root = root;
+    this.plain = plain;
     this.list = root.querySelector(".insp-list");
     this.hideAudio = root.querySelector("#insp-hide-audio");
     this.records = [];
@@ -95,6 +98,7 @@ export class Inspector {
     row.className = `insp-row ${dir} ${kind}`;
     if (/TOOL CALL|tool result/.test(summary) || /^🦆/.test(title)) row.classList.add("tool");
     if (/^ERROR/.test(summary)) row.classList.add("err");
+    if (this.plain) title = String(title).replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "");
     const arrow = { out: "→", in: "←", note: "•" }[dir];
     row.innerHTML = `<summary><span class="insp-t">${this.time()}</span><span class="insp-dir">${arrow}</span>` +
       `<span class="insp-title"></span><span class="insp-sum"></span></summary>`;
@@ -121,11 +125,21 @@ export class Inspector {
     const slim = this.records.filter((r) => !FOLD[r.type]).map((r) => ({
       ...r, event: r.event ? JSON.parse(shorten(r.event)) : undefined,
     }));
+    const btn = this.root.querySelector("#insp-copy");
+    // Confirm on the button itself for a moment, where you're looking (then it says Copy again).
+    const flash = (text) => {
+      clearTimeout(this.flashTimer);
+      btn.textContent = text;
+      btn.classList.add("done");
+      this.flashTimer = setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1800);
+    };
     try {
       await navigator.clipboard.writeText(JSON.stringify(slim, null, 2));
       this.note(`Copied ${slim.length} events to the clipboard`);
+      flash("Copied to clipboard ✓");
     } catch {
       this.note("Couldn't copy (clipboard blocked)");
+      flash("Couldn't copy");
     }
   }
 }

@@ -99,10 +99,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 h1, h2 { margin: 0; line-height: 1.2; }
-h1 { font-size: 20px; font-weight: 700; }
+h1 { font-size: 20px; font-weight: 600; }
 h2 { font-size: 15px; font-weight: 600; }
 small { color: var(--ink-2); font-weight: 400; }
-button, select, textarea, input { font: inherit; color: inherit; }
+button, select, textarea, input { font:  "Bricolage Grotesque", system-ui, sans-serif; color: inherit; }
 
 .top {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
@@ -157,37 +157,7 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
 }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .hint { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
-
-/* Relay race */
-.stages {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; position: relative;
-}
-.stages li {
-  position: relative; display: grid; gap: 2px; padding: 12px; border-radius: 12px;
-  background: var(--bg); border: 1px solid var(--line); transition: background .2s, border-color .2s;
-}
-.stages li b { font-size: 13px; }
-.stages li small { font-size: 11px; line-height: 1.3; }
-.stages .node {
-  width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink-2); margin-bottom: 6px;
-  transition: all .2s;
-}
-.stages .time { font-style: normal; font-family: var(--mono); font-size: 16px; font-weight: 500; margin-top: 6px; }
-.stages li[data-state="active"] { background: var(--accent-soft); border-color: var(--active); }
-.stages li[data-state="active"] .node { background: var(--active); border-color: var(--active); animation: pulse .8s infinite; }
-.stages li[data-state="done"] .node { background: var(--good); border-color: var(--good); }
-.stages li .calc { font-size: 11px; color: var(--ink-2); font-family: Inter, sans-serif; margin-left: 4px; }
 @media (max-width: 1100px) and (min-width: 901px), (max-width: 560px) { .stages { grid-template-columns: 1fr 1fr; } }
-
-.headline {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); color: var(--ink-2);
-}
-.headline strong { font-family: var(--mono); font-size: 28px; color: var(--ink); font-weight: 500; }
-
-/* Conversation */
-.convo { display: flex; flex-direction: column; min-height: 520px; }
 .chat {
   flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
   max-height: 420px; padding: 4px 2px 12px;
@@ -197,7 +167,7 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
 .bubble.user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
 .bubble.bot { align-self: flex-start; background: var(--surface-2); border-bottom-left-radius: 4px; }
 .bubble.pending { opacity: .7; font-style: italic; }
-.bubble .tag { display: block; font-size: 11px; opacity: .75; margin-top: 4px; font-style: normal; }
+.bubble .tag { display: block; font-size: 13px; opacity: .75; margin-top: 4px; font-style: normal; }
 .bubble.action {
   align-self: center; font-size: 13px; padding: 4px 12px; border-radius: 999px;
   background: var(--bg); border: 1px dashed var(--accent); color: var(--ink);
@@ -216,14 +186,6 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
 .talk:disabled { opacity: .45; cursor: not-allowed; }
 .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
 .check input { margin-top: 3px; accent-color: var(--accent); }
-
-/* Controls */
-.field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13px; font-weight: 500; }
-select, textarea {
-  width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line);
-  background: var(--bg);
-}
-textarea { resize: vertical; font-size: 13px; }
 .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 button.primary, button.ghost {
   padding: 8px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; border: 1px solid transparent;
@@ -241,20 +203,20 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .results { width: 100%; border-collapse: collapse; font-size: 13px; }
 .results th, .results td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .results th { color: var(--ink-2); font-weight: 500; }
-.results td.num { font-family: var(--mono); white-space: nowrap; }
-.mark { font-weight: 700; margin-right: 4px; }
+.results td.num {  white-space: nowrap; }
+.mark { font-weight: 600; margin-right: 4px; }
 .mark.ok { color: var(--good); } .mark.meh { color: var(--warn); } .mark.bad { color: var(--bad); }
 
 /* Log */
 .log summary { cursor: pointer; font-weight: 600; }
 .log pre {
-  margin: 12px 0 0; max-height: 320px; overflow: auto; font: 12px/1.5 var(--mono);
+  margin: 12px 0 0; max-height: 320px; overflow: auto; font: 13px/1.5 "Bricolage Grotesque", system-ui, sans-serif;
   background: var(--bg); padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-all;
 }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(560px, calc(100% - 32px));
-  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 15px;
   box-shadow: var(--shadow); white-space: pre-wrap;
 }
 
@@ -282,22 +244,7 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
   :root:not([data-theme="light"]) .mood[data-mood="thinking"] { background: #3a2b4a; color: #d6bdf2; }
   :root:not([data-theme="light"]) .mood[data-mood="interrupted"] { background: #4a2523; color: #f3aaa4; }
 }
-.body-readout {
-  display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 16px; margin: 12px 0 0;
-  font-size: 13px;
-}
-.body-readout dt { color: var(--ink-2); font-size: 12px; margin-bottom: 4px; }
-.body-readout dd { margin: 0; display: flex; align-items: center; gap: 8px; }
-.meter { display: inline-block; width: 90px; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
-.meter span { display: block; height: 100%; width: 0; background: var(--duck); transition: width 60ms linear; }
-.num { font-family: var(--mono); min-width: 3.5ch; }
-.head-dial {
-  position: relative; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--line); flex: none;
-}
-.head-dial span {
-  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
-  background: var(--duck); transition: transform 200ms ease;
-}
+.num {  min-width: 3.5ch; }
 @media (max-width: 560px) { .body-readout { grid-template-columns: 1fr 1fr; } .body-readout > div:last-child { grid-column: 1 / -1; } }
 
 /* Tabs */
@@ -306,33 +253,25 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
   background: none; border: none; padding: 8px 12px; font-weight: 600; color: var(--ink-2); cursor: pointer;
   border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
 }
-.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--duck); }
 
 /* The hidden attribute must win over display rules above. */
 [hidden] { display: none !important; }
-
-.help-h { margin: 0; font-size: 13px; font-weight: 600; }
-.keys { margin-top: 8px; border-collapse: collapse; font-size: 13px; }
-.keys td { padding: 5px 16px 5px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.keys td button { margin-left: 8px; }
 kbd {
   display: inline-block; min-width: 1.6em; padding: 0 4px; margin: 0 1px; text-align: center;
-  font: 11px/1.6 var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+  font: 13px/1.6 "Bricolage Grotesque", system-ui, sans-serif; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
   background: var(--surface);
 }
 
 .duck-actions { display: flex; align-items: center; gap: 8px; }
-#skates[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-#skates:disabled { opacity: .5; }
 
 /* Inspector */
 .row.tight { margin-top: 0; gap: 6px; }
-.insp-list { flex: 1; overflow-y: auto; margin-top: 8px; font: 12px/1.45 var(--mono); border-top: 1px solid var(--line); }
+.insp-list { flex: 1; overflow-y: auto; margin-top: 8px; font: 13px/1.45 var(--mono); border-top: 1px solid var(--line); }
 .insp-row { border-bottom: 1px solid var(--line); }
 .insp-row summary { display: grid; grid-template-columns: 3.6em 1.2em auto; column-gap: 6px; padding: 4px 2px; cursor: pointer; list-style: none; }
 .insp-row summary::-webkit-details-marker { display: none; }
 .insp-t { color: var(--ink-2); }
-.insp-dir { font-weight: 700; }
+.insp-dir { font-weight: 600; }
 .insp-row.out .insp-dir { color: var(--accent); }
 .insp-row.in .insp-dir { color: var(--good); }
 .insp-row.note .insp-dir { color: var(--ink-2); }
@@ -341,18 +280,15 @@ kbd {
 .insp-row.tool { background: var(--accent-soft); }
 .insp-row.err { background: #f8dcda; }
 .insp-row.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
-.insp-row pre { margin: 0 0 6px 4.8em; padding: 8px; background: var(--bg); border-radius: 8px; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all; font-size: 11px; }
+.insp-row pre { margin: 0 0 6px 4.8em; padding: 8px; background: var(--bg); border-radius: 8px; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all; font-size: 13px; }
 .inspector.hide-audio .insp-row.audio { display: none; }
 
 /* Column 2 panel */
 .side .tabs { margin: -4px 0 8px; }
-.side-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.side-panel[hidden] { display: none; }
 .side .chat { max-height: none; flex: 1; }
-.panel-tools { justify-content: flex-end; margin: 0 0 4px; }
 .insp-root { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .hide-audio .insp-row.audio { display: none; }
-#panel-log pre { flex: 1; margin: 0; overflow: auto; font: 12px/1.5 var(--mono); background: var(--bg); padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-all; }
+#panel-log pre { flex: 1; margin: 0; overflow: auto; font: 13px/1.5 "Bricolage Grotesque", system-ui, sans-serif; background: var(--bg); padding: 12px; border-radius: 10px; white-space: pre-wrap; word-break: break-all; }
 .side .talk-row { margin-top: 8px; }
 .duck .sim-wrap { aspect-ratio: 16 / 9; }
 
@@ -363,24 +299,12 @@ kbd {
   box-shadow: 0 4px 16px rgb(0 0 0 / 35%);
 }
 .cam-pip canvas { display: block; width: 100%; height: auto; }
-.cam-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 11px; }
-.cam-bar .ghost { color: #fff; border-color: rgb(255 255 255 / 40%); padding: 2px 8px; font-size: 11px; }
-.pose-chips {
-  position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 62%;
-  list-style: none; margin: 0; padding: 0;
-}
-.pose-chips li {
-  font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgb(0 0 0 / 55%); color: rgb(255 255 255 / 70%);
-  transition: background .15s, color .15s;
-}
-.pose-chips li .num { font-family: var(--mono); font-size: 10px; opacity: .7; margin-left: 2px; }
-.pose-chips li.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.pose-chips li.off-limits { text-decoration: line-through; opacity: .5; }
-#camera[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.cam-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 13px; }
+.cam-bar .ghost { color: #fff; border-color: rgb(255 255 255 / 40%); padding: 2px 8px; font-size: 13px; }
 
 /* Simon OS: STATUS / SERVER / MODEL / VOICE / STRAY PROCESSES rows, system messages, relay race */
 .health { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.health strong { font-family: var(--mono); font-size: 20px; letter-spacing: .04em; }
+.health strong {  font-size: 18px; letter-spacing: .04em; }
 .health small { font-size: 13px; }
 .health-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-2); }
 .health[data-state="ready"] strong { color: var(--good); }
@@ -391,37 +315,18 @@ kbd {
 .health[data-state="busy"] strong { color: var(--warn); }
 .health[data-state="busy"] .health-dot { background: var(--warn); }
 .health[data-state="error"] .health-dot, .health[data-state="unknown"] .health-dot { background: var(--bad); }
-.os .headline { margin-top: 8px; padding-top: 8px; }
-.os .headline strong { font-size: 22px; }
 
 .os-rows { display: grid; margin-top: 12px; border-top: 1px solid var(--line); }
 .os-row {
   display: grid; grid-template-columns: 8.5em minmax(0, 1fr) auto; gap: 12px; align-items: center;
   padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px;
 }
-.os-label { font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: 12px; }
-.os-info { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.os-label { font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: 13px; }
+.os-info {  font-size: 13px; overflow-wrap: anywhere; }
 .os-info small { font-family: Inter, sans-serif; }
-.os-model { display: flex; gap: 6px; align-items: center; margin: 4px 0 2px; }
-.os-model select { width: auto; max-width: 100%; padding: 4px 8px; font-family: Inter, sans-serif; font-size: 13px; }
 .os-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 #os-leftovers[data-warn="true"] { color: var(--warn); }
 @media (max-width: 700px) { .os-row { grid-template-columns: 1fr; gap: 4px; } .os-btns { justify-content: flex-start; } }
-
-.os-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 16px 0 6px; }
-.os-head h3 { margin: 0; font-size: 13px; font-weight: 600; }
-.os-feed {
-  list-style: none; margin: 0; padding: 8px 10px; max-height: 240px; overflow-y: auto;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-size: 13px;
-}
-.os-feed li { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); column-gap: 8px; padding: 3px 0; }
-.os-feed time { font-family: var(--mono); font-size: 11px; color: var(--ink-2); padding-top: 2px; }
-.os-feed code {
-  grid-column: 2; font: 11px/1.4 var(--mono); color: var(--ink-2); overflow-wrap: anywhere;
-}
-.os-feed li[data-level="good"] span { color: var(--good); }
-.os-feed li[data-level="warn"] span { color: var(--warn); }
-.os-feed li[data-level="bad"] span { color: var(--bad); font-weight: 600; }
 
 
 /* Model log (raw): warnings and errors stand out */
@@ -430,7 +335,7 @@ kbd {
 
 /* Mac OS tab: memory meters */
 .mac-summary { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.mac-summary strong { font-family: var(--mono); font-size: 20px; letter-spacing: .04em; color: var(--good); }
+.mac-summary strong {  font-size: 18px; letter-spacing: .04em; color: var(--good); }
 .mac-summary small { font-size: 13px; }
 .mac-summary[data-pressure="warning"] strong { color: var(--warn); }
 .mac-summary[data-pressure="warning"] + .ram-bar span { background: var(--warn); }
@@ -441,9 +346,9 @@ kbd {
 .mac-summary[data-pressure="critical"] + .ram-bar span { background: var(--bad); }
 .mem-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
 .mem-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
-.mem-head .num { font-family: var(--mono); font-size: 12px; }
-.mem-list small { display: block; margin-top: 3px; font-size: 12px; }
-.mem-list .top { font-family: var(--mono); font-size: 11px; }
+.mem-head .num {  font-size: 13px; }
+.mem-list small { display: block; margin-top: 3px; font-size: 13px; }
+.mem-list .top {  font-size: 13px; }
 .mem-list li[data-name="Model"] .mem-bar span { background: var(--good); }
 
 /* Low-memory warning, shown on top of every tab */
@@ -453,15 +358,15 @@ kbd {
 }
 .ram-warning[hidden] { display: none; }
 .ram-warning[data-level="critical"] { background: var(--bad); color: #fff; }
-.ram-warning span { flex: 1; min-width: 200px; }
+#ram-warning-text { flex: 1; min-width: 200px; }   /* only the message stretches */
 .ram-warning .ghost { color: inherit; border-color: currentColor; }
 
 /* Simon Says game */
-.ss-command { margin: 16px 0 8px; font-size: 26px; font-weight: 700; line-height: 1.2; min-height: 1.2em; }
+.ss-command { margin: 16px 0 8px; font-size: 26px; font-weight: 600; line-height: 1.2; min-height: 1.2em; }
 .ss-timer-wrap { height: 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
 .ss-timer-wrap span { display: block; height: 100%; width: 0; background: var(--duck); }
 .ss-result { margin: 10px 0 0; font-size: 15px; font-weight: 600; min-height: 1.5em; }
-.ss-score { margin: 4px 0 8px; font-family: var(--mono); font-size: 13px; color: var(--ink-2); min-height: 1.4em; }
+.ss-score { margin: 4px 0 8px;  font-size: 13px; color: var(--ink-2); min-height: 1.4em; }
 
 /* Duck colour dots */
 .duck-dots { display: flex; gap: 10px; }
@@ -471,19 +376,19 @@ kbd {
 }
 .duck-dots .dot[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
 .ss-now { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.ss-seconds { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--duck); min-width: 3ch; text-align: right; }
+.ss-seconds {  font-size: 26px; font-weight: 600; color: var(--duck); min-width: 3ch; text-align: right; }
 
 /* All-time scoreboard: split-flap cards */
 .ss-board { display: flex; gap: 16px; margin-bottom: 12px; }
 .ss-team { display: grid; justify-items: center; gap: 6px; }
-.ss-team b { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.ss-team b { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 .ss-card { position: relative; display: block; width: 64px; height: 76px; perspective: 300px; }
 .ss-card .half {
   position: absolute; left: 0; right: 0; height: 50%; overflow: hidden;
   background: var(--duck); color: var(--duck-ink); backface-visibility: hidden;
 }
 .ss-card .half b {
-  display: block; height: 76px; font: 600 48px/76px var(--mono); text-align: center;
+  display: block; height: 76px; font: 600 48px/76px "Bricolage Grotesque", system-ui, sans-serif; text-align: center;
   letter-spacing: 0; text-transform: none; color: inherit;
 }
 .ss-card .upper { top: 0; border-radius: 8px 8px 0 0; border-bottom: 1px solid rgb(0 0 0 / 30%); }
@@ -546,14 +451,14 @@ button.primary, button.ghost, .talk,
   background: var(--surface); color: var(--ink); border: 1px solid var(--ink-2); border-radius: 10px;
   font-weight: 600; font-size: 13px; padding: 6px 12px; gap: 8px;
 }
-button.small { padding: 4px 10px; }
+button.small { padding: 4px 12px; }
 button.primary:hover:not(:disabled), button.ghost:hover:not(:disabled), .talk:hover:not(:disabled) { border-color: var(--ink); }
 /* Listening: the button turns beak orange (Simon's own colour, not an alarm red). */
 .talk[aria-pressed="true"] { background: var(--beak, #f08a24); color: #fff; border-color: var(--beak, #f08a24); }
 .cam-bar .ghost { background: transparent; color: #fff; border-color: rgb(255 255 255 / 40%); }
 .ram-warning .ghost { background: transparent; color: inherit; border-color: currentColor; }
 .talk-hint { margin: 0; }
-.talk-hint kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--ink-2); border-radius: 4px; background: var(--surface); }
+.talk-hint kbd { font: 13px "Bricolage Grotesque", system-ui, sans-serif; padding: 1px 5px; border: 1px solid var(--ink-2); border-radius: 4px; background: var(--surface); }
 
 /* Simon's status, under the sim: the one place it lives on this page. */
 .simon-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
@@ -581,3 +486,70 @@ button.primary:hover:not(:disabled), button.ghost:hover:not(:disabled), .talk:ho
 
 /* Deep duck yellow: the drag line and the handle's outline. */
 :root { --gold: #e8a800; }
+
+/* Every button on the page: slim and quiet, the same clean style (Liz: "this isn't arduino or a cartoon
+   app"). Tap to talk keeps its orange while listening. */
+button.primary, button.ghost, button.small, .talk, .split-bottom .talk {
+  padding: 4px 12px; font-size: 15px; font-weight: 500; line-height: 1.4;
+  border-radius: 6px; border-color: color-mix(in srgb, var(--ink-2) 60%, transparent);
+}
+.split-bottom .talk[aria-pressed="true"] { border-color: var(--beak, #f08a24); }   /* listening keeps its orange edge */
+.cam-bar .ghost, .ram-warning .ghost { border-color: currentColor; }
+
+/* ---------- Type (Liz, 2026-09-26): two typefaces, a few sizes, nothing tiny, nothing pale ----------
+   Source Sans 3 for everything, IBM Plex Mono only in the Inspector log (the fonts Hugging Face uses).
+   Sizes: 13px smallest (labels), 15px text, 18px headings, big display sizes for the game only.
+   Darkest text #232323 (never pure black); secondary text #4a4845 (was #6c6a68), never at the smallest size. */
+:root { --ink: #232323; --ink-2: #4a4845; --mono: "Bricolage Grotesque", system-ui, sans-serif; }   /* one typeface on this page */
+body { font: 15px/1.5 "Bricolage Grotesque", system-ui, sans-serif; color: var(--ink); }
+h2 { font-size: 18px; }
+.title-bar h3 { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.hint, small { font-size: 13px; color: var(--ink-2); }
+.insp-list { font: 13px/1.45 var(--mono); color: var(--ink); }
+.health small, #health-detail { font-size: 15px; color: var(--ink); }
+.setup-text, .chat, .bubble { font-size: 15px; color: var(--ink); }
+
+/* Inspector rows: calmer. The typeface and tinted rows do the work, so less bold. */
+.insp-title { font-weight: 500; }
+.insp-dir { font-weight: 400; }
+
+/* Weights: Regular 400 for reading, Medium 500 for buttons and labels, Semi-bold 600 for titles and the
+   game display. No bold 700. (Source Sans 3 is loaded as a variable font, 300–700, so these are real faces.) */
+button, .talk, .os-label, dt, .ss-team b { font-weight: 500; }
+h2, h3, .title-bar h3, .health strong, .mac-summary strong, .ss-command { font-weight: 600; }
+
+/* Inspector (Liz): the page's typeface, not monospace, and no arrow column: time, then the message.
+   (Numbers stay aligned with tabular figures.) */
+.insp-list, .insp-row pre { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.insp-list { font-size: 13px; line-height: 1.45; }
+.insp-row summary { grid-template-columns: 3.2em auto; }
+.insp-dir { display: none; }
+.insp-sum { grid-column: 2; }
+.insp-row pre { margin-left: 3.6em; font-size: 13px; }
+/* Inspector: larger text (the page's 15px reading size) and a tighter gap after the time. */
+.insp-list { font-size: 15px; line-height: 1.45; }
+.insp-row summary { grid-template-columns: 2.6em auto; column-gap: 4px; }
+.insp-row pre { margin-left: 2.9em; font-size: 15px; }
+
+/* Title-bar actions: plain words, a pipe between them, no button shapes. */
+.title-bar .bar-link, .ram-warning .bar-link {
+  background: none; border: 0; padding: 0; color: var(--duck-ink); font: 500 15px/1.4 "Bricolage Grotesque", system-ui, sans-serif;
+  cursor: pointer;
+}
+.bar-link:hover, .bar-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+.bar-sep { color: var(--duck-ink); opacity: .6; }
+
+/* RAM banner: readable (the page's 15px text) with plain-word actions, pushed to the right. */
+.ram-warning { font-size: 15px; font-weight: 500; padding: 8px 16px; }
+.ram-warning .bar-actions { margin-left: auto; display: inline-flex; gap: 10px; align-items: center; }
+
+/* Titles at the heading size; the RAM banner: a semi-bold headline, then regular text. */
+.title-bar h3 { font-size: 18px; }
+.ram-warning { font-weight: 400; }
+.ram-warning strong { font-weight: 600; }
+
+/* Actions in capitals (buttons and the plain-word actions in the bars), a little letter-spacing so
+   they breathe; titles stay in normal case. */
+button, .talk, .bar-link { text-transform: uppercase; letter-spacing: .05em; }
+[role="tab"] { text-transform: none; letter-spacing: 0; }   /* tabs are navigation, not actions */
+.ram-warning .bar-actions { flex: none; white-space: nowrap; }   /* the two actions stay together */
