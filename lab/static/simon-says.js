@@ -184,7 +184,9 @@ export class SimonSaysGame {
       this.render("Starting the camera… face it, looking straight ahead.", "");
       const problem = await this.app.prepare();
       if (problem) return this.render(problem, "");
-      if (!(await this.calibrateWithCountdown())) return;
+      // The game page does camera setup on the page before Start appears (Liz: a spoken "Let's adjust
+      // the camera" can't show what to do); the lab still sets up by voice with a countdown.
+      if (!this.app.setupOnPage && !(await this.calibrateWithCountdown())) return;
     } finally {
       this.starting = false;
       $("ss-start").disabled = false;
@@ -195,7 +197,8 @@ export class SimonSaysGame {
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
-    if (!this.lastWinner) await this.speak(FIRST_OPENER);   // a rematch already said its opener over the countdown
+    if (!this.lastWinner) await this.speak(FIRST_OPENER);
+    else if (this.app.setupOnPage) await this.speak(this.pickOpener());   // (by voice: said over the countdown)
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
     while (live() && !this.out && this.round < ROUNDS) await this.playRound(id);
     if (!live()) return;
