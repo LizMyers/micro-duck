@@ -279,3 +279,12 @@ restart for the agent rows. Write-up: [04-who-goes-first.md](04-who-goes-first.m
 - Type: Bricolage Grotesque only; 13/15/18 + game display; text never darker than #232323; no emojis in
   the Inspector; actions in capitals. Liz tests UI changes herself (no screenshots).
 - Next: the left panel (Simon Says tab, Simon settings, Mac OS), then release 1 to `microduck-simon-says`.
+
+## 2026-09-26 late: where we are (before a context compact)
+- /play left column done except the game tab: tabs SIMON SAYS · MEMORY · INFO in a blue bar with a sliding
+  yellow underline and colour dots (50% black band) at its right end; scoreboard on the sim (only with camera on);
+  sim at half height; Info = "Everything runs locally on your Mac" + STEP / WHAT IT DOES / MODEL / RUNS table;
+  Memory tab readable, bars in the duck's colours.
+- Chat bar starts level with the left tab bar (measured in play.js; drags last the visit).
+- NEXT: the Simon Says (game) tab, Liz leads. Then release 1 (microduck-simonsays repo, fresh history).
+- Working style: Liz tests UI herself (no screenshots); commit + push at checkpoints (repo private).

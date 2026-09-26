@@ -711,3 +711,9 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* Column headings in capitals (labels, like the tabs); the model column lets names wrap. */
 .inside thead th { text-transform: uppercase; letter-spacing: .05em; }
 .inside td.model { min-width: 12em; }
+
+/* Memory: every bar in the duck's colour family (the Model bar a shade darker so it stands out). */
+.ram-bar span, .mem-bar span,
+.mac-summary[data-pressure="warning"] + .ram-bar span, .mac-summary[data-pressure="critical"] + .ram-bar span { background: var(--duck); }
+.mem-list li[data-name="Model"] .mem-bar span { background: var(--duck-dark); }
+.ram-bar, .mem-bar { background: color-mix(in srgb, var(--duck) 15%, var(--surface)); border-color: color-mix(in srgb, var(--duck) 30%, var(--surface)); }
