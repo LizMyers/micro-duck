@@ -18,7 +18,7 @@ const MODEL_URL =
 // MediaPipe's landmark numbers. Left/right are the PERSON's own left/right,
 // whatever the mirrored video looks like.
 export const LM = {
-  nose: 0, leftEye: 2, rightEye: 5, leftEar: 7, rightEar: 8,
+  nose: 0, leftEye: 2, rightEye: 5, leftEar: 7, rightEar: 8, mouthLeft: 9, mouthRight: 10,
   leftShoulder: 11, rightShoulder: 12, leftElbow: 13, rightElbow: 14,
   leftWrist: 15, rightWrist: 16, leftIndex: 19, rightIndex: 20,
   leftHip: 23, rightHip: 24,
@@ -42,11 +42,13 @@ export const POSE_LABELS = {
 // First guesses from geometry; tune them live on a real person (the chips show the numbers).
 export const THRESHOLDS = {
   look: 0.2,       // head turn: nose offset from the ear midpoint, in ear-widths
-  pitch: 0.15,     // head tilt: nose height relative to the ears, in ear-widths
+  pitch: 0.12,     // head tilt: nose height relative to the ears, in ear-widths (0.15 missed Liz's natural
+                   // look down, 2026-09-26; safe to loosen now a move must be held for 1 s)
   turned: 0.75,    // body turn: shoulders look this fraction of their calibrated width
 };
 
 const VISIBLE = 0.5;
+const DROPOUT_MS = 300;   // a pose that drops out for less than this is still being held
 
 // Skeleton lines drawn over the video.
 const BONES = [
@@ -85,6 +87,11 @@ export function measure(lm, aspect = 4 / 3) {
     yaw: (nose.x - earMid.x) / earWidth,
     // Head tilt: + when looking up (nose rises relative to the ears).
     pitch: (earMid.y - nose.y) / earWidth,
+    // Head tilt, second opinion (being compared, not used by the rules yet): where the nose sits between
+    // the eye line and the mouth, 0 = at the eyes, 1 = at the mouth; negated so + is up. Uses only the middle
+    // of the face, because ears are often hidden and their estimate is shaky (Liz: the ear line barely moves).
+    facePitch: -((nose.y - (P(LM.leftEye).y + P(LM.rightEye).y) / 2) /
+      Math.max((P(LM.mouthLeft).y + P(LM.mouthRight).y) / 2 - (P(LM.leftEye).y + P(LM.rightEye).y) / 2, 1e-6)),
     shoulderWidth: dist(ls, rs),
     // Vertical shoulders-to-nose distance: shrinks when you step back, but not when you turn.
     shoulderToNose: (ls.y + rs.y) / 2 - nose.y,
@@ -194,6 +201,7 @@ export class PoseTracker {
     this.fps = 0;
     this._cbs = new Set();
     this._since = {};          // poseId -> time it started being true
+    this._lost = {};           // poseId -> when it last dropped out (a hold survives short dropouts)
     this._landmarker = null;
     this._stream = null;
     this._running = false;
@@ -272,6 +280,16 @@ export class PoseTracker {
     return d[poseId] ?? { ok: false, confidence: 0, reason: `unknown pose ${poseId}` };
   }
 
+  // Head tilt now, compared with calibration, by both methods (see facePitch in measure()).
+  tilt() {
+    const m = measure(this.latest?.landmarks, this.aspect), b = this.baseline;
+    if (!m || !b || b.facePitch == null) return null;
+    return { ears: m.pitch - b.pitch, face: m.facePitch - b.facePitch };
+  }
+
+  // When poseId started being held (performance.now() time), or null if it isn't held now.
+  since(poseId) { return this._since[poseId] ?? null; }
+
   // True when poseId has been held continuously for at least `ms`.
   held(poseId, ms = 300) {
     const since = this._since[poseId];
@@ -295,9 +313,15 @@ export class PoseTracker {
       this.latest = { landmarks, timestamp: ts };
       const poses = evaluatePoseDetailed(landmarks, this.baseline, this.aspect);
       const now = performance.now();
+      // Tracking flickers: a single missed frame used to restart a hold, so a 1 s hold could never be
+      // reached (Liz held her arm up and lost "Too slow", 2026-09-26). Only a dropout longer than
+      // DROPOUT_MS ends a hold.
       for (const id of POSE_IDS) {
-        if (poses[id].ok) this._since[id] ??= now;
-        else delete this._since[id];
+        if (poses[id].ok) { this._since[id] ??= now; delete this._lost[id]; }
+        else if (this._since[id] != null) {
+          this._lost[id] ??= now;
+          if (now - this._lost[id] > DROPOUT_MS) { delete this._since[id]; delete this._lost[id]; }
+        }
       }
       this._fpsTick(now);
       this._draw(landmarks);

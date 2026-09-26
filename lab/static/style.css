@@ -321,6 +321,7 @@ kbd {
 .insp-sum { grid-column: 3; color: var(--ink-2); overflow-wrap: anywhere; }
 .insp-row.tool { background: var(--accent-soft); }
 .insp-row.err { background: #f8dcda; }
+.insp-row.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
 .insp-row pre { margin: 0 0 6px 4.8em; padding: 8px; background: var(--bg); border-radius: 8px; max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all; font-size: 11px; }
 .inspector.hide-audio .insp-row.audio { display: none; }
 

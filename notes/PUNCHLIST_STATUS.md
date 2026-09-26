@@ -11,6 +11,7 @@ Context: branch `main`; repo stays private until item 11. Items 6–9 are done i
 - [ ] 2. Pre-warm the game lines (suggested)
 - [ ] 3. Record the demo
 - [ ] 4. Upload the video, one link (suggested)
+- [ ] 4b. Split app.js (1,222 lines) into modules that match the blog posts: voice-lines, turn-taking, agent, audio, camera; app.js just wires up. Own commit, no behaviour change; tests + Liz plays once before committing
 - [ ] 5. Polish the GitHub repo, still private (README + video, licence, secrets check)
 
 ## lizm.dev (other window)

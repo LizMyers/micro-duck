@@ -1,7 +1,7 @@
 // Unit tests for the Simon Says rules. Run: node --test lab/static/tests/simon-says.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nextCommand, line, judge, words, COMMANDS } from "../simon-says.js";
+import { nextCommand, line, judge, words, scoreLine, scoreLines, taunts, calibrationProblem, pickFresh, COMMANDS } from "../simon-says.js";
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
 
@@ -53,4 +53,41 @@ test("scores are spoken as words", () => {
   assert.equal(words(3), "three");
   assert.equal(words(0), "zero");
   assert.equal(words(42), "42");
+});
+
+test("the score is its own line; taunts have no numbers", () => {
+  assert.equal(scoreLine(7, 0), "Seven for me, zero for you.");
+  assert.equal(scoreLine(2, 2), "Two all.");
+  assert.equal(scoreLine(1, 3), "You lead three to one.");
+  for (const [a, b] of [[1, 0], [3, 3], [0, 4]]) {
+    assert.match(scoreLine(a, b), new RegExp(`${words(a)}|${words(b)}`, "i"));
+    for (const taunt of taunts(a, b)) assert.doesNotMatch(taunt, /zero|one|two|three|four|five|six|seven|eight|nine|\d/i);
+  }
+  assert.ok(taunts(5, 0).includes("Are you even trying?"));
+  assert.ok(taunts(0, 5).includes("I'm coming for you!"));
+});
+
+test("pickFresh never repeats the last pick", () => {
+  const list = ["a", "b", "c"];
+  for (let i = 0; i < 50; i++) assert.notEqual(pickFresh(list, "b"), "b");
+  assert.equal(pickFresh(["only"], "only"), "only");
+});
+
+test("every score has a second wording to fall back on", () => {
+  for (const [a, b] of [[6, 1], [2, 2], [1, 4]]) {
+    const all = scoreLines(a, b);
+    assert.ok(all.length >= 2);
+    assert.equal(all[0], scoreLine(a, b));
+    assert.equal(new Set(all).size, all.length);
+  }
+  assert.deepEqual(scoreLines(6, 1), ["Six for me, one for you.", "It's six to one in my favor.", "It's six to one."]);
+});
+
+test("calibration: Liz's real stances, one good and one taken while turned", () => {
+  const good = { yaw: -0.019, pitch: -0.151, shoulderDepth: -0.044 };   // 2026-09-26, facing the camera
+  const turned = { yaw: 0.081, pitch: -0.321, shoulderDepth: 0.174 };  // same day: then "look right" all game
+  assert.equal(calibrationProblem(good), null);
+  assert.match(calibrationProblem(turned), /face me/);
+  assert.match(calibrationProblem({ yaw: 0.3, shoulderDepth: 0 }), /straight at me/);
+  assert.match(calibrationProblem(null), /can't see you/);
 });

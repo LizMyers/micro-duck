@@ -236,3 +236,21 @@ mention the series as "in progress" with a link to `notes/tutorial-series.md`.
 ## Notes index
 `notes/README.md`, `00-plan.md`, `01-local-voice-agent.md`, `02-duck-lab-and-voice-moves.md`, `ideas.md`,
 `research/*` (voice synth, sim + Reachy pattern, webcam pose, upstream candidates).
+
+## Update 2026-09-26 (evening)
+Play-testing the six ways a game ends turned up two voice UX bugs, both fixed but **not yet live-tested or
+committed**: pre-warming swallowed "let's have a rematch" (one lane: the person now goes first), and six
+score takes were saved with only ~1 s of sound (score is now two short lines; silent takes aren't saved).
+The Inspector now shows reasons from both ends, labelled `page:` and `🧠 agent:`. The server needs a
+restart for the agent rows. Write-up: [04-who-goes-first.md](04-who-goes-first.md).
+
+## Plan after lunch 2026-09-26 (Liz)
+- **Simon Says V2: the game front and centre, nothing more.** The lab has been our instrument for Follow Me,
+  Chat and the other tutorial material, but it shows all of it at once. V2 is the game experience for
+  publication; the tutorial tools move out of the way. Liz has a firm idea of the layout: ask her, build
+  only what she names.
+- **Camera setup moves out of the voice and into the page.** A spoken line ("Let's adjust the camera,
+  please.") can't say what to do; the page can show it (sit square on, head and shoulders in view). Voice
+  = the game; page = setup and instructions. "What to do where" becomes a section of the write-up.
+- **A race condition is still there** (Liz, before lunch): get her log and find it first.
+- Committed ("Simon Says: turn-taking, honest voice checks…", not pushed): everything up to V2. Devlog: notes/04-who-goes-first.md.
