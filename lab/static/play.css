@@ -553,3 +553,20 @@ h2, h3, .title-bar h3, .health strong, .mac-summary strong, .ss-command { font-w
 button, .talk, .bar-link { text-transform: uppercase; letter-spacing: .05em; }
 [role="tab"] { text-transform: none; letter-spacing: 0; }   /* tabs are navigation, not actions */
 .ram-warning .bar-actions { flex: none; white-space: nowrap; }   /* the two actions stay together */
+
+/* The main actions in the theme colour, like the title bars: Turn on camera and Tap to talk.
+   (Listening still turns Tap to talk beak orange.) */
+#setup-camera, .split-bottom .talk { background: var(--duck); border-color: var(--duck); color: var(--duck-ink); }
+/* Hover brightens a little (a lift), keeping the white label readable. */
+#setup-camera:hover:not(:disabled), .split-bottom .talk:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--duck) 85%, #fff); border-color: color-mix(in srgb, var(--duck) 85%, #fff);
+}
+.split-bottom .talk[aria-pressed="true"] { background: var(--beak, #f08a24); border-color: var(--beak, #f08a24); color: #fff; }
+
+/* Action labels a step heavier: Semi-bold. */
+button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warning .bar-link { font-weight: 600; }
+[role="tab"] { font-weight: 500; }
+
+/* "or hold Space": readable, not a footnote. */
+.talk-hint { font-size: 15px; color: var(--ink); }
+.talk-hint kbd { font: 600 13px "Bricolage Grotesque", system-ui, sans-serif; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--ink-2); background: var(--surface); }
