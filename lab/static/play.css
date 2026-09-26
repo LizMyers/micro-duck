@@ -651,8 +651,10 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* Settings: what's inside Simon, one row per step of a conversation. */
 .settings-lead { margin: 0 0 12px; font-size: 15px; color: var(--ink); }
 .inside { width: 100%; border-collapse: collapse; font-size: 15px; color: var(--ink); }
-.inside th, .inside td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
-.inside th { font-weight: 600; white-space: nowrap; width: 1%; }
+.inside th, .inside td { text-align: left; vertical-align: top; padding: 8px 24px 8px 0; border-bottom: 1px solid var(--line); }
+.inside tr > :last-child { padding-right: 0; }   /* the same 24px gap between every column */
+.inside th { font-weight: 600; white-space: nowrap; }
+.inside tbody th { width: 1%; }   /* only the Step column hugs its words (the headings had it too, squeezing the middle columns) */
 .inside .job { display: block; }
 .inside td:nth-child(2) { font-weight: 400; }
 .inside a { color: var(--duck-dark); font-weight: 600; text-underline-offset: 3px; }
