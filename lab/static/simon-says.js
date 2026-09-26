@@ -161,7 +161,7 @@ export class SimonSaysGame {
   linesToWarm() {
     const { simon, you } = this.board.totals;
     return [
-      ...FIRST_SETUP, ...FACE_FRONT, FIRST_OPENER, ...REMATCH.simon, ...REMATCH.you,
+      ...FIRST_SETUP, FIRST_OPENER, ...REMATCH.simon, ...REMATCH.you,
       ...Object.keys(COMMANDS).flatMap((pose) => [line({ pose, says: true }), line({ pose, says: false })]),
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
       ...TRAP_OPENERS.map(trapLine),
@@ -194,9 +194,7 @@ export class SimonSaysGame {
     $("ss-start").textContent = "Stop game";
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
-    const opener = this.lastWinner ? pickFresh(REMATCH[this.lastWinner], this.lastSaid.opener) : FIRST_OPENER;
-    this.lastSaid.opener = opener;
-    await this.speak(opener);
+    if (!this.lastWinner) await this.speak(FIRST_OPENER);   // a rematch already said its opener over the countdown
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
     while (live() && !this.out && this.round < ROUNDS) await this.playRound(id);
     if (!live()) return;
@@ -228,12 +226,14 @@ export class SimonSaysGame {
       this.render("You win!", `All ${ROUNDS} right.`);
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
-      const said = await this.speak(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
+      const { started, done } = this.app.sayLine(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
         `Congratulate them in a ${mood} way, and say clearly that they win. ` +
         `You can start with "${pickFresh(WIN_OPENERS)}"`, { improvise: true });
+      // What he actually said ("" if he never started or mumbled), so "You win!" isn't said twice (Liz).
+      let heard = (await started) ? await Promise.race([done, sleep(SPEAK_TIMEOUT_MS).then(() => "")]) : "";
       if (!live()) return;
-      if (!said) await this.speak("Well played. You win!");   // fallback if the improvised line stalls
-      await this.speak("You win!");
+      if (!heard) { heard = "Well played. You win!"; await this.speak(heard); }   // fallback if the made-up line stalls
+      if (!/\byou(?:'ve| have)? (?:win|won)\b/i.test(heard)) await this.speak("You win!");
       if (!live()) return;
       await this.sayScore(simon, you);
     }
@@ -271,6 +271,13 @@ export class SimonSaysGame {
     this.app.gameOver?.();
   }
 
+  // A rematch opener that fits who won last, never the same one twice running.
+  pickOpener() {
+    const opener = pickFresh(REMATCH[this.lastWinner], this.lastSaid.opener);
+    this.lastSaid.opener = opener;
+    return opener;
+  }
+
   // The wording that will be used for this score (the first one the voice model doesn't get wrong).
   usableScore(simon, you) {
     return scoreLines(simon, you).find((t) => !this.app.isBad?.(t)) ?? scoreLine(simon, you);
@@ -282,12 +289,14 @@ export class SimonSaysGame {
   async calibrateWithCountdown() {
     for (let attempt = 1; attempt <= 3; attempt++) {
       // Spoken once; a retry just shows what to fix (repeating the line made no sense).
+      // One cue per start (Liz: nudge + opener + her own "let's play again" was three). A rematch says its
+      // opener ("Brave. Let's go!") over the countdown; the first game says the camera line. The cheeky
+      // face-front nudges (FACE_FRONT) are resting until V2 moves camera setup into the page.
       let said = null;
       if (attempt === 1) {
-        const nudge = this.setUpOnce ? pickFresh(FACE_FRONT, this.lastSaid.nudge)
+        const line = this.lastWinner ? this.pickOpener()
           : FIRST_SETUP.find((t) => !this.app.isBad?.(t)) ?? FIRST_SETUP[0];
-        this.lastSaid.nudge = nudge;
-        said = this.speak(nudge);
+        said = this.speak(line);
       }
       for (const n of ["3", "2", "1"]) { this.render("Face the camera…", n); await sleep(800); }
       await said;
