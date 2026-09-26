@@ -85,6 +85,8 @@ Object.assign(ctx, {
   // The talk button is only a button: Simon's status lives under the sim (the button just greys out).
   talkLabels: { starting: "Tap to talk", stopped: "Tap to talk", error: "Tap to talk", busy: "Tap to talk" },
   busyMessage: "Simon is busy in another tab: close it, then reload this page.",
+  // Your moves in the Inspector only during a game, when they're evidence; otherwise every glance shows up.
+  logPoses: () => !!(ctx.game?.running || ctx.game?.starting),
 });
 
 // ---------- Camera setup: before Start, on the page ----------------------------------------
@@ -126,6 +128,7 @@ async function calibrateNow() {
   const problem = calibrationProblem(base);
   $("setup-calibrate").disabled = false;
   if (problem) {
+    cam.calibrated = false;   // an unusable stance doesn't count as set up (the game started on one, 2026-09-26)
     inspector.note(`📷 page: calibration not usable: ${problem}`, base, "warn");
     await turnOnCamera();   // back to live feedback
     return;

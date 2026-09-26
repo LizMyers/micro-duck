@@ -152,7 +152,9 @@ export class SimonSaysGame {
     // it did, so the camera was never calibrated and every move went unseen).
     if (this.app.setupOnPage && !this.app.isSetUp?.()) {
       this.app.needSetup?.();
-      return "the camera isn't set up yet: the player turns it on and presses I'm ready on the Simon Says tab, then asks again";
+      // Worded for Simon to pass on (he said "player turns on the camera…" and "I see…" when it read like a note).
+      return "not started: the camera isn't set up yet. Tell them, in your own words and without saying you can see, " +
+        "to press Turn on camera and then I'm ready on the Simon Says tab, and to ask you again after that";
     }
     setTimeout(() => this.start(), 0);
     return "starting";

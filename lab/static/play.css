@@ -512,13 +512,13 @@ kbd {
 .split-top .title-bar { border-radius: var(--radius) var(--radius) 0 0; }
 .title-bar h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; flex: 1; }
 
-.title-bar.divider { position: relative; border-top: 2px solid var(--duck-dark);
+.title-bar.divider { position: relative; border-top: 3px solid var(--gold);   /* deep duck yellow (was orange #f08a24) */
   cursor: row-resize; user-select: none; touch-action: none; }
 /* The drag handle: a pill sitting on the double border, centred, the usual "grab me" sign. */
 .title-bar.divider::before {
-  content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%);   /* its middle on the bar's top edge */
+  content: ""; position: absolute; left: 50%; top: -7px; transform: translateX(-50%);   /* its middle on the bar's top edge (3px line + half the 8px pill) */
   width: 44px; height: 8px; border-radius: 999px; z-index: 2;
-  background: #ffd23f; border: 1.5px solid var(--duck-dark); box-sizing: border-box;   /* duck yellow, dark themed outline */
+  background: #ffd23f; border: 1.5px solid var(--gold); box-sizing: border-box;   /* duck yellow, deep yellow outline */
   transition: width .15s;
 }
 .title-bar.divider:hover::before, .title-bar.divider.dragging::before { width: 60px; border-width: 2px; }
@@ -567,3 +567,17 @@ button.primary:hover:not(:disabled), button.ghost:hover:not(:disabled), .talk:ho
 
 /* The Inspector log on a light duck-yellow tint (the title bar covers the top). */
 .split-top { background: #fffbe6; }
+
+/* Chat: pale yellow is Simon's colour, so his words sit in yellow bubbles. Yours are plain text on the
+   right, no bubble, so each turn takes less room. */
+:root { --simon: #fffbe6; --simon-edge: #efdf9c; }
+.split-top { background: var(--simon); }
+.split-bottom .chat { gap: 6px; }
+.split-bottom .bubble.bot { background: var(--simon); border: 1px solid var(--simon-edge); color: var(--ink); }
+.split-bottom .bubble.user {
+  background: none; color: var(--ink); padding: 2px 2px; border-radius: 0; max-width: 90%;
+  text-align: right; font-weight: 500;
+}
+
+/* Deep duck yellow: the drag line and the handle's outline. */
+:root { --gold: #e8a800; }

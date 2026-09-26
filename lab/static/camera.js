@@ -51,7 +51,11 @@ export async function startCamera({ forGame = false } = {}) {
         li.title = `${POSE_LABELS[id]}: ${p.reason}`;
         li.classList.toggle("on", on);
       }
-      if (on && !cam.held.has(id)) { cam.held.add(id); ctx.inspector.note(`🧍 you: ${POSE_LABELS[id]}`); }
+      if (on && !cam.held.has(id)) {
+        cam.held.add(id);
+        // (A page can limit this to when it matters: the game page logs moves only during a game.)
+        if (ctx.logPoses?.() ?? true) ctx.inspector.note(`🧍 you: ${POSE_LABELS[id]}`);
+      }
       if (!on) cam.held.delete(id);
     }
     if (cam.calibrated) status(`${Math.round(cam.tracker.fps || 0)} fps · watching`);

@@ -37,6 +37,7 @@ export const ctx = {
   tools: [],                       // tools offered besides play_simon_says (the lab's duck moves)
   onTool: null,                    // (ev, args) => handles one of those tools
   relay: { newTurn() {}, setStage() {} },   // the lab's relay race (timings); the game page has none
+  logPoses: null,                  // () => whether to log "🧍 you: …" rows now (default: always)
   onCameraFrame: null,             // the lab's Copy me
   onCameraStop: null,
 };
