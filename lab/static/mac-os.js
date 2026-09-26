@@ -9,12 +9,13 @@ const $ = (id) => document.getElementById(id);
 const GB = (mb) => `${(mb / 1024).toFixed(1)} GB`;
 
 // What each part is, in one line.
+// Display names where the server's part name isn't the clearest wording.
+const LABEL = { "Other apps": "Other open apps" };
 const WHAT = {
   "macOS": "The system itself: kernel, window server, background services",
   "Model": "speech-to-speech: Simon's hearing, language model and voice",
   "Chrome": "Includes this page, the simulator and the camera",
   "Duck Lab server": "The small server behind this page",
-  "Other apps": "Everything else that's open",
 };
 
 const PRESSURE = {
@@ -63,15 +64,25 @@ export class MacOS {
       const li = document.createElement("li");
       li.dataset.name = g.name;
       const pct = Math.min(100, (g.mb / r.total_mb) * 100);
-      const top = g.top?.length ? g.top.map((t) => `${t.name} ${GB(t.mb)}`).join(" · ") : "";
+      // Just one app in this part (e.g. Google Chrome Canary): its name goes above the bar, no extra row.
+      const single = g.top?.length === 1;
+      const top = g.top?.length > 1 ? g.top.map((t) => `${t.name} ${GB(t.mb)}`).join(" · ") : "";
       li.innerHTML = `
         <div class="mem-head"><b></b><span class="num"></span></div>
         <div class="mem-bar"><span style="width:${pct}%"></span></div>
         <small class="what"></small>${top ? '<small class="top"></small>' : ""}`;
-      li.querySelector("b").textContent = g.name;
+      li.querySelector("b").textContent = single ? g.top[0].name : (LABEL[g.name] || g.name);
       li.querySelector(".num").textContent = GB(g.mb);
       li.querySelector(".what").textContent = WHAT[g.name] || "";
-      if (top) li.querySelector(".top").textContent = top;
+      // The biggest apps in this part, one per line: the name in semi-bold, its size beside it.
+      if (top) li.querySelector(".top").replaceChildren(...g.top.map((t) => {
+        const row = document.createElement("span");
+        row.className = "app";
+        const name = document.createElement("b");
+        name.textContent = t.name;
+        row.append(name, ` ${GB(t.mb)}`);
+        return row;
+      }));
       list.append(li);
     }
   }
