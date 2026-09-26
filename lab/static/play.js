@@ -151,8 +151,15 @@ $("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); 
     top.style.flex = `0 0 ${h}px`;
     return h;
   };
-  const save = () => { try { localStorage.setItem("play-split", String(top.offsetHeight / col.clientHeight)); } catch {} };
-  try { const f = parseFloat(localStorage.getItem("play-split")); if (f > 0 && f < 1) setTop(f * col.clientHeight); } catch {}
+  // Every visit starts aligned (Liz); a drag lasts for the visit only.
+  const save = () => {};
+  try { localStorage.removeItem("play-split"); } catch {}
+  // Default: the chat bar's top edge level with the top of the left tab bar (measured, so it holds at any size).
+  const tabsBar = document.querySelector(".controls .tabs");
+  const align = () => setTop(tabsBar.getBoundingClientRect().top - col.getBoundingClientRect().top);
+  let saved = null;   // true once you've dragged it this visit
+  align();
+  new ResizeObserver(() => { if (!saved) align(); }).observe(col);
   let drag = null;
   bar.addEventListener("pointerdown", (e) => {
     if (e.target.closest("button")) return;   // Clear is still a button
@@ -160,11 +167,15 @@ $("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); 
     bar.setPointerCapture(e.pointerId);
     bar.classList.add("dragging");
   });
-  bar.addEventListener("pointermove", (e) => { if (drag) setTop(drag.h + e.clientY - drag.y); });
-  const end = () => { if (!drag) return; drag = null; bar.classList.remove("dragging"); save(); };
+  bar.addEventListener("pointermove", (e) => {
+    if (!drag || Math.abs(e.clientY - drag.y) < 3) return;   // a click isn't a drag
+    drag.moved = true;
+    setTop(drag.h + e.clientY - drag.y);
+  });
+  const end = () => { if (!drag) return; if (drag.moved) saved = true; drag = null; bar.classList.remove("dragging"); };
   bar.addEventListener("pointerup", end);
   bar.addEventListener("pointercancel", end);
-  bar.addEventListener("dblclick", () => { top.style.flex = ""; try { localStorage.removeItem("play-split"); } catch {} });
+  bar.addEventListener("dblclick", () => { saved = null; align(); });
   // Keyboard: arrow keys move the divider.
   bar.addEventListener("keydown", (e) => {
     const step = { ArrowUp: -24, ArrowDown: 24 }[e.key];
@@ -172,6 +183,7 @@ $("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); 
     e.preventDefault();
     setTop(top.offsetHeight + step);
     save();
+    saved = true;
   });
 }
 
