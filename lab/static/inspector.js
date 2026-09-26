@@ -54,8 +54,10 @@ export class Inspector {
     this.t0 = performance.now();
     root.querySelector("#insp-clear").onclick = () => this.clear();
     root.querySelector("#insp-copy").onclick = () => this.copy();
-    this.hideAudio.onchange = () => root.classList.toggle("hide-audio", this.hideAudio.checked);
-    root.classList.toggle("hide-audio", this.hideAudio.checked);
+    // Audio chunks (50 a second while the mic is on) are hidden unless the page offers a checkbox to show
+    // them (the lab does; the game page always hides them).
+    if (this.hideAudio) this.hideAudio.onchange = () => root.classList.toggle("hide-audio", this.hideAudio.checked);
+    root.classList.toggle("hide-audio", this.hideAudio ? this.hideAudio.checked : true);
   }
 
   time() { return ((performance.now() - this.t0) / 1000).toFixed(2); }

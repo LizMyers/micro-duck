@@ -499,30 +499,33 @@ kbd {
 .side.split { gap: 0; padding: 0; overflow: hidden; }
 /* The side padding lives in each panel, so the title bars can run edge to edge across the card. */
 .split-top { flex: 3; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 16px; }
-.split-bottom { flex: 2; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 16px 12px; }
+/* (Not clipped: the drag handle sits across the chat bar's top border, half over the Inspector.) */
+.split-bottom { flex: 2; min-height: 0; display: flex; flex-direction: column; overflow: visible; padding: 0 16px 12px; }
 .split-bottom .chat { max-height: none; flex: 1; }
 
-/* Title bars: a light tint of the duck's colour, edge to edge across the card. */
+/* Title bars: the duck's colour (the same as the RAM banner), edge to edge across the card. */
 .title-bar {
   display: flex; align-items: center; gap: 10px; min-height: 40px;
   margin: 0 -16px 8px; padding: 6px 16px;
-  background: var(--accent-soft); border-bottom: 1px solid var(--line);
+  background: var(--duck); color: var(--duck-ink); border-bottom: 0;
 }
 .split-top .title-bar { border-radius: var(--radius) var(--radius) 0 0; }
 .title-bar h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; flex: 1; }
 
-.title-bar.divider { position: relative; border-top: 4px double var(--line); cursor: row-resize; user-select: none; touch-action: none; }
+.title-bar.divider { position: relative; border-top: 2px solid var(--duck-dark);
+  cursor: row-resize; user-select: none; touch-action: none; }
 /* The drag handle: a pill sitting on the double border, centred, the usual "grab me" sign. */
 .title-bar.divider::before {
-  content: ""; position: absolute; left: 50%; top: -7px; transform: translateX(-50%);
-  width: 44px; height: 8px; border-radius: 999px; background: var(--ink-2); opacity: .45;
-  transition: opacity .15s, width .15s;
+  content: ""; position: absolute; left: 50%; top: -6px; transform: translateX(-50%);   /* its middle on the bar's top edge */
+  width: 44px; height: 8px; border-radius: 999px; z-index: 2;
+  background: #ffd23f; border: 1.5px solid var(--duck-dark); box-sizing: border-box;   /* duck yellow, dark themed outline */
+  transition: width .15s;
 }
-.title-bar.divider:hover::before, .title-bar.divider.dragging::before { opacity: .8; width: 60px; }
-.title-bar.divider:hover { background: color-mix(in srgb, var(--accent) 18%, var(--accent-soft)); }
+.title-bar.divider:hover::before, .title-bar.divider.dragging::before { width: 60px; border-width: 2px; }
+.title-bar.divider:hover { background: color-mix(in srgb, var(--duck-ink) 10%, var(--duck)); }
 .title-bar.divider button { cursor: pointer; }
 .title-bar.divider:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.title-bar.divider.dragging { background: color-mix(in srgb, var(--accent) 30%, var(--accent-soft)); }
+.title-bar.divider.dragging { background: color-mix(in srgb, var(--duck-ink) 15%, var(--duck)); }
 
 /* Tap to talk, compact: it sits under the chat without taking over. */
 .split-bottom .talk-row { margin-top: 6px; padding-top: 8px; }
@@ -555,3 +558,12 @@ button.primary:hover:not(:disabled), button.ghost:hover:not(:disabled), .talk:ho
 /* Simon's status, under the sim: the one place it lives on this page. */
 .simon-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
 .simon-status .health { flex: 1; min-width: 0; }
+
+/* Under a title bar the list needs no line of its own. */
+.split-top .insp-list { border-top: 0; margin-top: 0; }
+
+/* A darker shade of the duck's colour (dark blue for Sky, dark violet for Lavender…), for the divider line. */
+:root { --duck-dark: color-mix(in srgb, var(--duck) 60%, #000); }
+
+/* The Inspector log on a light duck-yellow tint (the title bar covers the top). */
+.split-top { background: #fffbe6; }
