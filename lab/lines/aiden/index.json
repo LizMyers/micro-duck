@@ -1,0 +1,212 @@
+{
+ "Good!": {
+  "cut": false,
+  "file": "good.wav",
+  "seconds": 0.45
+ },
+ "Good! Simon didn't say.": {
+  "cut": false,
+  "file": "good-simon-didn-t-say.wav",
+  "seconds": 1.89
+ },
+ "Got it!": {
+  "cut": false,
+  "file": "got-it.wav",
+  "seconds": 0.38
+ },
+ "Gotcha! I didn't say Simon says, and you moved anyway. I win!": {
+  "cut": true,
+  "file": "gotcha-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
+  "seconds": 4.29
+ },
+ "Ha ha! I didn't say Simon says, and you moved anyway. I win!": {
+  "cut": true,
+  "file": "ha-ha-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
+  "seconds": 11.78
+ },
+ "Last round!": {
+  "cut": false,
+  "file": "last-round.wav",
+  "seconds": 0.77
+ },
+ "Let's play Simon Says!": {
+  "cut": false,
+  "file": "let-s-play-simon-says.wav",
+  "seconds": 1.73
+ },
+ "Look down!": {
+  "cut": false,
+  "file": "look-down.wav",
+  "seconds": 1.34
+ },
+ "Look left!": {
+  "cut": false,
+  "file": "look-left.wav",
+  "seconds": 0.77
+ },
+ "Look right!": {
+  "cut": false,
+  "file": "look-right.wav",
+  "seconds": 1.34
+ },
+ "Look up!": {
+  "cut": false,
+  "file": "look-up.wav",
+  "seconds": 0.7
+ },
+ "Nice one!": {
+  "cut": false,
+  "file": "nice-one.wav",
+  "seconds": 0.7
+ },
+ "OK!": {
+  "cut": false,
+  "file": "ok.wav",
+  "seconds": 0.35
+ },
+ "Raise both arms!": {
+  "cut": false,
+  "file": "raise-both-arms.wav",
+  "seconds": 1.18
+ },
+ "Raise your left arm!": {
+  "cut": false,
+  "file": "raise-your-left-arm.wav",
+  "seconds": 1.41
+ },
+ "Raise your right arm!": {
+  "cut": false,
+  "file": "raise-your-right-arm.wav",
+  "seconds": 1.18
+ },
+ "Simon says, look down.": {
+  "cut": false,
+  "file": "simon-says-look-down.wav",
+  "seconds": 2.53
+ },
+ "Simon says, look left.": {
+  "cut": false,
+  "file": "simon-says-look-left.wav",
+  "seconds": 2.37
+ },
+ "Simon says, look right.": {
+  "cut": false,
+  "file": "simon-says-look-right.wav",
+  "seconds": 2.53
+ },
+ "Simon says, look up.": {
+  "cut": false,
+  "file": "simon-says-look-up.wav",
+  "seconds": 2.3
+ },
+ "Simon says, raise both arms.": {
+  "cut": false,
+  "file": "simon-says-raise-both-arms.wav",
+  "seconds": 2.46
+ },
+ "Simon says, raise your left arm.": {
+  "cut": true,
+  "file": "simon-says-raise-your-left-arm.wav",
+  "seconds": 5.57
+ },
+ "Simon says, raise your right arm.": {
+  "cut": false,
+  "file": "simon-says-raise-your-right-arm.wav",
+  "seconds": 2.78
+ },
+ "Simon says, turn left.": {
+  "cut": false,
+  "file": "simon-says-turn-left.wav",
+  "seconds": 2.3
+ },
+ "Simon says, turn right.": {
+  "cut": false,
+  "file": "simon-says-turn-right.wav",
+  "seconds": 2.05
+ },
+ "Too slow!": {
+  "cut": false,
+  "file": "too-slow.wav",
+  "seconds": 0.93
+ },
+ "Too slow! I win!": {
+  "cut": false,
+  "file": "too-slow-i-win.wav",
+  "seconds": 2.05
+ },
+ "Tricked you! I didn't say Simon says, and you moved anyway. I win!": {
+  "cut": false,
+  "file": "tricked-you-i-didn-t-say-simon-says-and-you-moved-anyway-i-win.wav",
+  "seconds": 6.3
+ },
+ "Turn left!": {
+  "cut": false,
+  "file": "turn-left.wav",
+  "seconds": 0.61
+ },
+ "Turn right!": {
+  "cut": false,
+  "file": "turn-right.wav",
+  "seconds": 0.86
+ },
+ "Well played. You win!": {
+  "cut": false,
+  "file": "well-played-you-win.wav",
+  "seconds": 1.79
+ },
+ "Wrong move! I win!": {
+  "cut": true,
+  "file": "wrong-move-i-win.wav",
+  "seconds": 3.65
+ },
+ "Wrong move! That was both arms.": {
+  "cut": false,
+  "file": "wrong-move-that-was-both-arms.wav",
+  "seconds": 2.75
+ },
+ "Wrong move! That was look down.": {
+  "cut": false,
+  "file": "wrong-move-that-was-look-down.wav",
+  "seconds": 2.59
+ },
+ "Wrong move! That was look left.": {
+  "cut": false,
+  "file": "wrong-move-that-was-look-left.wav",
+  "seconds": 2.59
+ },
+ "Wrong move! That was look right.": {
+  "cut": false,
+  "file": "wrong-move-that-was-look-right.wav",
+  "seconds": 2.43
+ },
+ "Wrong move! That was look up.": {
+  "cut": false,
+  "file": "wrong-move-that-was-look-up.wav",
+  "seconds": 2.21
+ },
+ "Wrong move! That was turn left.": {
+  "cut": false,
+  "file": "wrong-move-that-was-turn-left.wav",
+  "seconds": 2.21
+ },
+ "Wrong move! That was turn right.": {
+  "cut": false,
+  "file": "wrong-move-that-was-turn-right.wav",
+  "seconds": 1.89
+ },
+ "Wrong move! That was your left arm.": {
+  "cut": false,
+  "file": "wrong-move-that-was-your-left-arm.wav",
+  "seconds": 2.27
+ },
+ "Wrong move! That was your right arm.": {
+  "cut": false,
+  "file": "wrong-move-that-was-your-right-arm.wav",
+  "seconds": 2.21
+ },
+ "You win!": {
+  "cut": false,
+  "file": "you-win.wav",
+  "seconds": 0.7
+ }
+}

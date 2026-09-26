@@ -361,6 +361,7 @@ function connect() {
     // The model serves one page at a time; a second page is told so, then closed (code 1008).
     if (ev.type === "error" && ev.error?.type === "session_limit_reached") setBusy(true);
     else if (ev.type === "session.created" || ev.type === "session.updated") setBusy(false);
+    if (ev.type === "session.updated") setTimeout(() => loadSavedLines().then(() => prewarmLines(game.linesToWarm())), 500);
     onAgentEvent(ev);
   };
   ws.onclose = (e) => {
@@ -393,6 +394,7 @@ function onAgentEvent(ev) {
   switch (ev.type) {
     case "input_audio_buffer.speech_started":
       state.followUps = 0;
+      warm.heardYou = true;   // you come first: pre-warming pauses
       // Barge-in: if you start talking while it's replying, it stops.
       const wasTalking = isPlaying() || (state.botBubble && !state.botBubble.done);
       stopPlayback();
@@ -417,9 +419,10 @@ function onAgentEvent(ev) {
       break;
     case "response.created":
       state.responding = true;
-      botBubble();
+      if (!state.line?.silent) botBubble();
       break;
     case "response.output_audio_transcript.delta":
+      if (state.line?.silent) { state.line.heard += ev.delta; break; }
       botBubble().text += ev.delta;
       renderBot();
       break;
@@ -437,6 +440,7 @@ function onAgentEvent(ev) {
           send({ type: "response.cancel" });
           inspector.note(`✂️ cut "${l.text}" at ${l.max} s (the voice model ran on)`);
         }
+        if (l.silent) break;   // pre-warming: keep the audio, don't play it
         if (body.mood !== "speaking") body.setMood("speaking");
         playChunk(samples);
         break;
@@ -478,7 +482,10 @@ function onAgentEvent(ev) {
       if (state.line) {
         const l = state.line;
         state.line = null;
-        if (!l.improvise && l.chunks.length && (status === "completed" || l.cut)) lineCache.set(l.text, l.chunks);
+        const keep = !l.improvise && l.chunks.length && (status === "completed" || l.cut)
+          && (!l.silent || sameWords(l.heard, l.text));   // nobody hears a pre-warmed line, so check it
+        if (keep) { lineCache.set(l.text, l.chunks); saveLine(l.text, l.chunks, l.cut); }
+        else if (l.silent) inspector.note(`🔥 not kept: asked for "${l.text}", Simon said "${l.heard}"`);
         l.onDone(status);
       }
       const spoke = !!state.botBubble?.text;
@@ -557,12 +564,13 @@ function sayOnly(instructions) {
 //   cut off after LINE_MAX seconds.
 // `started` resolves true at the first sound (false if none within 15 s); `done` when it has played.
 const LINE_MAX = 3.5;
-const FREE_MAX = 6;            // improvised reactions are longer, so they get more room
+const FREE_MAX = 10;           // improvised reactions are longer (6 s cut "…congratulations, you win!" off a 14-word line)
 const lineCache = new Map();   // text -> Float32Array chunks
 
 // improvise: instead of an exact line, `text` describes what happened and Simon makes up one short
 // sentence about it (variety for free; never cached). Used for reactions, never for commands.
-function sayLine(text, { improvise = false } = {}) {
+// silent: make the audio and cache it without playing it (pre-warming, below).
+function sayLine(text, { improvise = false, silent = false } = {}) {
   let startedResolve, doneResolve;
   const started = new Promise((r) => (startedResolve = r));
   const done = new Promise((r) => (doneResolve = r));
@@ -589,7 +597,7 @@ function sayLine(text, { improvise = false } = {}) {
   whenIdle(() => {
     // Claim the next reply only once any earlier one has finished.
     state.line = mine = {
-      text, chunks: [], samples: 0, cut: false, max: improvise ? FREE_MAX : Math.max(LINE_MAX, text.split(/\s+/).length * 0.9), improvise,   // ~2x a normal pace: never cuts real words, still catches a run-on
+      text, chunks: [], samples: 0, cut: false, silent, heard: "", max: improvise ? FREE_MAX : Math.max(LINE_MAX, text.split(/\s+/).length * 0.9), improvise,   // ~2x a normal pace: never cuts real words, still catches a run-on
       onAudio: () => { clearTimeout(timer); startedResolve(true); },
       onDone: (status) => {
         clearTimeout(timer);
@@ -601,7 +609,9 @@ function sayLine(text, { improvise = false } = {}) {
     if (improvise) return send({ type: "response.create", response: {
       conversation: "none", tool_choice: "none", max_output_tokens: 40,   // a hard stop for runaway text
       instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
-        "Reply with ONE short sentence to say out loud (under 15 words). No emoji, no laughing sounds like 'ha ha'.",
+        "Reply with ONE short sentence to say out loud (under 15 words). No emoji, no laughing sounds like 'ha ha'. " +
+        "Plain words and ordinary punctuation only: no dashes, ellipses or symbols. " +
+        "Speak as yourself: say I and me, never Simon or the duck (Liz: no third person).",
       input: [msg("user", text)],
     } });
     send({ type: "response.create", response: {
@@ -616,6 +626,101 @@ function sayLine(text, { improvise = false } = {}) {
     } });
   });
   return { started, done };
+}
+
+// Saved lines: every line that makes it into the cache is also saved to disk (lab/lines/<voice>/, via
+// the server), and loaded back when the page connects. So the first game after a reload, a restart or
+// a fresh clone plays every fixed line instantly, and always with the same take. To redo a bad take,
+// delete its .wav: Simon makes it again. Why: notes/03-saved-voice-lines.md.
+const saved = { voice: null };
+const voiceKey = () => ui.voice.value.toLowerCase();
+
+function wavBytes(chunks) {
+  const n = chunks.reduce((a, c) => a + c.length, 0);
+  const view = new DataView(new ArrayBuffer(44 + n * 2));
+  const str = (o, t) => [...t].forEach((c, i) => view.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); view.setUint32(4, 36 + n * 2, true); str(8, "WAVEfmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);   // PCM, mono
+  view.setUint32(24, RATE, true); view.setUint32(28, RATE * 2, true);
+  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  str(36, "data"); view.setUint32(40, n * 2, true);
+  let o = 44;
+  for (const c of chunks) for (const x of c) { const s = Math.max(-1, Math.min(1, x)); view.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2; }
+  return new Uint8Array(view.buffer);
+}
+
+async function saveLine(text, chunks, cut) {
+  const bytes = wavBytes(chunks);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  const seconds = (bytes.length - 44) / 2 / RATE;
+  try {
+    const r = await fetch(`/api/lines/${voiceKey()}`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, wav_b64: btoa(bin), seconds, cut }) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    inspector.note(`💾 saved "${text}" (${seconds.toFixed(1)} s${cut ? ", cut: worth a listen" : ""})`);
+  } catch (e) {
+    inspector.note(`💾 couldn't save "${text}": ${e.message}`);
+  }
+}
+
+// Load this voice's saved lines into the cache (once per voice).
+async function loadSavedLines() {
+  const voice = voiceKey();
+  if (saved.voice === voice) return;
+  saved.voice = voice;
+  try {
+    const list = await (await fetch(`/api/lines/${voice}`)).json();
+    let n = 0;
+    await Promise.all(list.map(async (e) => {
+      const buf = await (await fetch(e.url)).arrayBuffer();
+      const pcm = new Int16Array(buf, 44, (buf.byteLength - 44) >> 1);   // our own WAVs: 44-byte header, 16-bit mono
+      const out = new Float32Array(pcm.length);
+      for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 0x8000;
+      if (!lineCache.has(e.text)) { lineCache.set(e.text, [out]); n++; }
+    }));
+    inspector.note(`💾 loaded ${n} saved lines for ${voice}`);
+  } catch (e) {
+    saved.voice = null;
+    inspector.note(`💾 couldn't load saved lines: ${e.message}`);
+  }
+}
+
+// Pre-warming: as soon as the model is ready, Simon makes every fixed game line once, silently, and
+// the audio is cached. Then even the first game plays every command instantly (an uncached line
+// takes 1.3–2 s to think). It stops if a game starts or the mic goes on; the rest get cached in play.
+const warm = { running: false, done: 0, total: 0, heardYou: false };
+function sameWords(a, b) {
+  const norm = (t) => t.toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+  return norm(a) === norm(b);
+}
+// Make sure a line is cached (made silently and checked, if it isn't yet). True if it's ready to play.
+async function prepareLine(text) {
+  if (lineCache.has(text)) return true;
+  const { done } = sayLine(text, { silent: true });
+  await Promise.race([done, sleep(20000)]);
+  return lineCache.has(text);
+}
+
+async function prewarmLines(lines) {
+  if (warm.running) return;
+  const todo = [...new Set(lines)].filter((t) => !lineCache.has(t));
+  if (!todo.length) return;
+  Object.assign(warm, { running: true, done: 0, total: todo.length, heardYou: false });
+  inspector.note(`🔥 pre-warming ${todo.length} game lines (silent)`);
+  const t0 = performance.now();
+  for (const text of todo) {
+    if (!state.ws || game.running || warm.heardYou) {
+      inspector.note(`🔥 pre-warm paused at ${warm.done} of ${warm.total} (${game.running ? "a game started" : warm.heardYou ? "you spoke" : "not connected"}); it carries on after the game`);
+      break;
+    }
+    const { done } = sayLine(text, { silent: true });
+    await Promise.race([done, sleep(20000)]);
+    warm.done++;
+    if (lineCache.has(text)) inspector.note(`🔥 ${warm.done}/${warm.total} "${text}"`);
+  }
+  if (warm.done === warm.total) inspector.note(`🔥 pre-warm finished: ${todo.filter((t) => lineCache.has(t)).length} of ${todo.length} lines cached in ${((performance.now() - t0) / 1000).toFixed(0)} s`);
+  warm.running = false;
 }
 
 // Some messages must wait until the agent isn't in the middle of a reply.
@@ -931,10 +1036,14 @@ const game = new SimonSaysGame({
     return cam.calibrated ? null : "The camera can't see you: sit where your head and shoulders are in view, then start again.";
   },
   sayLine,
+  prepareLine,
+  warming: () => (warm.running ? `Warming up Simon's lines: ${warm.done} of ${warm.total}. You can start any time.` : null),
   lookAt: (dir) => body.lookAt(dir),
   // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
   celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
   note: (text, data) => inspector.note(text, data),
+  // After a game, carry on pre-warming whatever is still missing (and the next game's two scores).
+  gameOver: () => setTimeout(() => prewarmLines(game.linesToWarm()), 1500),
 });
 ui.preset.onchange = () => { ui.instructions.value = PRESETS[ui.preset.value]; savePrefs(); showVoice(); };
 ui.apply.onclick = () => {
@@ -942,7 +1051,8 @@ ui.apply.onclick = () => {
   send(sessionUpdate());
   toast("Personality and voice updated.");
 };
-ui.voice.onchange = () => { savePrefs(); send(sessionUpdate()); showVoice(); };
+// A new voice needs its own lines: forget the old voice's audio (its saved lines load on session.updated).
+ui.voice.onchange = () => { lineCache.clear(); saved.voice = null; savePrefs(); send(sessionUpdate()); showVoice(); };
 ui.muteWhileSpeaking.onchange = savePrefs;
 ui.talk.onclick = () => setMic(!state.micOn);
 ui.clearChat.onclick = () => {
