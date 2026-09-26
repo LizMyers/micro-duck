@@ -644,3 +644,55 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 @media (min-width: 1001px) {
   main.layout { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
 }
+
+/* Settings: what's inside Simon, one row per step of a conversation. */
+.settings-lead { margin: 0 0 12px; font-size: 15px; color: var(--ink); }
+.inside { width: 100%; border-collapse: collapse; font-size: 15px; color: var(--ink); }
+.inside th, .inside td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
+.inside th { font-weight: 600; white-space: nowrap; width: 1%; }
+.inside .job { display: block; }
+.inside td:nth-child(2) { font-weight: 400; }
+.inside a { color: var(--duck-dark); font-weight: 600; text-underline-offset: 3px; }
+.inside a:hover { color: var(--duck); }
+.inside .where { white-space: nowrap; color: var(--ink-2); width: 1%; }
+.settings-colour { margin-top: 16px; display: flex; align-items: center; gap: 16px; }
+.settings-colour .os-label { font-weight: 600; font-size: 15px; color: var(--ink); }
+.dot { cursor: pointer; }
+
+/* Colour dots at the right end of the tab bar. */
+.controls .tabs .bar-dots { margin-left: auto; align-self: center; display: flex; gap: 8px; padding-right: 4px; }
+.bar-dots .dot { width: 16px; height: 16px; box-shadow: 0 0 0 1px rgb(255 255 255 / 60%); }
+.bar-dots .dot[aria-checked="true"] { box-shadow: 0 0 0 2px var(--duck), 0 0 0 4px #fff; }
+/* Colour dots, simplified: a plain 20px circle with a 32px tap area (the padding is transparent); only the
+   chosen colour gets a white ring. */
+.controls .tabs .bar-dots { gap: 2px; }
+.bar-dots .dot {
+  width: 32px; height: 32px; padding: 6px; border: 0; border-radius: 50%; background: var(--c);
+  background-clip: content-box; box-shadow: none;
+}
+.bar-dots .dot[aria-checked="true"] { box-shadow: inset 0 0 0 2px #fff; }
+.bar-dots .dot:hover { box-shadow: inset 0 0 0 2px rgb(255 255 255 / 55%); }
+/* The dots on a neutral pill, so every colour shows true (not against the blue); dark ring for the chosen one. */
+.controls .tabs .bar-dots { background: var(--surface); border-radius: 999px; padding: 2px 4px; }
+.bar-dots .dot[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.bar-dots .dot:hover { box-shadow: inset 0 0 0 2px var(--line); }
+.bar-dots .dot[aria-checked="true"]:hover { box-shadow: inset 0 0 0 2px var(--ink); }
+/* The colour pill in near-black (#232323, the page's darkest), with a white ring for the chosen colour. */
+.controls .tabs .bar-dots { background: #232323; }
+.bar-dots .dot[aria-checked="true"], .bar-dots .dot[aria-checked="true"]:hover { box-shadow: inset 0 0 0 2px #fff; }
+.bar-dots .dot:hover { box-shadow: inset 0 0 0 2px rgb(255 255 255 / 45%); }
+/* The colour block: square, pure black, filling the right end of the bar top to bottom (so the dark
+   Graphite dot still shows). Dots without padding; the chosen one has a white border. */
+.controls .tabs .bar-dots {
+  align-self: stretch; margin-right: -12px; padding: 0 14px; border-radius: 0; background: #000;
+  align-items: center; gap: 10px;
+}
+.bar-dots .dot {
+  width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%;
+  background: var(--c); background-clip: border-box; box-shadow: none;
+}
+.bar-dots .dot:hover { box-shadow: none; border-color: rgb(255 255 255 / 45%); }
+.bar-dots .dot[aria-checked="true"], .bar-dots .dot[aria-checked="true"]:hover { box-shadow: none; border-color: #fff; }
+.controls .tabs .bar-dots { padding-right: 24px; }   /* 10px more room after the last dot */
+.controls .tabs .bar-dots { padding-right: 14px; margin-right: -2px; }   /* back to 14px inside; 10px of blue outside, before the card edge */
+.controls .tabs .bar-dots { background: rgb(0 0 0 / 50%); }   /* black at 50%: a darker band of the theme colour */
