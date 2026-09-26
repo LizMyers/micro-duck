@@ -696,3 +696,18 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .controls .tabs .bar-dots { padding-right: 24px; }   /* 10px more room after the last dot */
 .controls .tabs .bar-dots { padding-right: 14px; margin-right: -2px; }   /* back to 14px inside; 10px of blue outside, before the card edge */
 .controls .tabs .bar-dots { background: rgb(0 0 0 / 50%); }   /* black at 50%: a darker band of the theme colour */
+
+/* The scoreboard shows only while the camera is on (its preview box is showing). */
+.sim-wrap:not(:has(#cam-pip:not([hidden]))) .ss-board.on-sim { display: none; }
+
+/* Info: the first sentence as a title (the heading size), the second as a normal line under it. */
+.settings-title { font-size: 20px; font-weight: 600; line-height: 1.3; margin: 4px 0 4px; color: var(--ink); }
+.settings-lead { font-size: 15px; margin: 0 0 14px; }
+
+/* Column labels: readable like the rest (15px, semi-bold, dark), with a stronger line under them. */
+.inside thead th { font-size: 15px; font-weight: 600; color: var(--ink); border-bottom: 2px solid var(--line);
+  padding-bottom: 6px; white-space: nowrap; }
+
+/* Column headings in capitals (labels, like the tabs); the model column lets names wrap. */
+.inside thead th { text-transform: uppercase; letter-spacing: .05em; }
+.inside td.model { min-width: 12em; }
