@@ -30,7 +30,7 @@ const PERSONALITY =
 
 const inspector = new Inspector($("inspector"), { plain: true });   // no emojis on this page
 const body = new DuckBody({
-  iframe: $("sim"), moodEl: $("mood"),   // (no Beak / Head / Why row on this page: status lives there instead)
+  iframe: $("sim"),   // (no mood badge or Beak / Head / Why row on this page: the sim fills the card)
 });
 
 // ---------- Simon's status: one line under the sim, with Start / Restart ---------------------
