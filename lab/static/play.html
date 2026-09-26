@@ -36,20 +36,15 @@
           <div class="cam-bar"><span id="cam-status">Starting camera…</span></div>
         </div>
       </div>
-      <dl class="body-readout">
-        <div>
-          <dt>Beak</dt>
-          <dd><span class="meter"><span id="beak-meter"></span></span><span class="num" id="beak-num">0%</span></dd>
+      <!-- Simon's status: the one place it lives on this page. -->
+      <div class="simon-status">
+        <div class="health" id="health" data-state="unknown" role="status">
+          <span class="health-dot" aria-hidden="true"></span>
+          <strong id="health-word">?</strong>
+          <small id="health-detail">Checking…</small>
         </div>
-        <div>
-          <dt>Head</dt>
-          <dd><span class="head-dial" aria-hidden="true"><span id="head-dot"></span></span><span id="head-text">neutral</span></dd>
-        </div>
-        <div>
-          <dt>Why</dt>
-          <dd id="mood-why">Waiting for someone to talk.</dd>
-        </div>
-      </dl>
+        <button class="ghost small" id="simon-start" title="Starts (or restarts) Simon's voice agent: Qwen3 4B, about 1–3 minutes">Start Simon</button>
+      </div>
     </section>
 
     <!-- Left, bottom: the game, Simon's settings, the Mac -->
@@ -97,17 +92,6 @@
       <div role="tabpanel" id="panel-settings" class="os" aria-labelledby="tab-settings" hidden>
         <div class="os-rows">
           <div class="os-row">
-            <div class="os-label">Status</div>
-            <div class="health" id="health" data-state="unknown" role="status">
-              <span class="health-dot" aria-hidden="true"></span>
-              <strong id="health-word">?</strong>
-              <small id="health-detail">Checking…</small>
-            </div>
-            <div class="os-btns">
-              <button class="ghost small" id="simon-start" title="Starts (or restarts) Simon's voice agent: Qwen3 4B, about 1–3 minutes">Start Simon</button>
-            </div>
-          </div>
-          <div class="os-row">
             <div class="os-label">Colour</div>
             <div class="os-info duck-dots" id="duck-colour" role="radiogroup" aria-label="Duck colour">
               <button class="dot" data-colour="blue" role="radio" aria-label="Sky" style="--c:#8fc3e3"></button>
@@ -137,29 +121,34 @@
 
     <!-- Right: the Inspector (why things happen) above the chat (what was said) -->
     <section class="card side split" aria-label="Inspector and chat">
-      <div class="split-top inspector">
-        <div class="split-head"><h3>Inspector</h3></div>
-        <div id="inspector" class="insp-root">
-          <div class="row tight">
-            <label class="check"><input type="checkbox" id="insp-hide-audio" checked><span>Hide audio</span></label>
-            <button class="ghost small" id="insp-copy">Copy</button>
-            <button class="ghost small" id="insp-clear">Clear</button>
-          </div>
-          <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
-          <div class="insp-list" aria-live="off"></div>
+      <div class="split-top inspector insp-root" id="inspector">
+        <div class="title-bar">
+          <h3>Inspector</h3>
+          <button class="ghost small" id="insp-copy">Copy</button>
+          <button class="ghost small" id="insp-clear">Clear</button>
         </div>
+        <div class="row tight">
+          <label class="check"><input type="checkbox" id="insp-hide-audio" checked><span>Hide audio</span></label>
+        </div>
+        <p class="hint"><b>→</b> page to agent · <b>←</b> agent to page · <b>•</b> the page itself. Click a row for details.</p>
+        <div class="insp-list" aria-live="off"></div>
       </div>
 
       <div class="split-bottom">
-        <div class="split-head"><h3>Chat</h3><button class="ghost small" id="clear-chat">Clear</button></div>
+        <!-- The chat's title bar is also the divider: drag it up or down (or focus it and use the arrow keys). -->
+        <div class="title-bar divider" id="chat-head" role="separator" aria-orientation="horizontal"
+             aria-label="Resize the Inspector and chat" tabindex="0" title="Drag to resize · double-click to reset">
+          <h3>Chat</h3>
+          <button class="ghost small" id="clear-chat">Clear</button>
+        </div>
         <div class="chat" id="chat" aria-live="polite">
-          <p class="empty" id="chat-empty">When Simon is ready, tap the button below and say hello.</p>
+          <p class="empty" id="chat-empty">When Simon is ready, tap the button below (or hold Space) and say hello.</p>
         </div>
         <div class="talk-row">
           <button class="talk" id="talk" disabled aria-pressed="false">
-            <span class="mic" aria-hidden="true"></span>
             <span id="talk-label">Tap to talk</span>
           </button>
+          <span class="hint talk-hint">or hold <kbd>Space</kbd></span>
         </div>
       </div>
     </section>

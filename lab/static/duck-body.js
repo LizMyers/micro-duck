@@ -137,9 +137,12 @@ export class DuckBody {
     clearTimeout(this.timer);
     this.mood = mood;
     this.pose = POSES[mood];
-    this.moodEl.dataset.mood = mood;
-    this.moodEl.textContent = mood[0].toUpperCase() + mood.slice(1);
-    this.whyEl.textContent = WHY[mood];
+    // (A page may leave out any of these readouts: the game page has no Beak / Head / Why row.)
+    if (this.moodEl) {
+      this.moodEl.dataset.mood = mood;
+      this.moodEl.textContent = mood[0].toUpperCase() + mood.slice(1);
+    }
+    if (this.whyEl) this.whyEl.textContent = WHY[mood];
     this.applyHead();
     if (holdMs && then) this.timer = setTimeout(() => this.setMood(then), holdMs);
   }
@@ -162,14 +165,14 @@ export class DuckBody {
     const up = neck - pitch;           // both raise the gaze
     const x = Math.max(-1, Math.min(1, -yaw / 0.6)) * 9;
     const y = Math.max(-1, Math.min(1, -up / 0.6)) * 9;
-    this.headDot.style.transform = `translate(${x}px, ${y}px)`;
+    if (this.headDot) this.headDot.style.transform = `translate(${x}px, ${y}px)`;
     const parts = [];
     if (up > 0.1) parts.push("up");
     if (up < -0.1) parts.push("back");
     if (yaw > 0.1) parts.push("left");
     if (yaw < -0.1) parts.push("right");
     if (Math.abs(pose[3]) > 0.1) parts.push("tilted");
-    this.headText.textContent = parts.length ? parts.join(", ") : "neutral";
+    if (this.headText) this.headText.textContent = parts.length ? parts.join(", ") : "neutral";
   }
 
   // Every animation frame: measure how loud the reply is and open the beak to match.
@@ -188,8 +191,8 @@ export class DuckBody {
     if (this.jawOverride != null) this.jaw = this.jawOverride;
     this.rl?.setJaw?.(this.jaw);
     const pct = Math.round(this.jaw * 100);
-    this.beakBar.style.width = `${pct}%`;
-    this.beakNum.textContent = `${pct}%`;
+    if (this.beakBar) this.beakBar.style.width = `${pct}%`;
+    if (this.beakNum) this.beakNum.textContent = `${pct}%`;
     requestAnimationFrame(() => this.tick());
   }
 }

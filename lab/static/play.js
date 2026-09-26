@@ -11,7 +11,7 @@ import { Inspector } from "/static/inspector.js";
 import { MacOS } from "/static/mac-os.js";
 import { measure } from "/static/pose.js";
 import { calibrationProblem } from "/static/simon-says.js";
-import { setMic } from "/static/audio.js";
+import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
 import { cam, startCamera, calibrate } from "/static/camera.js";
 import { startAgent, listenToServer, onAgentStatus } from "/static/server-link.js";
@@ -24,11 +24,10 @@ const PERSONALITY =
 
 const inspector = new Inspector($("inspector"));
 const body = new DuckBody({
-  iframe: $("sim"), moodEl: $("mood"), whyEl: $("mood-why"),
-  beakBar: $("beak-meter"), beakNum: $("beak-num"), headDot: $("head-dot"), headText: $("head-text"),
+  iframe: $("sim"), moodEl: $("mood"),   // (no Beak / Head / Why row on this page: status lives there instead)
 });
 
-// ---------- Simon settings: one clear status line, and Start / Restart ----------------------
+// ---------- Simon's status: one line under the sim, with Start / Restart ---------------------
 const HEALTH = {
   ready: ["READY", () => "Simon is ready to play."],
   busy: ["BUSY", () => "Another tab is connected to Simon (he talks to one page at a time). Close the other tabs."],
@@ -76,6 +75,10 @@ Object.assign(ctx, {
   muteWhileSpeaking: () => false,
   tools: [],          // no duck moves by voice here: just the game (play_simon_says)
   os: new SimonSettings(),
+  // Player words, not lab words, on the talk button and the busy message.
+  // The talk button is only a button: Simon's status lives under the sim (the button just greys out).
+  talkLabels: { starting: "Tap to talk", stopped: "Tap to talk", error: "Tap to talk", busy: "Tap to talk" },
+  busyMessage: "Simon is busy in another tab: close it, then reload this page.",
 });
 
 // ---------- Camera setup: before Start, on the page ----------------------------------------
@@ -129,6 +132,41 @@ $("setup-camera").onclick = turnOnCamera;
 $("setup-calibrate").onclick = calibrateNow;
 $("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); };
 
+// ---------- Inspector / chat divider: drag the chat's title bar to share the space ----------
+// The Inspector's height is remembered as a share of the column, so it survives a resize or reload.
+{
+  const top = document.querySelector(".split-top"), col = document.querySelector(".side.split"), bar = $("chat-head");
+  const MIN = 120;   // px: neither panel shrinks to nothing
+  const setTop = (px) => {
+    const max = col.clientHeight - MIN - bar.offsetHeight;
+    const h = Math.max(MIN, Math.min(max, px));
+    top.style.flex = `0 0 ${h}px`;
+    return h;
+  };
+  const save = () => { try { localStorage.setItem("play-split", String(top.offsetHeight / col.clientHeight)); } catch {} };
+  try { const f = parseFloat(localStorage.getItem("play-split")); if (f > 0 && f < 1) setTop(f * col.clientHeight); } catch {}
+  let drag = null;
+  bar.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;   // Clear is still a button
+    drag = { y: e.clientY, h: top.offsetHeight };
+    bar.setPointerCapture(e.pointerId);
+    bar.classList.add("dragging");
+  });
+  bar.addEventListener("pointermove", (e) => { if (drag) setTop(drag.h + e.clientY - drag.y); });
+  const end = () => { if (!drag) return; drag = null; bar.classList.remove("dragging"); save(); };
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
+  bar.addEventListener("dblclick", () => { top.style.flex = ""; try { localStorage.removeItem("play-split"); } catch {} });
+  // Keyboard: arrow keys move the divider.
+  bar.addEventListener("keydown", (e) => {
+    const step = { ArrowUp: -24, ArrowDown: 24 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    setTop(top.offsetHeight + step);
+    save();
+  });
+}
+
 // ---------- The rest of the page ------------------------------------------------------------
 for (const tab of document.querySelectorAll('[role="tab"]')) {
   tab.onclick = () => {
@@ -156,8 +194,41 @@ function setDuckColour(name) {
 }
 
 new MacOS();
+// The RAM banner's height, for play.css: the right column shrinks by it so nothing goes off screen.
+{
+  const banner = $("ram-warning");
+  const setH = () => document.documentElement.style.setProperty("--banner-h", banner.hidden ? "0px" : `${banner.offsetHeight}px`);
+  new MutationObserver(setH).observe(banner, { attributes: true, attributeFilter: ["hidden"] });
+  new ResizeObserver(setH).observe(banner);
+  setH();
+}
 ctx.game = makeGame({ setupOnPage: true });
 $("talk").onclick = () => setMic(!state.micOn);
+
+// Hold the space bar to talk (a walkie-talkie). Tap to talk still works as a toggle. Not during a game:
+// the mic is off while Simon referees, so you talk to him only between games.
+{
+  const typing = (el) => el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+  let holding = false;
+  window.addEventListener("keydown", (e) => {
+    if (e.code !== "Space" || typing(document.activeElement)) return;
+    e.preventDefault();                // no page scroll, and no "click" on a focused button
+    if (e.repeat || holding) return;
+    if ($("talk").disabled) return;
+    if (ctx.game?.running) { toast("The mic is off during a game: talk to Simon when it's over."); return; }
+    if (state.micOn) return;           // already on via Tap to talk: leave it alone
+    holding = state.holdToTalk = true;
+    cancelMicRelease();
+    setMic(true);
+  });
+  const release = () => {
+    if (!holding) return;
+    holding = state.holdToTalk = false;
+    releaseMicAfterSilence();
+  };
+  window.addEventListener("keyup", (e) => { if (e.code === "Space" && !typing(document.activeElement)) { e.preventDefault(); release(); } });
+  window.addEventListener("blur", release);   // let go outside the window: stop too
+}
 $("clear-chat").onclick = clearChat;
 
 state.options = await (await fetch("/api/options")).json();
