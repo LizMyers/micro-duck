@@ -119,6 +119,16 @@
   "file": "fifty-for-me-thirty-five-for-you.wav",
   "seconds": 2.3
  },
+ "Fifty-five for me, thirty-nine for you.": {
+  "cut": false,
+  "file": "fifty-five-for-me-thirty-nine-for-you.wav",
+  "seconds": 2.46
+ },
+ "Fifty-four for me, forty for you.": {
+  "cut": false,
+  "file": "fifty-four-for-me-forty-for-you.wav",
+  "seconds": 3.1
+ },
  "Fifty-four for me, thirty-seven for you.": {
   "cut": false,
   "file": "fifty-four-for-me-thirty-seven-for-you.wav",
@@ -334,15 +344,40 @@
   "file": "it-s-fifteen-to-two-in-my-favor.wav",
   "seconds": 1.95
  },
+ "It's fifty-five to forty in my favor.": {
+  "cut": false,
+  "file": "it-s-fifty-five-to-forty-in-my-favor.wav",
+  "seconds": 2.75
+ },
+ "It's fifty-five to forty-one.": {
+  "cut": false,
+  "file": "it-s-fifty-five-to-forty-one.wav",
+  "seconds": 2.37
+ },
  "It's fifty-five to thirty-seven in my favor.": {
   "cut": false,
   "file": "it-s-fifty-five-to-thirty-seven-in-my-favor.wav",
   "seconds": 2.05
  },
+ "It's fifty-four to forty-one in my favor.": {
+  "cut": false,
+  "file": "it-s-fifty-four-to-forty-one-in-my-favor.wav",
+  "seconds": 3.01
+ },
+ "It's fifty-four to forty-two.": {
+  "cut": false,
+  "file": "it-s-fifty-four-to-forty-two.wav",
+  "seconds": 2.43
+ },
  "It's fifty-four to thirty-eight in my favor.": {
   "cut": false,
   "file": "it-s-fifty-four-to-thirty-eight-in-my-favor.wav",
   "seconds": 2.59
+ },
+ "It's fifty-four to thirty-nine.": {
+  "cut": false,
+  "file": "it-s-fifty-four-to-thirty-nine.wav",
+  "seconds": 2.37
  },
  "It's fifty-one to thirty-eight in my favor.": {
   "cut": false,
@@ -363,6 +398,11 @@
   "cut": false,
   "file": "it-s-fifty-one-to-thirty-six.wav",
   "seconds": 1.89
+ },
+ "It's fifty-six to forty.": {
+  "cut": false,
+  "file": "it-s-fifty-six-to-forty.wav",
+  "seconds": 2.27
  },
  "It's fifty-three to thirty-nine in my favor.": {
   "cut": false,
@@ -1283,6 +1323,11 @@
   "cut": false,
   "file": "twenty-three-for-me-eleven-for-you.wav",
   "seconds": 2.3
+ },
+ "Uh oh, you're gaining on me!": {
+  "cut": false,
+  "file": "uh-oh-you-re-gaining-on-me.wav",
+  "seconds": 2.43
  },
  "Well played. You win!": {
   "cut": false,

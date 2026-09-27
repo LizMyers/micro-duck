@@ -67,6 +67,8 @@ export function sayLine(text, { improvise = false, silent = false } = {}) {
       instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
         "Reply with ONE short sentence to say out loud (under 10 words). No emoji, no laughing sounds like 'ha ha', never the word quack (your real quacks are played as sounds). " +
         "Plain words and ordinary punctuation only: no dashes, ellipses or symbols. " +
+        "Join parts with a comma, never a long dash: say \"Slick win, way to go!\", not \"Slick win\u2014way to go!\" " +
+        "(the voice goes silent at a dash). " +
         "Speak as yourself: say I and me, never Simon or the duck (Liz: no third person).",
       input: [msg("user", text)],
     } });
@@ -92,6 +94,18 @@ export function onLineAudio(l, delta) {
   l.chunks.push(samples);
   l.samples += samples.length;
   const said = l.improvise ? l.heard || "(made-up line)" : l.text;   // improvised: l.text is the prompt, not the words
+  // Gone quiet mid-line: after real speech, a second of silence means the voice model dropped the rest (it does
+  // at a long dash: "the duck in you—congrats" was 4 s of speech then 3 s of silence, 2026-09-27). Cut it now,
+  // not at the run-on limit.
+  const quiet = chunkIsQuiet(samples);
+  if (!quiet) { l.hadSound = true; l.quietSamples = 0; } else if (l.hadSound) l.quietSamples = (l.quietSamples || 0) + samples.length;
+  if (l.hadSound && l.quietSamples > QUIET_CUT_S * RATE) {
+    l.cut = true;
+    send({ type: "response.cancel" });
+    ctx.inspector.note(`✂️ page: cut "${said}" after ${QUIET_CUT_S} s of silence mid-line: the voice model dropped the rest`, null, "warn");
+    if (!l.improvise) markBad(l, "went silent");
+    return;
+  }
   if (l.samples > l.max * RATE) {   // the voice model ran on: stop it
     l.cut = true;
     send({ type: "response.cancel" });
@@ -131,6 +145,14 @@ export function finishLine(l, status) {
 }
 
 // Where the sound stops: the voice model sometimes says a few words and then pads with silence.
+// A chunk is quiet if its loudness (RMS) stays under 0.01, the same line noteSilence uses for "sound".
+export const QUIET_CUT_S = 1;
+export function chunkIsQuiet(samples) {
+  let sum = 0;
+  for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
+  return Math.sqrt(sum / Math.max(1, samples.length)) <= 0.01;
+}
+
 function noteSilence(l) {
   const all = l.chunks.length === 1 ? l.chunks[0] : Float32Array.from(l.chunks.flatMap((c) => [...c]));
   const win = RATE / 20;   // 50 ms
