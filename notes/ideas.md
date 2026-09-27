@@ -97,6 +97,13 @@ so his quack is his fingerprint and the serial can be his ID.
 - **Lost mode:** powered on away from home (not on the home Wi-Fi) he introduces himself: "Hi! I'm Simon. I think
   I'm lost…" (Liz: "genius").
 - Printed QR sticker on the real duck with the same contact, for a flat battery.
+- **Face recognition** (Liz): "I think I'm lost" only to a face he doesn't know; to the owner: "Welcome back, Liz!".
+  Biometric data, so: opt-in, owner (and consenting family) only; never stores anyone else's face; a numeric faceprint,
+  not photos, kept on the duck/Mac, never uploaded, visible in the Inspector, deletable ("Simon, forget my face").
+  Not security (a photo may fool it): it only changes friendliness; never says the address even to the owner.
+  Two signals decide: home Wi-Fi yes + known face = "Welcome back"; home + unknown = friendly "Hi! I'm Simon";
+  away + known = "We're out and about!"; away + unknown = "I think I'm lost…" + safe contact.
+  Tech: MediaPipe finds faces but doesn't recognise them; needs a small face-recognition model in the browser (local).
 
 ## Companionship (Liz, 2026-09-27, walk)
 "It's a powerful experience when the duck can play with you and maintain healthy banter at the same time."
