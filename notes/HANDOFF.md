@@ -342,3 +342,17 @@ Still seen: a raised arm crossing the face can flicker right/both/left for a mom
 name the wrong arm. The 📏 arm line logs on every arm round, traps too.
 Pending (Liz to decide): one type hierarchy for the game panel (4 levels: hero 72 / headline 28 / label 15 /
 note 18), proposed after "the timer, Stop and round label look splattered".
+
+## Release 2 idea: the same game with a real Microduck (Liz, 2026-09-26)
+Only the body changes. Brain (voice agent on the Mac) and referee (webcam in the browser) stay as they are.
+- Swap `DuckBody` (the sim) for a real-duck version with the same calls (look, mood, face the player, beak with
+  the audio, quack), talking to Pollen's `robotd`, the program that controls the real duck.
+- Build it before the hardware arrives against Pollen's `duck-sim` (robotd with a simulated body; Rust build,
+  Linux audio: see notes/research/sim-and-reachy-pattern.md), then point it at the real duck.
+- Known (Liz, from Pollen's material): the real beak moves, and the duck makes its own sounds.
+- To check with the hardware/docs: voice through the duck's speaker or the laptop; how robotd connects
+  (Wi-Fi/USB) and its latency; which moves are safe on a desk.
+- Microduck ships ~Christmas 2026. Story: "the same game, the same brain, now in a real duck."
+
+Also open (09-26): a very fast "yes, again!" can still start a game before the score pre-warm finishes
+(paused at 3 of 5 when Liz spoke), so an end-of-game score is occasionally made live, with a short pause.
