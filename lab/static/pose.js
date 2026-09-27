@@ -299,6 +299,23 @@ export class PoseTracker {
     return b;
   }
 
+  // For the log: an arm move's raw numbers (wrist height above the shoulder in shoulder widths, and how sure
+  // the camera is of the wrist and elbow). Both arms for both_arms_up: the lower one.
+  armDetail(poseId) {
+    const lm = this.latest?.landmarks;
+    if (!lm) return null;
+    const one = (side) => {
+      const sh = LM[`${side}Shoulder`], w = LM[`${side}Wrist`], el = LM[`${side}Elbow`];
+      const sw = Math.hypot((lm[LM.leftShoulder].x - lm[LM.rightShoulder].x) * this.aspect, lm[LM.leftShoulder].y - lm[LM.rightShoulder].y) || 1;
+      return { side, up: (lm[sh].y - lm[w].y) / sw, wristVis: lm[w].visibility ?? 1, elbowVis: lm[el].visibility ?? 1,
+        elbowUp: (lm[sh].y - lm[el].y) / sw };
+    };
+    if (poseId === "left_arm_up") return one("left");
+    if (poseId === "right_arm_up") return one("right");
+    const [l, r] = [one("left"), one("right")];
+    return l.up < r.up ? l : r;
+  }
+
   check(poseId) {
     const d = evaluatePoseDetailed(this.latest?.landmarks, this.baseline, this.aspect);
     return d[poseId] ?? { ok: false, confidence: 0, reason: `unknown pose ${poseId}` };
