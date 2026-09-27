@@ -7,6 +7,7 @@ import { SimonSaysGame } from "/static/simon-says.js";
 import { ensureAudio, setMic } from "/static/audio.js";
 import { cam, startCamera, calibrate } from "/static/camera.js";
 import { sayLine, prepareLine, prewarmLines, badLines, warm } from "/static/voice-lines.js";
+import { rememberSaid } from "/static/agent.js";
 
 // setupOnPage: the page sets up and calibrates the camera before Start (the game page); otherwise the
 // game does it by voice with a countdown before each game (the lab).
@@ -43,6 +44,7 @@ export function makeGame({ beforeGame, setupOnPage = false, isSetUp, needSetup, 
     // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
     celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
     note: (text, data, kind) => ctx.inspector.note(text, data, kind),
+    remember: (text) => rememberSaid(text),
     // After a game, carry on pre-warming whatever is still missing (and the next game's two scores).
     gameOver: () => setTimeout(() => prewarmLines(game.linesToWarm()), 1500),
   });

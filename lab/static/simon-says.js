@@ -62,6 +62,26 @@ export const SETUP_LINES = {
   ok: ["Perfect!", "Looking good!", "That's the spot!"],
 };
 
+// Matches (Liz: "suggest best 2 out of 3, or 3 out of 5, or 4 out of 7, depending on how many have been
+// played"). Offered at the end of a game; saying yes makes the game just played game 1.
+export const MATCH_OFFERS = { 3: "Best two out of three?", 5: "Best three out of five?", 7: "Best four out of seven?" };
+export function offerFor(gamesPlayed) { return gamesPlayed >= 6 ? 7 : gamesPlayed >= 3 ? 5 : 3; }
+export function newMatch(bestOf, firstWinner) {
+  return { bestOf, need: (bestOf + 1) / 2, games: 1, simon: firstWinner === "simon" ? 1 : 0, you: firstWinner === "you" ? 1 : 0, over: false };
+}
+export function matchAfter(m, winner) {
+  const next = { ...m, games: m.games + 1, [winner]: m[winner] + 1 };
+  next.over = next[winner] >= next.need;
+  return next;
+}
+// What Simon says after a match game (fixed lines, so they're saved once and play instantly).
+export const MATCH_LINES = { simonWins: "That's the match. I win!", youWin: "You win the match!",
+  level: "It's level!", simonAhead: "I'm ahead!", youAhead: "You're ahead!" };
+export function matchLine(m) {
+  if (m.over) return m.simon > m.you ? MATCH_LINES.simonWins : MATCH_LINES.youWin;
+  return m.simon === m.you ? MATCH_LINES.level : m.simon > m.you ? MATCH_LINES.simonAhead : MATCH_LINES.youAhead;
+}
+
 // Pick the next command (never the same one twice in a row).
 export function nextCommand(rand, { last = null } = {}) {
   const says = rand() < SAYS_CHANCE;
@@ -210,6 +230,7 @@ export class SimonSaysGame {
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
       ...TRAP_OPENERS.map(trapLine),
       "I win!", "You win!", "Well played. You win!",
+      ...Object.values(MATCH_OFFERS), ...Object.values(MATCH_LINES),
       // Only two scores are possible after the next game.
       this.usableScore(simon + 1, you), ...taunts(simon + 1, you),
       this.usableScore(simon, you + 1), ...taunts(simon, you + 1),
@@ -238,10 +259,16 @@ export class SimonSaysGame {
     const id = ++this.gameId;   // this game's ticket: stop() or a new game makes every older step give up
     const live = () => this.isLive(id);
     Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0, skips: 0 });
+    // Playing on after Simon offered a match is a yes: the game just played was game 1.
+    if (this.offer) {
+      this.match = newMatch(this.offer.bestOf, this.lastWinner);
+      this.app.note(`🏆 match on: best of ${this.match.bestOf} (the last game counts as game 1)`);
+      this.offer = null;
+    }
     setProp("ss-start", "textContent", "Stop game");
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
-    this.emit({ type: "playing" });
+    this.emit({ type: "playing", match: this.match ? { game: this.match.games + 1, bestOf: this.match.bestOf } : null });
     if (!this.lastWinner) await this.speak(FIRST_OPENER);
     else if (this.app.setupOnPage) await this.speak(this.pickOpener());   // (by voice: said over the countdown)
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
@@ -256,7 +283,19 @@ export class SimonSaysGame {
     const { simon, you } = { ...this.board.totals, [winner]: this.board.totals[winner] + 1 };
     // Numbers as words, in its own short line: the voice model dropped the end of
     // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
-    this.emit({ type: "over", winner, why: simonWon ? this.lastResult : `All ${ROUNDS} right!` });
+    // The match (if one's on) moves on; if not, Simon offers one (asked at the end, below).
+    this.gamesPlayed = (this.gamesPlayed || 0) + 1;
+    let match = null;
+    if (this.match) {
+      match = this.match = matchAfter(this.match, winner);
+      this.app.note(`🏆 match: Simon ${match.simon}, you ${match.you} (best of ${match.bestOf})${match.over ? ": match over" : ""}`);
+    }
+    if (!this.match || this.match.over) {
+      this.match = null;
+      this.offer = { bestOf: offerFor(this.gamesPlayed) };
+    }
+    const ask = this.offer ? MATCH_OFFERS[this.offer.bestOf] : null;
+    this.emit({ type: "over", winner, why: simonWon ? this.lastResult : `All ${ROUNDS} right!`, match, ask });
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
@@ -286,6 +325,14 @@ export class SimonSaysGame {
       if (!/\byou(?:'ve| have)? (?:win|won)\b/i.test(heard)) await this.speak("You win!");
       if (!live()) return;
       await this.sayScore(simon, you);
+    }
+    if (!live()) return;
+    // Then the match news, and the question (a nod, the button or a yes answers it).
+    if (match) await this.speak(matchLine(match));
+    if (!live()) return;
+    if (ask) {
+      await this.speak(ask);
+      this.app.remember?.(ask);   // so a spoken "yes" has context for the chat model
     }
     if (!live()) return;
     this.board.add(winner);

@@ -117,3 +117,19 @@ test("setup: every calibration problem has fun lines, and so does a good stance"
   assert.equal(calibrationIssue({ yaw: 0.3, shoulderDepth: 0 }), "look");
   assert.equal(calibrationIssue({ yaw: 0, shoulderDepth: 0 }), null);
 });
+
+test("match offers grow with games played; the game just played is game 1; first to the majority wins", async () => {
+  const { offerFor, newMatch, matchAfter, matchLine, MATCH_OFFERS } = await import("../simon-says.js");
+  assert.equal(MATCH_OFFERS[offerFor(1)], "Best two out of three?");
+  assert.equal(MATCH_OFFERS[offerFor(3)], "Best three out of five?");
+  assert.equal(MATCH_OFFERS[offerFor(6)], "Best four out of seven?");
+  let m = newMatch(3, "simon");                      // Simon won the game before the offer
+  assert.deepEqual([m.simon, m.you, m.games], [1, 0, 1]);
+  assert.equal(matchLine(m), "I'm ahead!");
+  m = matchAfter(m, "you");
+  assert.equal(matchLine(m), "It's level!");
+  assert.equal(m.over, false);
+  m = matchAfter(m, "you");
+  assert.equal(m.over, true);
+  assert.equal(matchLine(m), "You win the match!");
+});
