@@ -121,3 +121,20 @@ The page IS the board; Simon reads its STATE, not its pixels (like the onGame ev
   real-time server), with Simon as commentator/referee for both ("your mum just took two of your pieces!").
 - Existing sites: only via an API (e.g. Lichess for chess); screenshot-reading needs a vision model (slow, and our
   text-only model can't see). Build our own board. Order: tic-tac-toe, connect four, checkers.
+
+## More games that are special with Simon (2026-09-27)
+Best when they use two or more of his superpowers: a voice with personality, a body that moves, a fair camera
+referee, banter.
+- **Red light, green light** (TOP PICK): he turns away ("green light!"), spins back ("RED LIGHT!"), the camera catches
+  any wobble. Nearly all built already; the head-turn is the drama.
+- **Freeze dance / musical statues:** he plays music, stops it, judges who froze.
+- **Head, shoulders, knees and toes:** speeds up, checks you keep up; a desk warm-up.
+- **Duck charades** (TOP PICK): flipped: HE acts it out (sit, bow, roll, sulky droop) and you guess. Showcases the
+  expressive moves, best on the real duck.
+- **20 questions:** he thinks of an animal, answers yes/no with nods and head shakes, no words (a wordless duck).
+- **Trivia / quiz host:** cheeky game-show host, scoreboard, suspense pauses.
+- **Desk-break buddy** (TOP PICK): hourly "Stretch with me!", a 60-second Simon Says of neck rolls and shrugs,
+  judged by the camera. Companionship with a purpose.
+- **Language practice:** Parakeet hears 25 languages: "Jacques a dit, regarde à gauche !"
+- **Tongue twisters:** he says one, you repeat it, speech recognition judges.
+Order after the memory game and rock-paper-scissors: red light green light, duck charades, desk-break buddy.
