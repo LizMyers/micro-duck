@@ -467,6 +467,9 @@ export class SimonSaysGame {
       if (cmd.says) wrong = others.find(counts) ?? wrong;   // a wrong move only counts if you never get it right
       // "Hold it…" while the right move is on but not yet held for a second.
       const holding = cmd.says && tracker.since(cmd.pose) != null && tracker.since(cmd.pose) >= spokeAt + REACTION_MS;
+      // The referee's own count, for the page's fill meter: it fills exactly as the judge counts (Liz: the
+      // fill used the camera alone, so it could fill up while the judge was still counting or had rejected it).
+      this.emit({ type: "hold", progress: holding ? Math.min(1, (performance.now() - tracker.since(cmd.pose)) / HOLD) : 0 });
       setProp("ss-result", "textContent", holding ? "Hold it…" : "");
       const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
       if ($("ss-timer")) $("ss-timer").style.width = `${(left / this.window) * 100}%`;
@@ -621,4 +624,10 @@ export function scoreLines(simon, you) {
 }
 export const taunts = (simon, you) => TAUNTS[side(simon, you)];
 
-export function words(n) { return NUMBER_WORDS[n] ?? String(n); }
+// Up to 99 in words ("twenty-one"): past twenty the voice was handed digits ("It's 21 to nine", 2026-09-26).
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+export function words(n) {
+  if (NUMBER_WORDS[n] != null) return NUMBER_WORDS[n];
+  if (Number.isInteger(n) && n > 20 && n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? `-${NUMBER_WORDS[n % 10]}` : "");
+  return String(n);
+}

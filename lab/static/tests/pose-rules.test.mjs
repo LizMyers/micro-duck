@@ -222,3 +222,17 @@ test("raising the arms never also counts as a head move (arms throw the head rea
   set(LM.nose, 0.5, 0.385);   // the head reading jumps as the arms go past the face
   only(check(lm, base), "both_arms_up");
 });
+
+test("an arm raised straight up, hand over the head in the picture, is raised (not 'hand on the head')", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.4, 0.3);        // elbow up, straight above the shoulder
+  set(LM.rightWrist, 0.47, 0.2);       // hand over the head, close to the nose in 2D
+  only(check(lm, base), "right_arm_up");
+});
+
+test("a hand resting on the head with the elbow out to the side is still not raised", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.25, 0.4);       // elbow out wide at ear height
+  set(LM.rightWrist, 0.47, 0.27);
+  assert.equal(check(lm, base).right_arm_up, false);
+});
