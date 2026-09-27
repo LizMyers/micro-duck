@@ -439,6 +439,9 @@ export class SimonSaysGame {
     const isTilt = /look_(up|down)/.test(cmd.pose);
     const isTurn = /turn_(left|right)/.test(cmd.pose);
     let narrowest = null;   // turns: the narrowest your shoulders got, as a fraction of their calibrated width
+    const isArm = /arm/.test(cmd.pose);
+    const armWhy = new Map();   // arms: why the camera said "not up", frame by frame (e.g. the wrist out of view)
+    let armFrames = 0;
     let lostAt = null, lost = false;
     while (live() && performance.now() < deadline) {
       // Out of view for 2 s: you can't be judged, so the round doesn't count (it used to end "Too slow!").
@@ -450,6 +453,11 @@ export class SimonSaysGame {
       if (t) for (const k of ["ears", "face"]) if (tiltPeak[k] == null || t[k] * dir > tiltPeak[k] * dir) tiltPeak[k] = t[k];
       const v = dir && tracker.check(cmd.pose)?.value;
       if (typeof v === "number" && (peak == null || v * dir > peak * dir)) peak = v;
+      if (isArm && deadline !== Infinity) {
+        const c = tracker.check(cmd.pose);
+        armFrames++;
+        if (c && !c.ok) armWhy.set(c.reason, (armWhy.get(c.reason) || 0) + 1);
+      }
       const w = isTurn && tracker.check(cmd.pose)?.value;
       if (typeof w === "number" && (narrowest == null || w < narrowest)) narrowest = w;
       const since = tracker.since(cmd.pose);
@@ -479,6 +487,10 @@ export class SimonSaysGame {
       // Every look up/down round, right or wrong: the data for choosing the better tilt measure.
       this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: ears method got to ${tiltPeak.ears.toFixed(2)} ` +
         `(the judge uses this, needs ${dir > 0 ? "" : "−"}${this.app.thresholds?.pitch}); face method got to ${tiltPeak.face.toFixed(2)}`);
+    } else if (isArm && cmd.says && !seen && armFrames) {
+      // Why a raised arm wasn't counted, for tuning (a hand out of the top of the frame, 2026-09-26).
+      const [why, n] = [...armWhy].sort((a, b) => b[1] - a[1])[0] ?? ["it was up", 0];
+      this.app.note(`📏 ${LABEL[cmd.pose]} (missed): most often "${why}", ${Math.round((n / armFrames) * 100)}% of the time`);
     } else if (isTurn && cmd.says && narrowest != null) {
       // Every turn round, right or wrong: how far you turned, for tuning the threshold.
       this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: your shoulders got to ${narrowest.toFixed(2)} ` +
@@ -551,13 +563,21 @@ function half(cls, value) {
 }
 
 function setCard(card, value) {
-  card.replaceChildren(half("upper", value), half("lower", value));
+  card.replaceChildren(sizer(value), half("upper", value), half("lower", value));
+}
+// An invisible copy of the number sets the card's width, so 18 (or 118) fits with room either side.
+function sizer(value) {
+  const s = document.createElement("span");
+  s.className = "sizer";
+  s.textContent = String(value);
+  s.setAttribute?.("aria-hidden", "true");
+  return s;
 }
 
 // Split-flap: the new number appears behind the top half, the old top half folds down on the hinge,
 // and lands as the new bottom half.
 function flip(card, from, to) {
-  card.replaceChildren(half("upper", to), half("lower", from));
+  card.replaceChildren(sizer(Math.max(from, to)), half("upper", to), half("lower", from));
   const flapTop = half("upper flap", from), flapBottom = half("lower flap", to);
   card.append(flapTop, flapBottom);
   flapBottom.style.transform = "rotateX(90deg)";

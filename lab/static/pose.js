@@ -158,7 +158,16 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   const armUp = (side) => {
     const sh = side === "left" ? LM.leftShoulder : LM.rightShoulder;
     const w = side === "left" ? LM.leftWrist : LM.rightWrist;
-    if (!vis(sh, w)) return result(false, conf(sh, w), `${side} wrist not visible`, 0);
+    const el = side === "left" ? LM.leftElbow : LM.rightElbow;
+    if (!vis(sh, w)) {
+      // Sitting close to the webcam, a raised hand leaves the top of the frame and the wrist is lost
+      // (Liz's right arm was never seen, 2026-09-26). The elbow stays in view: well above the shoulder = up.
+      if (vis(sh, el)) {
+        const elbowUp = (P(sh).y - P(el).y) / sw;
+        if (elbowUp > 0.25) return result(true, conf(sh, el), `${side} elbow is above the ${side} shoulder (hand out of view)`, elbowUp);
+      }
+      return result(false, conf(sh, w), `${side} wrist not visible`, 0);
+    }
     const up = (P(sh).y - P(w).y) / sw;   // positive = wrist above shoulder
     if (up <= 0.35) return result(false, conf(sh, w), `${side} wrist isn't above the ${side} shoulder`, up);
     if (vis(LM.nose) && dist(P(w), P(LM.nose)) < 0.7 * sw) {
@@ -174,6 +183,13 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
   out.right_arm_up = only(right, "the right");
   out.both_arms_up = result(both, Math.min(left.confidence, right.confidence),
     both ? "both wrists above shoulders" : "needs both wrists above shoulders", Math.min(left.value, right.value));
+  // Raised arms pass over the ears and face and throw the head reading off (nine false head moves in
+  // four seconds of "raise both arms", one judged a wrong move, 2026-09-26). So no head moves while an arm is up.
+  if (left.ok || right.ok) {
+    for (const id of ["look_up", "look_down", "look_left", "look_right"]) {
+      out[id] = result(false, out[id].confidence, "an arm is up: the head reading isn't reliable", out[id].value);
+    }
+  }
   return out;
 }
 

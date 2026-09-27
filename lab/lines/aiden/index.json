@@ -129,6 +129,11 @@
   "file": "i-m-coming-for-you.wav",
   "seconds": 1.09
  },
+ "It's 21 to nine.": {
+  "cut": false,
+  "file": "it-s-21-to-nine.wav",
+  "seconds": 1.95
+ },
  "It's eight to one.": {
   "cut": false,
   "file": "it-s-eight-to-one.wav",
@@ -148,6 +153,11 @@
   "cut": false,
   "file": "it-s-eighteen-to-eight-in-my-favor.wav",
   "seconds": 1.57
+ },
+ "It's eighteen to nine.": {
+  "cut": false,
+  "file": "it-s-eighteen-to-nine.wav",
+  "seconds": 1.15
  },
  "It's eighteen to three.": {
   "cut": false,
@@ -268,6 +278,16 @@
   "cut": false,
   "file": "it-s-nine-to-zero-advantage-me.wav",
   "seconds": 2.53
+ },
+ "It's nineteen to eight.": {
+  "cut": false,
+  "file": "it-s-nineteen-to-eight.wav",
+  "seconds": 1.15
+ },
+ "It's nineteen to ten in my favor.": {
+  "cut": false,
+  "file": "it-s-nineteen-to-ten-in-my-favor.wav",
+  "seconds": 1.95
  },
  "It's seven to five.": {
   "cut": false,
@@ -399,6 +419,16 @@
   "file": "it-s-twelve-to-two-in-my-favor.wav",
   "seconds": 1.63
  },
+ "It's twenty to nine in my favor.": {
+  "cut": false,
+  "file": "it-s-twenty-to-nine-in-my-favor.wav",
+  "seconds": 1.95
+ },
+ "It's twenty to ten.": {
+  "cut": false,
+  "file": "it-s-twenty-to-ten.wav",
+  "seconds": 1.47
+ },
  "It's two to one.": {
   "cut": false,
   "file": "it-s-two-to-one.wav",
@@ -463,6 +493,11 @@
   "cut": false,
   "file": "nine-for-me-one-for-you.wav",
   "seconds": 2.37
+ },
+ "Nineteen for me, nine for you.": {
+  "cut": false,
+  "file": "nineteen-for-me-nine-for-you.wav",
+  "seconds": 3.23
  },
  "Not for long!": {
   "cut": false,
@@ -653,6 +688,11 @@
   "cut": false,
   "file": "twelve-for-me-seven-for-you.wav",
   "seconds": 1.73
+ },
+ "Twenty for me, eight for you.": {
+  "cut": false,
+  "file": "twenty-for-me-eight-for-you.wav",
+  "seconds": 2.14
  },
  "Well played. You win!": {
   "cut": false,

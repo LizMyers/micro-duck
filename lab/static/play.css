@@ -837,9 +837,10 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .simon-status .health[data-state="ready"] #health-detail { font-size: 32px; font-weight: 800; line-height: 1.1; }
 #panel-game .simon-status { margin: 0 0 16px; }
 
-/* Bricolage changes its design with size (optical sizing): at 30px+ it switched to its quirky display cut
-   (Liz: "where did the crazy font come from?"). Keep the calm text cut at every size. */
-#panel-game, #panel-game * { font-optical-sizing: none; }
+/* Bricolage changes its design with size (optical sizing): big text got its quirky display cut
+   (Liz: "where did the crazy font come from?"). Pin the calm text cut (opsz 14) at every size. (Turning
+   optical sizing off made it worse: the font's default is the display cut, opsz 96.) */
+#panel-game, #panel-game * { font-variation-settings: "opsz" 14; }
 #panel-game .step .sub:empty { display: none; }
 
 /* Setup, one step at a time: the steps share one cell and slide like the screens (Apple-style). */
@@ -861,3 +862,10 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   #panel-game .setup-steps > .step, #panel-game .setup-steps > .step.in, #panel-game .setup-steps > .step.out { transform: none; transition: none; }
   #panel-game .setup-steps > .step.out { visibility: hidden; }
 }
+#panel-game .setup-steps { margin-top: 20px; }   /* room between the status line and the wizard (Liz) */
+
+/* Score cards fit their number: width from an invisible copy of it, 10px either side (Liz: 18 didn't fit). */
+.ss-card { width: auto; min-width: 80px; }
+.ss-card .sizer { display: block; visibility: hidden; height: 0; overflow: hidden; padding: 0 10px;
+  font: 800 76px/1 "Bricolage Grotesque", system-ui, sans-serif; white-space: nowrap; }
+#panel-game .simon-status { margin-top: 40px; }   /* breathing room under the tab bar for type this size (Liz) */
