@@ -154,3 +154,7 @@ Story: the same Simon who plays cheeky Simon Says with hiring managers leads Mom
 - **Duck aerobics** (Liz): an 80s workout video with Simon on skates. The skates are real (Pollen's roller policy;
   the lab already has skates_on / skates_off): glide side to side to the beat, a victory spin after each set, skates
   off and sit for the cool-down ("And… rest."). Retro music. Pairs with the chair workout.
+- **Line dancing** (Liz): Simon Says set to music, with Simon as the caller ("Grapevine right! Stomp! Clap! Quarter
+  turn!"). He demonstrates (walk side to side, turn, kick policy, head bob to the beat); seated version for the chair
+  workout (arm sweeps, toe taps, shoulder turns, claps, judged by the camera); teaches step by step, then "from the
+  top… five, six, seven, eight!". Music: royalty-free or original (no popular songs).
