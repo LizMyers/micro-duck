@@ -104,8 +104,9 @@ function slideTo(container, key, name) {
     if (!on && el.classList.contains("in")) { el.classList.remove("in"); el.classList.add("out"); }
     if (on && !el.classList.contains("in")) {
       el.classList.remove("out");
-      void el.offsetWidth;   // restart the slide
-      el.classList.add("in");
+      el.classList.add("enter");   // on the page, off to the right: where the slide starts from
+      void el.offsetWidth;
+      el.classList.replace("enter", "in");
     }
   }
   setTimeout(() => { for (const el of container.children) if (!el.classList.contains("in")) el.classList.remove("out"); }, 400);
@@ -191,10 +192,12 @@ function onGame(ev) {
   if (ev.type === "playing") { game.pose = null; $("play-round").textContent = "Get ready"; showScreen("playing"); }
   if (ev.type === "round") {
     game.pose = ev.pose;
+    game.hold = 0;
     $("play-round").textContent = `Round ${ev.round} of ${ev.rounds}`;
     setMove(ev.move);
   }
-  if (ev.type === "result") { game.pose = null; setMove(ev.text); }
+  if (ev.type === "hold") game.hold = ev.progress;
+  if (ev.type === "result") { game.pose = null; game.hold = 0; setMove(ev.text); }
   if (ev.type === "say") game.lastSaid = ev.big;   // for a stop without a message ("Simon didn't answer…")
   if (ev.type === "lost") { game.pose = null; setMove("I can't see you!"); }
   if (ev.type === "back") setMove("There you are!");
@@ -233,8 +236,7 @@ setInterval(() => {
   const seenIds = d ? POSE_IDS.filter((id) => d[id]?.ok) : [];
   const word = !cam.on ? "Camera off" : seenIds.length ? seenIds.map((id) => POSE_LABELS[id]).join(" + ") : "No move";
   const match = !!game.pose && seenIds.includes(game.pose);
-  const since = match ? cam.tracker.since?.(game.pose) : null;
-  const hold = since != null ? Math.min(1, (performance.now() - since) / 1000) : 0;
+  const hold = game.pose ? game.hold || 0 : 0;   // the referee's own count (the "hold" event)
   for (const chip of document.querySelectorAll("[data-seen]")) {
     chip.querySelector("strong").textContent = word;
     chip.classList.toggle("match", match);

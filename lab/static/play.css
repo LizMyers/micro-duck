@@ -147,8 +147,14 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
   .controls > [role="tabpanel"] { flex: 1; min-height: 0; overflow-y: auto; }
 }
 @media (max-width: 1000px) {
-  .layout { grid-template-columns: 1fr; grid-template-areas: "duck" "side" "controls"; }
-  .side { height: 640px; position: static; }
+  /* One column (phones, narrow windows): the game first (Simon, then the game panel), then chat, then the
+     Inspector (Liz). The chat/Inspector divider doesn't apply here: each gets its own height. */
+  .layout { grid-template-columns: 1fr; grid-template-areas: "duck" "controls" "side"; }
+  .side { height: auto; position: static; }
+  .side.split .split-bottom { order: -1; flex: none; height: 420px; }
+  .side.split .split-top { flex: none !important; height: 480px; }
+  .side.split .title-bar.divider { cursor: default; touch-action: auto; border-top: 0; }   /* nothing to drag in one column */
+  .side.split .title-bar.divider::before { display: none; }
 }
 
 .card {
@@ -869,3 +875,18 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .ss-card .sizer { display: block; visibility: hidden; height: 0; overflow: hidden; padding: 0 10px;
   font: 800 76px/1 "Bricolage Grotesque", system-ui, sans-serif; white-space: nowrap; }
 #panel-game .simon-status { margin-top: 40px; }   /* breathing room under the tab bar for type this size (Liz) */
+.bar-link.done, .bar-link.done:hover, .bar-link.done:focus-visible { text-decoration: none; }   /* "Copied to clipboard" is a message, not a link (Liz) */
+
+/* Only the screen (and setup step) on show takes up room, so the panel is as tall as what it shows (Liz: on
+   mobile it kept the tallest screen's height, ~150px of empty space above the chat). */
+#panel-game .screen:not(.in):not(.out):not(.enter), #panel-game .setup-steps > .step:not(.in):not(.out):not(.enter) { display: none; }
+
+/* One column: Chat and the Inspector are two cards with the page's 16px gap between them (Liz), not one
+   shared card. (Placed last so it beats the shared-card rules above.) */
+@media (max-width: 1000px) {
+  .side.split { background: none; border: 0; box-shadow: none; gap: 16px; overflow: visible; }
+  .side.split .split-top, .side.split .split-bottom {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .side.split .split-top { background: var(--simon); }
+  .side.split .title-bar, .side.split .title-bar.divider { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0; }
+}

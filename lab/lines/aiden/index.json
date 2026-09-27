@@ -1,4 +1,9 @@
 {
+ "21 for me, ten for you.": {
+  "cut": false,
+  "file": "21-for-me-ten-for-you.wav",
+  "seconds": 2.37
+ },
  "Advantage me!": {
   "cut": false,
   "file": "advantage-me.wav",
@@ -129,10 +134,20 @@
   "file": "i-m-coming-for-you.wav",
   "seconds": 1.09
  },
+ "It's 21 to eleven in my favor.": {
+  "cut": false,
+  "file": "it-s-21-to-eleven-in-my-favor.wav",
+  "seconds": 2.27
+ },
  "It's 21 to nine.": {
   "cut": false,
   "file": "it-s-21-to-nine.wav",
   "seconds": 1.95
+ },
+ "It's 22 to ten in my favor.": {
+  "cut": false,
+  "file": "it-s-22-to-ten-in-my-favor.wav",
+  "seconds": 2.53
  },
  "It's eight to one.": {
   "cut": false,
@@ -428,6 +443,26 @@
   "cut": false,
   "file": "it-s-twenty-to-ten.wav",
   "seconds": 1.47
+ },
+ "It's twenty-one to eleven in my favor.": {
+  "cut": false,
+  "file": "it-s-twenty-one-to-eleven-in-my-favor.wav",
+  "seconds": 2.85
+ },
+ "It's twenty-three to ten.": {
+  "cut": false,
+  "file": "it-s-twenty-three-to-ten.wav",
+  "seconds": 1.18
+ },
+ "It's twenty-two to eleven.": {
+  "cut": false,
+  "file": "it-s-twenty-two-to-eleven.wav",
+  "seconds": 1.5
+ },
+ "It's twenty-two to ten in my favor.": {
+  "cut": false,
+  "file": "it-s-twenty-two-to-ten-in-my-favor.wav",
+  "seconds": 2.21
  },
  "It's two to one.": {
   "cut": false,

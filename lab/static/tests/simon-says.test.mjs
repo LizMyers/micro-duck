@@ -52,7 +52,8 @@ test("strict traps: any move on a trap is out, not just that move", () => {
 test("scores are spoken as words", () => {
   assert.equal(words(3), "three");
   assert.equal(words(0), "zero");
-  assert.equal(words(42), "42");
+  assert.equal(words(42), "forty-two");   // (was left as digits: the voice got "21", 2026-09-26)
+  assert.equal(words(100), "100");
 });
 
 test("the score is its own line; taunts have no numbers", () => {
@@ -90,4 +91,12 @@ test("calibration: Liz's real stances, one good and one taken while turned", () 
   assert.match(calibrationProblem(turned), /face me/);
   assert.match(calibrationProblem({ yaw: 0.3, shoulderDepth: 0 }), /straight at me/);
   assert.match(calibrationProblem(null), /can't see you/);
+});
+
+test("scores past twenty are said in words (the voice was handed '21')", async () => {
+  const { words, scoreLine } = await import("../simon-says.js");
+  assert.equal(words(21), "twenty-one");
+  assert.equal(words(30), "thirty");
+  assert.equal(words(99), "ninety-nine");
+  assert.doesNotMatch(scoreLine(21, 9), /\d/);
 });
