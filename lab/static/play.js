@@ -163,7 +163,8 @@ async function turnOnCamera() {
   clearInterval(setup.live);
   setup.live = setInterval(() => {
     const problem = stanceNow();
-    $("setup-check").textContent = setupLine(problem);
+    // Only problems get a line ("Over here, silly!"); when it's right, nothing: step 3 slides in.
+    $("setup-check").textContent = problem ? setupLine(problem) : "";
     $("setup-adjust").dataset.ok = String(!problem);
     setup.ok = !problem;
     setup.okSince = problem ? null : setup.okSince ?? performance.now();
@@ -176,8 +177,10 @@ async function turnOnCamera() {
 
 async function calibrateNow() {
   $("setup-calibrate").disabled = true;
-  for (const n of ["3", "2", "1"]) { $("setup-ready-sub").textContent = `Hold still… ${n}`; await sleep(700); }
-  $("setup-ready-sub").textContent = "";
+  // The countdown runs in step 3's own number circle: 3, 2, 1.
+  const circle = $("setup-calibrate").querySelector(".n");
+  for (const n of ["3", "2", "1"]) { circle.textContent = n; await sleep(700); }
+  circle.textContent = "3";
   $("setup-calibrate").disabled = false;
   const base = calibrate();
   const problem = calibrationProblem(base);

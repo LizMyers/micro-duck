@@ -335,6 +335,10 @@ no traps): "Show me a look left!" The camera records how far *this* player goes,
   (rematches start straight away); a "Skip warm-up" link. Tests for the fitting and the clamps.
 - Blog beat: "the game fits itself to your body" (personal calibration, not reinforcement learning).
 
-Left arm (fixed late 2026-09-26, play-test it): Liz's bent left raise (hand up by her face, elbow 0.40 below
-the shoulder) was read as "hand on the head". Now "resting on the head" needs the elbow out wide AND up near
-head height. Test with her numbers. If it's still missed, the 📏 arm line logs on every arm round, traps too.
+Arms (fixed late 2026-09-26, left arm confirmed working): the "hand resting on the head" exception is gone.
+It misjudged three kinds of real raise (straight, bent with the elbow down, L-shaped). A wrist well above the
+shoulder is a raised arm; a hand on the head counts too (Liz: "hand on head is still a raised arm").
+Still seen: a raised arm crossing the face can flicker right/both/left for a moment, so a wrong-move line may
+name the wrong arm. The 📏 arm line logs on every arm round, traps too.
+Pending (Liz to decide): one type hierarchy for the game panel (4 levels: hero 72 / headline 28 / label 15 /
+note 18), proposed after "the timer, Stop and round label look splattered".
