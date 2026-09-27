@@ -196,3 +196,29 @@ test("a strong head turn alone is not a body turn", () => {
   assert.equal(r.look_left, true);
   assert.equal(r.turn_left, false);
 });
+
+test("a raised hand out of the top of the frame still counts (the elbow is above the shoulder)", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.38, 0.4); set(LM.rightWrist, 0.38, -0.05, 0, 0.1);   // wrist off the top, not visible
+  only(check(lm, base), "right_arm_up");
+});
+
+test("both hands out of the top of the frame: both arms up", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.38, 0.4); set(LM.rightWrist, 0.38, -0.05, 0, 0.1);
+  set(LM.leftElbow, 0.62, 0.4); set(LM.leftWrist, 0.62, -0.05, 0, 0.1);
+  only(check(lm, base), "both_arms_up");
+});
+
+test("a lost wrist with the elbow down is not an arm up", () => {
+  const { lm, set, base } = neutral();
+  set(LM.rightWrist, 0.38, 0.8, 0, 0.1);
+  assert.equal(check(lm, base).right_arm_up, false);
+});
+
+test("raising the arms never also counts as a head move (arms throw the head reading off)", () => {
+  const { lm, set, base } = neutral();
+  set(LM.leftWrist, 0.62, 0.2); set(LM.rightWrist, 0.38, 0.2);
+  set(LM.nose, 0.5, 0.385);   // the head reading jumps as the arms go past the face
+  only(check(lm, base), "both_arms_up");
+});

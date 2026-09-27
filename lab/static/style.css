@@ -472,3 +472,6 @@ kbd {
 .ss-card .lower b { margin-top: -38px; }      /* show the lower half of the number */
 .ss-card .upper.flap { transform-origin: 50% 100%; z-index: 2; }   /* hinged at the middle */
 .ss-card .lower.flap { transform-origin: 50% 0; z-index: 2; }
+
+/* The game page sizes cards by an invisible copy of the number; the lab keeps its fixed cards. */
+.ss-card .sizer { display: none; }
