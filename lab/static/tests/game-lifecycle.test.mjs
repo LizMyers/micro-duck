@@ -121,3 +121,11 @@ test("during a game only game lines speak: a chat reply is cut, game lines and c
   assert.equal(hushDuringGame({ conversationId: null, gameActive: true, line: { text: "Nice one!" } }), false); // a game line
   assert.equal(hushDuringGame({ conversationId: "conv_1", gameActive: false, line: null }), false);         // chat between games
 });
+
+test("pre-warm covers the scores two games ahead (a quick rematch finds its score ready)", async () => {
+  const { scoreLine } = await import("../simon-says.js");
+  const game = new SimonSaysGame(fakeApp());
+  game.board.totals = { simon: 10, you: 5 };
+  const lines = game.linesToWarm();
+  for (const [s, y] of [[11, 5], [10, 6], [12, 5], [11, 6], [10, 7]]) assert.ok(lines.includes(scoreLine(s, y)), `${s}-${y}`);
+});
