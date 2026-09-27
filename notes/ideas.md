@@ -119,6 +119,11 @@ so his quack is his fingerprint and the serial can be his ID.
   handshake" (show it twice). Different reactions per person (with face recognition): cheeky banter for Liz, gentle
   for Mom, silly for kids, polite for strangers. Inside jokes and callbacks that grow ("remember when I called your
   left arm a hand on your head?"). For fun and closeness, never security.
+- **Growing together = part of the family** (Liz): the difference between a gadget and a family member is a shared
+  history. Day 100 isn't day 1: milestones ("our 100th game!", a one-year celebration dance), callbacks ("you finally
+  beat my three-game streak!"), growth (learned your handshake, Mom's pace, the kid's favourite game), the family's
+  story in his memory, told back with affection, always yours to see or erase.
+  Pitch: "a small robot that grows with the family, and stays healthy, honest and private while doing it."
 - Blog post candidate: what makes a robot a good companion, and what makes a bad one.
 
 ## Shared web board for board games (Liz, 2026-09-27)
