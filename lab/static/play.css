@@ -902,3 +902,7 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
 .sim-full:hover { background: rgb(0 0 0 / 65%); }
 .sim-wrap:fullscreen { width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; border-radius: 0; }
+
+/* Inspector and Chat: the scrollbar hugs the card's right edge, with space kept for it, so it never sits on
+   the text (Liz). Same as the scrolling tabs: the list reaches into the card's 16px side padding. */
+.split-top .insp-list, .split-bottom .chat { margin-right: -16px; padding-right: 12px; scrollbar-gutter: stable; }

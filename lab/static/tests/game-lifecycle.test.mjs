@@ -129,3 +129,10 @@ test("pre-warm covers the scores two games ahead (a quick rematch finds its scor
   const lines = game.linesToWarm();
   for (const [s, y] of [[11, 5], [10, 6], [12, 5], [11, 6], [10, 7]]) assert.ok(lines.includes(scoreLine(s, y)), `${s}-${y}`);
 });
+
+test("pre-warm covers every taunt, so a new one is never made live mid-game", async () => {
+  const { taunts } = await import("../simon-says.js");
+  const lines = new SimonSaysGame(fakeApp()).linesToWarm();
+  for (const t of [...taunts(9, 1, "simon"), ...taunts(9, 1, "you"), ...taunts(1, 9, "you"), ...taunts(1, 9, "simon"), ...taunts(5, 5)])
+    assert.ok(lines.includes(t), t);
+});

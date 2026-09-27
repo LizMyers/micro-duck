@@ -213,6 +213,9 @@ export class SimonSaysGame {
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
       ...TRAP_OPENERS.map(trapLine),
       "I win!", "You win!", "Well played. You win!", ...PLAY_AGAIN,
+      // Every taunt, not just the next game's: a quick rematch paused the pre-warm and a new taunt was made
+      // live, with a pause (2026-09-27). There are only a few, each saved once.
+      ...Object.values(TAUNTS).flat(),
       // Only two scores are possible after the next game.
       this.usableScore(simon + 1, you), ...taunts(simon + 1, you, "simon"),
       this.usableScore(simon, you + 1), ...taunts(simon, you + 1, "you"),
