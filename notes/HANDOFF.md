@@ -323,3 +323,17 @@ Done today on /play (all committed, 51 tests):
   The "Are you ready?"-by-voice idea went with it; a nod or the button starts the next game.
 
 Still open: play in the browser (HF static Space, saved lines) after release 1; iPad as a goal for it.
+
+## Next feature after the demo: the warm-up (Liz, 2026-09-26)
+Once per session, after setup and before the first game, Simon calls each move plainly (no "Simon says",
+no traps): "Show me a look left!" The camera records how far *this* player goes, and the referee fits itself:
+- Head moves and turns: threshold ≈ 60% of the player's own move, clamped to a safe band (never so easy that
+  sitting still wobbles into a move, never stricter than the defaults).
+- Arms: record how they raise each arm (hand over the head? elbow out to the side? wrist off the frame?), so
+  a natural raise that the rules misread (Liz's left arm, 2026-09-26) counts.
+- ~15-20 s: each move taken as soon as the camera has it, Simon cheers between them; first game only
+  (rematches start straight away); a "Skip warm-up" link. Tests for the fitting and the clamps.
+- Blog beat: "the game fits itself to your body" (personal calibration, not reinforcement learning).
+
+Also open: the left arm isn't recognised for Liz at all (right is fine). Needs the Inspector line
+"📏 your left arm (missed): most often …" to pick the failing check. Code is symmetric; worked earlier on 09-26.
