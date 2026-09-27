@@ -10,7 +10,7 @@ import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
 import { MacOS } from "/static/mac-os.js";
 import { measure, evaluatePoseDetailed, POSE_IDS, POSE_LABELS } from "/static/pose.js";
-import { calibrationProblem } from "/static/simon-says.js";
+import { calibrationProblem, calibrationIssue, SETUP_LINES } from "/static/simon-says.js";
 import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
 import { cam, startCamera, calibrate } from "/static/camera.js";
@@ -136,7 +136,16 @@ function showSetupSteps() {
 
 function stanceNow() {
   const m = measure(cam.tracker?.latest?.landmarks, cam.tracker?.aspect);
-  return calibrationProblem(m);
+  return calibrationIssue(m);
+}
+// Step 2's words: a fun line for what the camera sees, a new wording each time a problem comes back.
+const setupTurn = {};
+let lastIssue;
+function setupLine(issue) {
+  const key = issue ?? "ok";
+  if (key !== lastIssue) { setupTurn[key] = (setupTurn[key] ?? -1) + 1; lastIssue = key; }
+  const lines = SETUP_LINES[key];
+  return lines[setupTurn[key] % lines.length];
 }
 
 async function turnOnCamera() {
@@ -150,7 +159,7 @@ async function turnOnCamera() {
   clearInterval(setup.live);
   setup.live = setInterval(() => {
     const problem = stanceNow();
-    $("setup-check").textContent = problem || "Perfect!";
+    $("setup-check").textContent = setupLine(problem);
     $("setup-adjust").dataset.ok = String(!problem);
     setup.ok = !problem;
     setup.okSince = problem ? null : setup.okSince ?? performance.now();

@@ -29,12 +29,38 @@ const HOLD = 1000;
 export const REACTION_MS = 600;
 // Is the calibrated stance usable? A stance taken while turned or looking away makes normal sitting read
 // as a move (Liz, 2026-09-26: calibrated with the body turned 0.17, then "look right" all game).
-export function calibrationProblem(b) {
-  if (!b) return "I can't see you. Sit where your head and shoulders are in view.";
-  if (Math.abs(b.shoulderDepth) > 0.1) return "Turn your body to face me.";
-  if (Math.abs(b.yaw) > 0.15) return "Look straight at me.";
+// calibrationIssue says which problem ("none" | "room" | "turned" | "look"), or null if it's fine.
+export function calibrationIssue(b) {
+  if (!b) return "none";
+  // Room for raised arms: an elbow raised to the side of the head sits about 0.6 shoulder-widths above the
+  // shoulder. If that's off the top of the picture, arm moves can't be judged (Liz's hands left the frame,
+  // 2026-09-26: the referee needs at least the elbows). All in picture heights (0 = top).
+  if (b.noseY != null && b.shoulderToNose != null && b.shoulderWidth != null) {
+    if (b.noseY + b.shoulderToNose - 0.6 * b.shoulderWidth < 0.05) return "room";
+  }
+  if (Math.abs(b.shoulderDepth) > 0.1) return "turned";
+  if (Math.abs(b.yaw) > 0.15) return "look";
   return null;
 }
+const PLAIN_SETUP = {
+  none: "I can't see you. Sit where your head and shoulders are in view.",
+  room: "Sit back a little, so your raised arms fit in the picture.",
+  turned: "Turn your body to face me.",
+  look: "Look straight at me.",
+};
+export function calibrationProblem(b) {
+  const issue = calibrationIssue(b);
+  return issue ? PLAIN_SETUP[issue] : null;
+}
+// The game page's setup step 2 says the same things with some fun (Liz: "Over here, silly!").
+// Each problem has a few wordings; the page moves to the next one each time that problem comes back.
+export const SETUP_LINES = {
+  none: ["Where did you go?", "Hello? Anybody there?", "Pop your head and shoulders in!"],
+  room: ["Whoa, too close! Sit back a bit.", "Scoot back, so your arms fit!", "A little further back, please!"],
+  turned: ["Over here, silly!", "Turn your shoulders to me!", "Face me, face me!"],
+  look: ["Eyes on me!", "Look straight at me!", "Yoo-hoo, over here!"],
+  ok: ["Perfect!", "Looking good!", "That's the spot!"],
+};
 
 // Pick the next command (never the same one twice in a row).
 export function nextCommand(rand, { last = null } = {}) {

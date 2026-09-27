@@ -1,7 +1,7 @@
 // Unit tests for the Simon Says rules. Run: node --test lab/static/tests/simon-says.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nextCommand, line, judge, words, scoreLine, scoreLines, taunts, calibrationProblem, pickFresh, COMMANDS } from "../simon-says.js";
+import { nextCommand, line, judge, words, scoreLine, scoreLines, taunts, calibrationProblem, calibrationIssue, SETUP_LINES, pickFresh, COMMANDS } from "../simon-says.js";
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
 
@@ -99,4 +99,21 @@ test("scores past twenty are said in words (the voice was handed '21')", async (
   assert.equal(words(30), "thirty");
   assert.equal(words(99), "ninety-nine");
   assert.doesNotMatch(scoreLine(21, 9), /\d/);
+});
+
+test("setup checks there's room for raised arms (the elbows must fit in the picture)", () => {
+  // Liz at her desk, 2026-09-26: fits (raised elbows at about 0.41 of the picture height).
+  const liz = { yaw: 0.003, shoulderDepth: 0.09, noseY: 0.43, shoulderToNose: 0.31, shoulderWidth: 0.56 };
+  assert.equal(calibrationProblem(liz), null);
+  // Leaning in close: head high and shoulders wide, so raised elbows would be off the top.
+  const close = { yaw: 0, shoulderDepth: 0, noseY: 0.3, shoulderToNose: 0.35, shoulderWidth: 1.2 };
+  assert.match(calibrationProblem(close), /Sit back/);
+});
+
+test("setup: every calibration problem has fun lines, and so does a good stance", () => {
+  for (const issue of ["none", "room", "turned", "look", "ok"]) assert.ok(SETUP_LINES[issue]?.length >= 2, issue);
+  assert.equal(calibrationIssue(null), "none");
+  assert.equal(calibrationIssue({ yaw: 0, shoulderDepth: 0.2 }), "turned");
+  assert.equal(calibrationIssue({ yaw: 0.3, shoulderDepth: 0 }), "look");
+  assert.equal(calibrationIssue({ yaw: 0, shoulderDepth: 0 }), null);
 });
