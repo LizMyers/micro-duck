@@ -70,3 +70,19 @@ Built from what Simon already has: hearing/speech, body moves and head looks, an
   - *Real robot:* Pollen's beak really picks things up, so light cards in a stand could make Option B real: a
     "sim to real" tutorial ending.
 - **Tutorial angle:** "From one game to a game console: adding a second game to your voice agent."
+
+## More games (Liz, 2026-09-27)
+- **Memory game ("Simon", the original):** Simon plays a sequence, you repeat it, one longer each round. Reuses the
+  camera referee. Four moves, four colours, four tones: look up = yellow, look left = green, look right = red,
+  look down = blue. On screen four big quadrants light up; the tones are Simon's own chirps tuned to four notes,
+  in his colour's voice, so the sequence can be played eyes-free, by ear. On a real duck he turns his head through it.
+- **Rock, paper, scissors:** MediaPipe Hands reads the throw; eyes-free.
+- **Board games** (tic-tac-toe, connect four, checkers): a game engine picks Simon's move (a small LLM can't play
+  reliably), the LLM does the banter; moves spoken ("top left", "column three") with confirmation. Tic-tac-toe works
+  by voice alone; connect four and checkers need a board on screen (or a real board read by the camera). Simon has no
+  arms: you move his pieces. Order: memory game, then RPS, then tic-tac-toe.
+
+## Web access (Liz, 2026-09-27)
+Not today: the brain (Qwen3 4B) runs on the Mac, offline. A `look_up` tool could run a web search (page or server)
+and hand results back. Opt-in only (it breaks "everything runs on your Mac"; show it in the Inspector); fill the
+few-second wait ("let me look that up" + a thinking nod); fine for simple facts, shaky for complex ones.
