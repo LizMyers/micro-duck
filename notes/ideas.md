@@ -138,3 +138,16 @@ referee, banter.
 - **Language practice:** Parakeet hears 25 languages: "Jacques a dit, regarde à gauche !"
 - **Tongue twisters:** he says one, you repeat it, speech recognition judges.
 Order after the memory game and rock-paper-scissors: red light green light, duck charades, desk-break buddy.
+
+## Chair workout for seniors (Liz, 2026-09-27)
+Simon is almost made for it: every move is already judged SITTING (tuned on Liz at her desk). A **gentle mode**:
+- No traps, no losing: Simon leads, you follow. Only encouragement ("Lovely!", "Nice and slow", "You're doing great!").
+- Your own pace: longer holds, no timer pressure. The warm-up round matters most: fit the moves to their range of
+  motion (a stiff shoulder still counts).
+- Slower, clearer, a little louder speech; one instruction at a time. Eyes-free already (good for low vision).
+- Gentle counting: "That's ten arm raises today! More than yesterday."
+- Companionship for someone living alone, with the healthy-companion rules (never needy, always kind).
+- Family/caregiver sets it up once.
+- Care: framed as gentle movement and fun, not medical advice ("check with your doctor…" at set-up); seated only,
+  slow, stop if anything hurts.
+Story: the same Simon who plays cheeky Simon Says with hiring managers leads Mom's morning stretches.
