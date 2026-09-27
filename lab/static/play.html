@@ -68,35 +68,49 @@
         </div>
 
 
-        <!-- Camera setup first; Start takes its place once you're calibrated. -->
-        <div class="setup" id="setup">
-          <p class="setup-text" id="setup-text">First, the camera. Simon's referee watches your head and arms through your webcam
-            (video never leaves your browser). Sit square to it, with your head and shoulders in view.</p>
-          <div class="row tight">
-            <button class="primary" id="setup-camera">Turn on camera</button>
-            <button class="primary" id="setup-calibrate" hidden>I'm ready</button>
-            <span class="hint setup-check" id="setup-check" aria-live="polite"></span>
-          </div>
-        </div>
-        <div class="row tight" id="start-row" hidden>
-          <button class="primary" id="ss-start" disabled>Start game</button>
-          <span class="hint" id="ss-ready">–</span>
-          <button class="ghost small" id="setup-again">Redo camera setup</button>
-        </div>
+        <!-- The game, one big screen at a time (play.js sets data-phase on the panel): setup, ready,
+             playing, over. Each slides in like a page. Designed for grown-ups playing with their inner child:
+             big and easy, but the screen never gives a trap away (moves look the same every round). -->
+        <div class="screens" id="screens">
 
-        <!-- What the camera sees right now (moved out of the camera box, which was crowded). -->
-        <p class="hint cam-status" id="cam-status" aria-live="polite"></p>
+          <section class="screen" data-screen="setup" aria-label="Camera setup">
+            <!-- One step at a time, each sliding in (like Apple's setup): 1, then 2, then 3. -->
+            <div class="setup-steps" id="setup-steps">
+              <button class="step" data-step="camera" id="setup-camera"><span class="n">1</span><span class="words"><span class="t">Turn on camera</span></span></button>
+              <div class="step adjust" data-step="adjust" id="setup-adjust"><span class="n">2</span><span class="words"><span class="t">Sit up and face me</span>
+                <span class="sub" id="setup-check" aria-live="polite">Head and shoulders in view</span></span></div>
+              <button class="step" data-step="go" id="setup-calibrate"><span class="n">3</span><span class="words"><span class="t">Yes, let's go!</span>
+                <span class="sub" id="setup-ready-sub"></span></span></button>
+            </div>
+            <p class="small-note">The camera is the referee. Video never leaves your browser.</p>
+          </section>
 
-        <div class="ss-now">
-          <p class="ss-command" id="ss-command" aria-live="assertive">Do what Simon says, but only when he says "Simon says".</p>
-          <span class="ss-seconds" id="ss-seconds" aria-label="Seconds left"></span>
+          <section class="screen" data-screen="ready" aria-label="Ready to play">
+            <button class="big-btn" id="ss-start" disabled>Play!</button>
+            <div class="rules">
+              <div class="rule"><span class="n">1</span><span class="t">Listen to Simon</span></div>
+              <div class="rule"><span class="n">2</span><span class="t">Copy the move</span></div>
+              <div class="rule"><span class="n">3</span><span class="t">Hold it for a second</span></div>
+            </div>
+            <div class="seen" data-seen><div class="meter"></div><span>I see</span><strong>No move</strong></div>
+            <p class="small-note"><span id="ss-ready">–</span> <button class="link" id="setup-again">Redo camera setup</button></p>
+          </section>
+
+          <section class="screen" data-screen="playing" aria-label="Playing">
+            <div class="timer"><div class="track"><span class="fill" id="ss-timer"></span></div><span class="secs" id="ss-seconds" aria-label="Seconds left"></span></div>
+            <div class="round-row"><span class="round-word" id="play-round">Get ready</span><button class="link" id="play-stop">Stop</button></div>
+            <p class="move" id="play-move" aria-live="assertive">Get ready…</p>
+            <div class="seen" data-seen><div class="meter"></div><span>I see</span><strong>No move</strong></div>
+            <p class="small-note play-result" id="ss-result"></p>
+          </section>
+
+          <section class="screen over" data-screen="over" aria-label="Game over">
+            <p class="headline" id="over-headline">You win!</p>
+            <p class="why" id="over-why"></p>
+            <button class="big-btn" id="play-again">Play again</button>
+          </section>
+
         </div>
-        <div class="ss-timer-wrap" aria-hidden="true"><span id="ss-timer"></span></div>
-        <p class="ss-result" id="ss-result"></p>
-        <p class="ss-score" id="ss-score"></p>
-        <p class="hint">Commands: look up / down / left / right, turn left / right, raise your left / right / both arms.
-          Left and right are yours. Hold each move for a second. 5 rounds: one mistake and Simon wins; get all 5 right
-          and you win. Say "let's play again" for a rematch.</p>
       </div>
 
       <div role="tabpanel" id="panel-settings" class="settings" aria-labelledby="tab-settings" hidden>

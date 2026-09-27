@@ -95,3 +95,22 @@ test("game page: a voice start can't skip camera setup (it did, and every move w
   await sleep(100);
   game.stop("test over");
 });
+
+test("game page events: playing, each round (never whether it's a trap), its result, and stopped", async () => {
+  const app = fakeApp();
+  const events = [];
+  app.onGame = (ev) => events.push(ev);
+  const game = new SimonSaysGame(app);
+  const started = game.start();
+  await sleep(7500);                   // setup (2.4 s) + a round's 4 s window
+  const types = events.map((e) => e.type);
+  assert.ok(types.includes("playing"), types.join(","));
+  const round = events.find((e) => e.type === "round");
+  assert.ok(round && round.round === 1 && round.move && round.pose, JSON.stringify(round));
+  assert.equal("says" in round, false);               // the screen mustn't give a trap away
+  assert.ok(types.includes("result"), types.join(","));
+  game.stop("test over");
+  await started;
+  const last = events.filter((e) => e.type === "stopped" || e.type === "over");
+  assert.ok(last.length >= 1, types.join(","));
+});

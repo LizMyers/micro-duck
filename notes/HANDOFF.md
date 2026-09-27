@@ -299,3 +299,9 @@ transitions, plus the screens side by side. One screen per phase (`data-phase`):
 - No 5 round dots. Match offers instead: Simon suggests "best 2 out of 3?", "3 out of 5?", "4 out of 7?",
   depending on how many games have been played.
 - Open: show the "Simon says" pill on screen (easier for kids, but it gives the trap away)?
+- **Play in the browser (Liz: yes, "for casual players like Mom")**: a game-only version with no server,
+  hosted free as a static Hugging Face Space. The referee (MediaPipe) and the sim already run in the browser;
+  Simon's game lines play from the saved takes (lab/lines/aiden, 130+). Improvised gloats fall back to fixed
+  lines; chatting with Simon stays a run-it-on-your-Mac feature. After release 1.
+- Step 1 of the redesign is built into /play (screens + slides, `onGame` events from the game); steps 2-5 next:
+  fun setup feedback lines, "Are you ready?" when calibrated, nod to start, match offers.

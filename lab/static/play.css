@@ -741,3 +741,123 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* The camera line in the game panel ("Seeing: Look right"); nothing to show when the camera is off. */
 .game .cam-status { margin: 10px 0 0; font-size: 15px; color: var(--ink); }
 .game .cam-status:empty { display: none; }
+
+/* ============ The game panel: one big screen at a time (Liz: big, bold, fun, easy) ============ */
+/* All screens share one grid cell, so the panel is as tall as the tallest; the current one slides in. */
+#panel-game { --yellow: #ffd23f; }
+#panel-game .screens { display: grid; overflow: hidden; }
+#panel-game .screen { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 16px; min-width: 0;
+  visibility: hidden; transform: translateX(105%); }
+#panel-game .screen.in { visibility: visible; transform: none; transition: transform .38s cubic-bezier(.3, 1.35, .5, 1); }
+#panel-game .screen.out { visibility: visible; transform: translateX(-105%); transition: transform .3s ease-in; }
+/* Simon's status line: only between games. */
+#panel-game[data-phase="playing"] .simon-status, #panel-game[data-phase="over"] .simon-status { display: none; }
+
+#panel-game .small-note { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--ink); }   /* part of the page, not a footnote (Liz) */
+#panel-game .link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--duck-dark);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* The big yellow button: Play! and Play again. */
+#panel-game .big-btn {
+  font: 800 44px/1 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: .02em; text-transform: uppercase;
+  border-radius: 20px; padding: 24px; border: 3px solid var(--gold); background: var(--yellow); color: #232323;
+  cursor: pointer; width: 100%; transition: transform .12s ease;
+}
+#panel-game .big-btn:hover:not(:disabled) { transform: scale(1.02); }
+#panel-game .big-btn:active:not(:disabled) { transform: scale(.98); }
+#panel-game .big-btn:disabled { opacity: .45; cursor: default; }
+
+/* 1. Setup: three numbered steps; the one you're on is lit. */
+#panel-game .step { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; font: inherit;
+  border-radius: 20px; padding: 14px 20px; border: 3px solid var(--line); background: var(--surface); color: var(--ink); }
+#panel-game .step .n { flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 32px; font-weight: 800; background: var(--surface-2); color: var(--ink-2); }
+#panel-game .step .words { display: flex; flex-direction: column; gap: 2px; }
+#panel-game .step .t { font-size: 28px; font-weight: 800; text-transform: uppercase; line-height: 1.05; color: var(--ink-2); }
+#panel-game .step .sub { font-size: 18px; font-weight: 600; color: var(--ink-2); }
+/* 2. Ready: the rules as three cards. */
+#panel-game .rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+#panel-game .rule { background: var(--duck-bg); border: 3px solid color-mix(in srgb, var(--duck) 35%, transparent);
+  border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+#panel-game .rule .n { font-size: 36px; font-weight: 800; line-height: 1; color: var(--duck); }
+#panel-game .rule .t { font-size: 22px; font-weight: 800; line-height: 1.1; }
+
+/* "I see": what the camera reads. Green while it's the move Simon called, filling as you hold it. */
+#panel-game .seen { position: relative; overflow: hidden; border-radius: 999px; border: 3px solid var(--line);
+  background: var(--surface-2); padding: 12px 24px; display: flex; justify-content: center; gap: 12px; align-items: baseline; }
+#panel-game .seen .meter { position: absolute; inset: 0; width: 0; background: color-mix(in srgb, var(--good) 30%, transparent);
+  transition: width .1s linear; }
+#panel-game .seen span { position: relative; font-size: 18px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); text-transform: uppercase; }
+#panel-game .seen strong { position: relative; font-size: 30px; font-weight: 800; text-transform: uppercase; }
+#panel-game .seen.match { border-color: var(--good); }
+#panel-game .seen.match strong { color: var(--good); }
+
+/* 3. Playing: timer first, then the round, the move (huge), and what the camera sees. */
+#panel-game .timer { display: flex; align-items: center; gap: 16px; }
+#panel-game .timer .track { flex: 1; height: 22px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+#panel-game .timer .fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--duck); }
+#panel-game .timer .secs { font-size: 36px; font-weight: 800; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+#panel-game .round-row { display: flex; justify-content: space-between; align-items: baseline; }
+#panel-game .round-word { font-size: 18px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+#panel-game .move { margin: 4px 0; text-align: center; font-size: 72px; font-weight: 800; line-height: 1; text-transform: uppercase; }
+#panel-game .play-result { text-align: center; font-size: 18px; font-weight: 700; color: var(--ink); min-height: 1.3em; }
+
+/* 4. Game over. */
+#panel-game .screen.over { text-align: center; justify-content: center; }
+#panel-game .over .headline { font-size: 84px; font-weight: 800; line-height: .95; text-transform: uppercase; margin: 8px 0 0; color: var(--duck); }
+#panel-game .over .headline.simon { color: var(--ink); }
+#panel-game .over .why { font-size: 26px; font-weight: 600; margin: 0; }
+
+/* Motion: the move pops in like a dealt card; the result drops in. */
+#panel-game .pop { animation: game-pop .4s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes game-pop { from { transform: scale(1.35); opacity: 0; } to { transform: none; opacity: 1; } }
+#panel-game .screen.over.in .headline { animation: game-drop .5s cubic-bezier(.3, 1.5, .5, 1) both; }
+#panel-game .screen.over.in .why, #panel-game .screen.over.in .big-btn { animation: game-drop .5s .35s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes game-drop { from { transform: translateY(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 700px) {
+  #panel-game .rules { grid-template-columns: 1fr; }
+  #panel-game .big-btn { font-size: 34px; }
+  #panel-game .move { font-size: 48px; }
+  #panel-game .over .headline { font-size: 56px; }
+  #panel-game .step .t { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #panel-game .screen, #panel-game .screen.in, #panel-game .screen.out { transform: none; transition: none; }
+  #panel-game .screen.out { visibility: hidden; }
+  #panel-game .pop, #panel-game .screen.over.in * { animation: none; }
+}
+
+/* Simon's status in the game panel: the headline that leads into the screen below (Liz). Big and heavy;
+   when he's ready, the sentence says it all ("Simon is ready to play! Are you?"), so the READY word goes. */
+#panel-game .simon-status .health { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+#panel-game .simon-status .health strong { font-size: 24px; font-weight: 800; }
+#panel-game .simon-status #health-detail { font-size: 24px; font-weight: 700; color: var(--ink); }
+#panel-game .simon-status .health[data-state="ready"] strong { display: none; }
+#panel-game .simon-status .health[data-state="ready"] #health-detail { font-size: 32px; font-weight: 800; line-height: 1.1; }
+#panel-game .simon-status { margin: 0 0 16px; }
+
+/* Bricolage changes its design with size (optical sizing): at 30px+ it switched to its quirky display cut
+   (Liz: "where did the crazy font come from?"). Keep the calm text cut at every size. */
+#panel-game, #panel-game * { font-optical-sizing: none; }
+#panel-game .step .sub:empty { display: none; }
+
+/* Setup, one step at a time: the steps share one cell and slide like the screens (Apple-style). */
+#panel-game .setup-steps { display: grid; overflow: hidden; }
+#panel-game .setup-steps > .step { grid-area: 1 / 1; visibility: hidden; transform: translateX(105%); }
+#panel-game .setup-steps > .step.in { visibility: visible; transform: none; transition: transform .38s cubic-bezier(.3, 1.35, .5, 1); }
+#panel-game .setup-steps > .step.out { visibility: visible; transform: translateX(-105%); transition: transform .3s ease-in; }
+/* The one step on screen is always lit. */
+#panel-game .setup-steps > button.step { background: var(--duck); border-color: var(--duck); cursor: pointer; opacity: 1; }
+#panel-game .setup-steps > button.step .n { background: #fff; color: var(--duck); }
+#panel-game .setup-steps > button.step .t, #panel-game .setup-steps > button.step .sub { color: var(--duck-ink); }
+#panel-game .setup-steps > button.step:hover:not(:disabled) { filter: brightness(1.08); }
+#panel-game .setup-steps > .step.adjust { background: var(--duck-bg); border-color: var(--duck); opacity: 1; }
+#panel-game .setup-steps > .step.adjust .n { background: var(--duck); color: var(--duck-ink); }
+#panel-game .setup-steps > .step.adjust .t { color: var(--ink); }
+#panel-game .setup-steps > .step.adjust .sub { font-size: 24px; font-weight: 800; color: var(--ink); }
+#panel-game .setup-steps > .step.adjust[data-ok="true"] .sub { color: var(--good); }
+@media (prefers-reduced-motion: reduce) {
+  #panel-game .setup-steps > .step, #panel-game .setup-steps > .step.in, #panel-game .setup-steps > .step.out { transform: none; transition: none; }
+  #panel-game .setup-steps > .step.out { visibility: hidden; }
+}

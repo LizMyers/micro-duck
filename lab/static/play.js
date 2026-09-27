@@ -9,7 +9,7 @@ import { $, state, ctx, toast, sleep } from "/static/core.js";
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
 import { MacOS } from "/static/mac-os.js";
-import { measure } from "/static/pose.js";
+import { measure, evaluatePoseDetailed, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { calibrationProblem } from "/static/simon-says.js";
 import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
@@ -35,7 +35,10 @@ const body = new DuckBody({
 
 // ---------- Simon's status: one line under the sim, with Start / Restart ---------------------
 const HEALTH = {
-  ready: ["READY", () => "Simon is ready to play."],
+  // Leads into the screen below it (Liz): the setup steps, or the big Play! button.
+  // During setup: short, and it moves on with you (Liz): camera off, look at him, then the question.
+  ready: ["READY", () => $("panel-game").dataset.phase !== "setup" ? "Simon is ready to play! Are you?"
+    : !cam.on ? "Simon is ready. Your camera is OFF." : setup.step === "go" ? "Are you ready?" : "Simon is ready. Look at him."],
   busy: ["BUSY", () => "Another tab is connected to Simon (he talks to one page at a time). Close the other tabs."],
   starting: ["LOADING", (s) => `Simon is waking up: ${s.secs} s (usually 1–3 minutes).`],
   stopped: ["STOPPED", () => "Simon is asleep. Press Start Simon."],
@@ -89,14 +92,45 @@ Object.assign(ctx, {
   calibrateHint: "Sit up, and look at Simon",
 });
 
-// ---------- Camera setup: before Start, on the page ----------------------------------------
-// Turn on the camera, see live whether your stance is usable, then calibrate with a 3-2-1.
-// Start appears in its place once you're calibrated.
-const setup = { live: null };
+// ---------- The game panel: one big screen at a time -----------------------------------------
+// setup (3 steps) → ready (Play!) → playing → over (Play again). data-phase on the panel picks the
+// screen; the new one slides in like a page. The game tells us what's happening (makeGame's onGame).
+const panel = $("panel-game");
+const screens = $("screens");
+// Slide `name` in and the current one out, among a container's children (matched by data-<key>).
+function slideTo(container, key, name) {
+  for (const el of container.children) {
+    const on = el.dataset[key] === name;
+    if (!on && el.classList.contains("in")) { el.classList.remove("in"); el.classList.add("out"); }
+    if (on && !el.classList.contains("in")) {
+      el.classList.remove("out");
+      void el.offsetWidth;   // restart the slide
+      el.classList.add("in");
+    }
+  }
+  setTimeout(() => { for (const el of container.children) if (!el.classList.contains("in")) el.classList.remove("out"); }, 400);
+}
+function showScreen(name) {
+  if (panel.dataset.phase === name) return;
+  panel.dataset.phase = name;
+  ctx.os?.render();   // Simon's status line words itself for this screen
+  slideTo(screens, "screen", name);
+}
+// Between games: setup until the camera is set up, then ready (or stay on the result until Play again).
+const betweenGames = () => (cam.on && cam.calibrated ? "ready" : "setup");
 
-function showSetup(on) {
-  $("setup").hidden = !on;
-  $("start-row").hidden = on;
+// ---------- Setup: one step at a time (1 Turn on camera, 2 Sit up and face me, 3 Yes, let's go!) ----------
+const setup = { live: null, ok: false, okSince: null };   // ok: the camera likes how you're sitting
+const OK_HOLD_MS = 1000;   // "Perfect!" for this long before step 3 slides in (no flicker while you settle)
+function showStep(step) {
+  setup.step = step;
+  slideTo($("setup-steps"), "step", step);
+  ctx.os?.render();   // the status line moves on with you
+}
+function showSetupSteps() {
+  setup.ok = false; setup.okSince = null;
+  $("setup-camera").disabled = false;
+  showStep(cam.on ? "adjust" : "camera");
 }
 
 function stanceNow() {
@@ -105,41 +139,110 @@ function stanceNow() {
 }
 
 async function turnOnCamera() {
+  showScreen("setup");
   $("setup-camera").disabled = true;
+  $("setup-check").textContent = "Starting the camera… (allow access)";
   if (!cam.on) await startCamera({ forGame: true });
-  $("setup-camera").disabled = false;
+  showSetupSteps();
   if (!cam.on) { $("setup-check").textContent = "The camera didn't start: allow camera access in Chrome's address bar."; return; }
-  $("setup-camera").hidden = true;
-  $("setup-calibrate").hidden = false;
-  // Live feedback while you get into position.
+  // Live feedback while you get into position; once it's been "Perfect!" for a second, step 3 slides in.
   clearInterval(setup.live);
   setup.live = setInterval(() => {
     const problem = stanceNow();
-    $("setup-check").textContent = problem ? problem.replace(/\bme\b/g, "the camera") : "Looks good. Press I'm ready.";
-    $("setup-check").dataset.ok = String(!problem);
-  }, 300);
+    $("setup-check").textContent = problem || "Perfect!";
+    $("setup-adjust").dataset.ok = String(!problem);
+    setup.ok = !problem;
+    setup.okSince = problem ? null : setup.okSince ?? performance.now();
+    if (setup.step === "adjust" && setup.okSince && performance.now() - setup.okSince >= OK_HOLD_MS) {
+      clearInterval(setup.live);
+      showStep("go");
+    }
+  }, 200);
 }
 
 async function calibrateNow() {
   $("setup-calibrate").disabled = true;
-  clearInterval(setup.live);
-  for (const n of ["3", "2", "1"]) { $("setup-check").textContent = `Hold still… ${n}`; await sleep(700); }
+  for (const n of ["3", "2", "1"]) { $("setup-ready-sub").textContent = `Hold still… ${n}`; await sleep(700); }
+  $("setup-ready-sub").textContent = "";
+  $("setup-calibrate").disabled = false;
   const base = calibrate();
   const problem = calibrationProblem(base);
-  $("setup-calibrate").disabled = false;
   if (problem) {
     cam.calibrated = false;   // an unusable stance doesn't count as set up (the game started on one, 2026-09-26)
     inspector.note(`📷 page: calibration not usable: ${problem}`, base, "warn");
-    await turnOnCamera();   // back to live feedback
+    await turnOnCamera();   // back to step 2, with live feedback
     return;
   }
-  $("setup-check").textContent = "";
-  showSetup(false);
+  // "Yes, let's go!" means go (Liz: don't ask twice): straight into the game. The Ready screen is for
+  // between games, or if Simon isn't ready yet.
+  showScreen("ready");
+  if (!ctx.game.app.ready()) ctx.game.start();
 }
 
 $("setup-camera").onclick = turnOnCamera;
 $("setup-calibrate").onclick = calibrateNow;
-$("setup-again").onclick = async () => { showSetup(true); await turnOnCamera(); };
+$("setup-again").onclick = () => { cam.calibrated = false; turnOnCamera(); };
+$("play-again").onclick = () => ctx.game.start();
+$("play-stop").onclick = () => ctx.game.stop("Stopped.");
+
+// ---------- The game's moments, drawn big ----------
+const game = { pose: null };
+function onGame(ev) {
+  if (ev.type === "playing") { game.pose = null; $("play-round").textContent = "Get ready"; showScreen("playing"); }
+  if (ev.type === "round") {
+    game.pose = ev.pose;
+    $("play-round").textContent = `Round ${ev.round} of ${ev.rounds}`;
+    setMove(ev.move);
+  }
+  if (ev.type === "result") { game.pose = null; setMove(ev.text); }
+  if (ev.type === "say") game.lastSaid = ev.big;   // for a stop without a message ("Simon didn't answer…")
+  if (ev.type === "lost") { game.pose = null; setMove("I can't see you!"); }
+  if (ev.type === "back") setMove("There you are!");
+  if (ev.type === "over") {
+    game.pose = null;
+    const simon = ev.winner === "simon";
+    $("over-headline").textContent = simon ? "Simon wins!" : "You win!";
+    $("over-headline").classList.toggle("simon", simon);
+    $("over-why").textContent = ev.why || "";
+    showScreen("over");
+  }
+  if (ev.type === "stopped") {
+    game.pose = null;
+    $("ss-start").textContent = "Play!";   // (the game renames its Start button "Start game")
+    if (panel.dataset.phase === "playing") showScreen(betweenGames());
+    const why = ev.message || game.lastSaid;
+    if (why) $("ss-ready").textContent = why;
+  }
+}
+// First screen: setup (or ready, if the camera is somehow already set up). Camera off later: back to setup.
+showSetupSteps();
+showScreen(betweenGames());
+ctx.onCameraStop = () => { clearInterval(setup.live); showSetupSteps(); ctx.os?.render(); if (!ctx.game?.running) showScreen("setup"); };
+
+// The move pops in like a new card being dealt.
+function setMove(text) {
+  const m = $("play-move");
+  m.textContent = text;
+  m.classList.remove("pop"); void m.offsetWidth; m.classList.add("pop");
+}
+
+// "I see": the move the camera reads right now (ready and playing screens). During a round it goes green
+// when it's the move Simon called, and fills while you hold it for the second.
+setInterval(() => {
+  const d = cam.on && cam.calibrated ? evaluatePoseDetailed(cam.tracker?.latest?.landmarks, cam.tracker?.baseline, cam.tracker?.aspect) : null;
+  const seenIds = d ? POSE_IDS.filter((id) => d[id]?.ok) : [];
+  const word = !cam.on ? "Camera off" : seenIds.length ? seenIds.map((id) => POSE_LABELS[id]).join(" + ") : "No move";
+  const match = !!game.pose && seenIds.includes(game.pose);
+  const since = match ? cam.tracker.since?.(game.pose) : null;
+  const hold = since != null ? Math.min(1, (performance.now() - since) / 1000) : 0;
+  for (const chip of document.querySelectorAll("[data-seen]")) {
+    chip.querySelector("strong").textContent = word;
+    chip.classList.toggle("match", match);
+    chip.querySelector(".meter").style.width = `${hold * 100}%`;
+  }
+  // Play again only once Simon has finished talking about the last game.
+  $("play-again").disabled = !!(ctx.game?.running || ctx.game?.starting);
+}, 100);
 
 // ---------- Inspector / chat divider: drag the chat's title bar to share the space ----------
 // The Inspector's height is remembered as a share of the column, so it survives a resize or reload.
@@ -239,7 +342,8 @@ new MacOS({ labels: { "Duck Lab server": "Simon's server" } });
 ctx.game = makeGame({
   setupOnPage: true,
   isSetUp: () => cam.on && cam.calibrated,
-  needSetup: () => { $("tab-game").click(); showSetup(true); if (cam.on) turnOnCamera(); },
+  needSetup: () => { $("tab-game").click(); turnOnCamera(); },
+  onGame,
 });
 $("talk").onclick = () => setMic(!state.micOn);
 

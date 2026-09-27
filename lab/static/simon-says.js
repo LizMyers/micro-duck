@@ -126,6 +126,8 @@ const MOVING = ["look_up", "look_down", "look_left", "look_right", "turn_left", 
   "left_arm_up", "right_arm_up", "both_arms_up"];
 
 const $ = (id) => document.getElementById(id);
+// The game page draws its own screens and leaves some of these elements out, so writes are skipped there.
+const setProp = (id, key, value) => { const el = $(id); if (el) el[key] = value; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class SimonSaysGame {
@@ -138,9 +140,14 @@ export class SimonSaysGame {
     this.lastWinner = null;
     this.gameId = 0;          // see start(): each game has an id, so a stopped game can't keep going   // this page load only: the first game gets the full opener
     this.lastSaid = {};       // last opener and taunt said, so neither repeats back to back
-    $("ss-start").onclick = () => (this.running ? this.stop("Stopped.") : this.start());
+    const startBtn = $("ss-start");
+    if (startBtn) startBtn.onclick = () => (this.running ? this.stop("Stopped.") : this.start());
     setInterval(() => this.showReady(), 1000);
   }
+
+  // What's happening, for a page that draws its own screens (the game page): "playing", each "round"
+  // (never whether it's a trap: the screen mustn't give it away), its "result", "over", and "stopped".
+  emit(ev) { this.app.onGame?.(ev); }
 
   // "I want a rematch!": start a game from a voice command (shows the game tab). False if already playing.
   // Returns what happened, for the model to say: "starting", or why not.
@@ -154,7 +161,7 @@ export class SimonSaysGame {
       this.app.needSetup?.();
       // Worded for Simon to pass on (he said "player turns on the camera…" and "I see…" when it read like a note).
       return "not started: the camera isn't set up yet. Tell them, in your own words and without saying you can see, " +
-        "to press Turn on camera and then I'm ready on the Simon Says tab, and to ask you again after that";
+        "to press Turn on camera and then Yes, let's go on the Simon Says tab, and to ask you again after that";
     }
     setTimeout(() => this.start(), 0);
     return "starting";
@@ -163,8 +170,8 @@ export class SimonSaysGame {
   showReady() {
     if (this.running || this.starting) return;   // (it re-enabled Start during setup: two games at once)
     const problem = this.app.ready();
-    $("ss-start").disabled = !!problem;
-    $("ss-ready").textContent = problem || this.app.warming?.() || "Ready. Face the camera, looking straight ahead.";
+    setProp("ss-start", "disabled", !!problem);
+    setProp("ss-ready", "textContent", problem || this.app.warming?.() || "Ready. Face the camera, looking straight ahead.");
   }
 
   // Every fixed line the game can say, most-needed first, for pre-warming (app.js). Improvised
@@ -189,7 +196,7 @@ export class SimonSaysGame {
     // click or "let's play" in that gap started a second game on top (2026-09-26).
     if (this.running || this.starting) return;
     this.starting = true;
-    $("ss-start").disabled = true;
+    setProp("ss-start", "disabled", true);
     try {
       this.render("Starting the camera… face it, looking straight ahead.", "");
       const problem = await this.app.prepare();
@@ -200,14 +207,15 @@ export class SimonSaysGame {
       if (!this.app.setupOnPage && !(await this.calibrateWithCountdown())) return;
     } finally {
       this.starting = false;
-      $("ss-start").disabled = false;
+      setProp("ss-start", "disabled", false);
     }
     const id = ++this.gameId;   // this game's ticket: stop() or a new game makes every older step give up
     const live = () => this.isLive(id);
     Object.assign(this, { running: true, score: 0, out: false, window: START_WINDOW, last: null, round: 0, skips: 0 });
-    $("ss-start").textContent = "Stop game";
+    setProp("ss-start", "textContent", "Stop game");
     this.render("Get ready…", "");
     this.app.note("🎲 Simon Says: game started");
+    this.emit({ type: "playing" });
     if (!this.lastWinner) await this.speak(FIRST_OPENER);
     else if (this.app.setupOnPage) await this.speak(this.pickOpener());   // (by voice: said over the countdown)
     // One mistake and you're out (classic rules). Survive all the rounds and you win.
@@ -222,6 +230,7 @@ export class SimonSaysGame {
     const { simon, you } = { ...this.board.totals, [winner]: this.board.totals[winner] + 1 };
     // Numbers as words, in its own short line: the voice model dropped the end of
     // "You win! All-time score: Simon 3, you 2." (it said "...Simon 3" then ran on).
+    this.emit({ type: "over", winner, why: simonWon ? this.lastResult : `All ${ROUNDS} right!` });
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
@@ -264,10 +273,11 @@ export class SimonSaysGame {
     this.round--;
     this.app.note("🧍 page: lost sight of you for 2 s, so that round doesn't count", null, "warn");
     this.render("I can't see you!", "Come back into view: head and shoulders.");
+    this.emit({ type: "lost" });
     const tracker = this.app.tracker();
     for (let t = 0; t < 15000; t += 200) {
       if (!this.isLive(id)) return;
-      if (tracker.latest?.landmarks) { this.render("There you are!", ""); await sleep(1000); return; }
+      if (tracker.latest?.landmarks) { this.render("There you are!", ""); this.emit({ type: "back" }); await sleep(1000); return; }
       await sleep(200);
     }
     this.stop("Stopped: I couldn't see you. Start again when you're back in view.");
@@ -280,8 +290,9 @@ export class SimonSaysGame {
     this.running = false;
     this.gameId++;               // any step still in flight sees it's no longer its game
     this.app.lookAt(null);
-    $("ss-start").textContent = "Start game";
+    setProp("ss-start", "textContent", "Start game");
     if (message) this.render(message, "");
+    this.emit({ type: "stopped", message });
     this.app.note(`🎲 Simon Says: game over, score ${this.score}`);
     this.app.gameOver?.();
   }
@@ -386,6 +397,7 @@ export class SimonSaysGame {
     this.round++;
     if (this.round === ROUNDS) await this.speak("Last round!");
     this.render(text, "");
+    this.emit({ type: "round", round: this.round, rounds: ROUNDS, pose: cmd.pose, move: COMMANDS[cmd.pose] });
     this.app.note(`🎲 round ${this.round}: "${text}" (${cmd.says ? "do it" : "trap: don't move"})`);
 
     const { started, done } = this.app.sayLine(text);
@@ -447,14 +459,14 @@ export class SimonSaysGame {
       if (cmd.says) wrong = others.find(counts) ?? wrong;   // a wrong move only counts if you never get it right
       // "Hold it…" while the right move is on but not yet held for a second.
       const holding = cmd.says && tracker.since(cmd.pose) != null && tracker.since(cmd.pose) >= spokeAt + REACTION_MS;
-      $("ss-result").textContent = holding ? "Hold it…" : "";
+      setProp("ss-result", "textContent", holding ? "Hold it…" : "");
       const left = deadline === Infinity ? this.window : Math.max(0, deadline - performance.now());
-      $("ss-timer").style.width = `${(left / this.window) * 100}%`;
-      $("ss-seconds").textContent = (left / 1000).toFixed(1);
+      if ($("ss-timer")) $("ss-timer").style.width = `${(left / this.window) * 100}%`;
+      setProp("ss-seconds", "textContent", (left / 1000).toFixed(1));
       await sleep(50);
     }
-    $("ss-timer").style.width = "0%";
-    $("ss-seconds").textContent = "";
+    if ($("ss-timer")) $("ss-timer").style.width = "0%";
+    setProp("ss-seconds", "textContent", "");
     if (demo) this.app.lookAt(null);
     if (!live()) return;
 
@@ -491,6 +503,8 @@ export class SimonSaysGame {
         : r.wrong ? `You said "Simon says, ${COMMANDS[cmd.pose]}" but the player did ${LABEL[r.wrong]} instead. ${gloat()}`
         : `You said "Simon says, ${COMMANDS[cmd.pose]}" and the player was too slow to do it. ${gloat()}`;
     }
+    this.lastResult = r.text;
+    this.emit({ type: "result", point: r.point, text: r.text });
     this.render(r.text, `${cmd.says ? "Simon said it" : "Simon didn't say"} · you ${seen ? "did it" : r.wrong ? `did ${LABEL[r.wrong]} instead` : "didn't do it"}`);
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say the result out loud, so you can follow the game without looking at the screen (Liz).
@@ -501,10 +515,11 @@ export class SimonSaysGame {
   }
 
   render(big, small) {
-    $("ss-command").textContent = big;
-    $("ss-result").textContent = small;
-    $("ss-score").textContent = this.running || this.round
-      ? `Round ${this.round} of ${ROUNDS} · Score ${this.score ?? 0} · Window ${((this.window ?? START_WINDOW) / 1000).toFixed(1)} s` : "";
+    setProp("ss-command", "textContent", big);
+    setProp("ss-result", "textContent", small);
+    this.emit({ type: "say", big, small });
+    setProp("ss-score", "textContent", this.running || this.round
+      ? `Round ${this.round} of ${ROUNDS} · Score ${this.score ?? 0} · Window ${((this.window ?? START_WINDOW) / 1000).toFixed(1)} s` : "");
   }
 }
 
