@@ -108,3 +108,16 @@ so his quack is his fingerprint and the serial can be his ID.
 - Healthy by design: never needy (invites once, respects "no thanks", no guilt-trips); honest (a playful robot
   duck); your memory, your control (local, visible in the Inspector, "Simon, forget me" really forgets); kid-safe.
 - Blog post candidate: what makes a robot a good companion, and what makes a bad one.
+
+## Shared web board for board games (Liz, 2026-09-27)
+The page IS the board; Simon reads its STATE, not its pixels (like the onGame events from the Simon Says page).
+- You move by click/drag (the page knows exactly, checks legality, tells Simon "red moved C2 to D3"), or by voice
+  ("I moved my red checker to D3": the chat model makes a tool call move(from, to); the page checks it; unclear or
+  illegal → Simon asks "From C2 or E2?").
+- Simon's move: a game engine picks it, the page shows it, Simon says it with banter ("jumping your piece on E5.
+  Sorry, not sorry!"). Real duck: the laptop/tablet beside him; he turns his head to "look" at the screen (theatre),
+  then faces you to announce.
+- No internet for you vs Simon (a local page). Internet only for a remote friend on the same shared board (a small
+  real-time server), with Simon as commentator/referee for both ("your mum just took two of your pieces!").
+- Existing sites: only via an API (e.g. Lichess for chess); screenshot-reading needs a vision model (slow, and our
+  text-only model can't see). Build our own board. Order: tic-tac-toe, connect four, checkers.
