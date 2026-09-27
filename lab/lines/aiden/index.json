@@ -74,6 +74,11 @@
   "file": "come-on-try-harder.wav",
   "seconds": 1.25
  },
+ "Don't get too comfy!": {
+  "cut": false,
+  "file": "don-t-get-too-comfy.wav",
+  "seconds": 1.31
+ },
  "Eight for me, five for you.": {
   "cut": false,
   "file": "eight-for-me-five-for-you.wav",
@@ -1059,6 +1064,11 @@
   "file": "okay-no-more-mr-nice-duck.wav",
   "seconds": 2.3
  },
+ "Okay, you're good.": {
+  "cut": false,
+  "file": "okay-you-re-good.wav",
+  "seconds": 0.99
+ },
  "One each.": {
   "cut": false,
   "file": "one-each.wav",
@@ -1393,5 +1403,10 @@
   "cut": false,
   "file": "you-re-ahead.wav",
   "seconds": 0.93
+ },
+ "You're on a roll!": {
+  "cut": false,
+  "file": "you-re-on-a-roll.wav",
+  "seconds": 1.47
  }
 }
