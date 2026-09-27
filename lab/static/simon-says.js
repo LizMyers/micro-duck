@@ -214,8 +214,8 @@ export class SimonSaysGame {
       ...TRAP_OPENERS.map(trapLine),
       "I win!", "You win!", "Well played. You win!", ...PLAY_AGAIN,
       // Only two scores are possible after the next game.
-      this.usableScore(simon + 1, you), ...taunts(simon + 1, you),
-      this.usableScore(simon, you + 1), ...taunts(simon, you + 1),
+      this.usableScore(simon + 1, you), ...taunts(simon + 1, you, "simon"),
+      this.usableScore(simon, you + 1), ...taunts(simon, you + 1, "you"),
       // And three after the one after: a quick "yes, again!" starts a game before the pre-warm can run
       // (a game in progress pauses it), so its score had to be made live, with a pause (Liz, 2026-09-26).
       this.usableScore(simon + 2, you), this.usableScore(simon + 1, you + 1), this.usableScore(simon, you + 2),
@@ -278,7 +278,7 @@ export class SimonSaysGame {
       // Say who won, unless his made-up gloat already did (Liz: he said it twice).
       if (!/\bwins?\b/i.test(heard)) await this.speak("I win!");
       if (!live()) return;
-      await this.sayScore(simon, you);
+      await this.sayScore(simon, you, winner);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
       await this.app.sfx?.("lose");    // Simon lost: a deflated quack before he congratulates you
@@ -293,7 +293,7 @@ export class SimonSaysGame {
       if (!heard) { heard = "Well played. You win!"; await this.speak(heard); }   // fallback if the made-up line stalls
       if (!/\byou(?:'ve| have)? (?:win|won)\b/i.test(heard)) await this.speak("You win!");
       if (!live()) return;
-      await this.sayScore(simon, you);
+      await this.sayScore(simon, you, winner);
     }
     if (!live()) return;
     const ask = pickFresh(PLAY_AGAIN, this.lastSaid.ask);
@@ -383,7 +383,7 @@ export class SimonSaysGame {
   }
 
   // The score every time; a taunt now and then, never the same one twice running.
-  async sayScore(simon, you) {
+  async sayScore(simon, you, winner) {
     // Skip wordings the voice model gets wrong; if this one goes wrong now, say the next one instead.
     const options = scoreLines(simon, you).filter((t) => !this.app.isBad?.(t));
     for (const [i, text] of options.entries()) {
@@ -392,7 +392,7 @@ export class SimonSaysGame {
       if (options[i + 1]) this.app.note(`🔁 trying another wording: "${options[i + 1]}"`);
     }
     if (Math.random() >= TAUNT_CHANCE) return this.app.note("🎭 no taunt this time");
-    const taunt = pickFresh(taunts(simon, you), this.lastSaid.taunt);
+    const taunt = pickFresh(taunts(simon, you, winner), this.lastSaid.taunt);
     this.lastSaid.taunt = taunt;
     await this.speak(taunt);
   }
@@ -653,11 +653,14 @@ const AHEAD = [
 ];
 const LEVEL = [(me) => `${cap(me)} all.`, (me) => `${cap(me)} each.`];
 const BEHIND = [(me, you) => `You lead ${you} to ${me}.`, (me, you) => `${cap(you)} for you, ${me} for me.`];
-// Cheeky when he's ahead, a good sport when he's behind.
+// Cheeky when he's ahead, a good sport when he's behind, and aware of who just won: 47 to 33 up but just
+// beaten, "Are you even trying?" made no sense (Liz, 2026-09-26: "you're gaining on me" fits).
 const TAUNTS = {
   ahead: ["Advantage me!", "Come on, try harder!", "Show me what you've got!", "Getting comfortable up here.", "Are you even trying?"],
+  aheadButBeaten: ["Uh oh, you're gaining on me!", "Catching up, are we?", "Think you can catch me?", "Enjoy it while it lasts!"],
   level: ["Anybody's game!", "All square!"],
   behind: ["Not for long!", "I'm coming for you!"],
+  behindAndBeaten: ["You're on a roll!", "Okay, you're good.", "Don't get too comfy!"],
 };
 const side = (simon, you) => (simon > you ? "ahead" : simon === you ? "level" : "behind");
 const cap = (t) => t[0].toUpperCase() + t.slice(1);
@@ -669,7 +672,13 @@ export function scoreLines(simon, you) {
   const pick = set === LEVEL ? simon : simon + you;   // a level total is always even, so use one side
   return set.map((_, i) => set[(pick + i) % set.length](words(simon), words(you)));
 }
-export const taunts = (simon, you) => TAUNTS[side(simon, you)];
+// winner: who won the game just played ("simon" | "you"); without it, the plain side of the all-time score.
+export const taunts = (simon, you, winner) => {
+  const where = side(simon, you);
+  if (winner === "you" && where === "ahead") return TAUNTS.aheadButBeaten;
+  if (winner === "you" && where === "behind") return TAUNTS.behindAndBeaten;
+  return TAUNTS[where];
+};
 
 // Up to 99 in words ("twenty-one"): past twenty the voice was handed digits ("It's 21 to nine", 2026-09-26).
 const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
