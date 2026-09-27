@@ -151,3 +151,6 @@ Simon is almost made for it: every move is already judged SITTING (tuned on Liz 
 - Care: framed as gentle movement and fun, not medical advice ("check with your doctor…" at set-up); seated only,
   slow, stop if anything hurts.
 Story: the same Simon who plays cheeky Simon Says with hiring managers leads Mom's morning stretches.
+- **Duck aerobics** (Liz): an 80s workout video with Simon on skates. The skates are real (Pollen's roller policy;
+  the lab already has skates_on / skates_off): glide side to side to the beat, a victory spin after each set, skates
+  off and sit for the cool-down ("And… rest."). Retro music. Pairs with the chair workout.
