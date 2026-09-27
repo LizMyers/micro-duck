@@ -349,7 +349,10 @@ Only the body changes. Brain (voice agent on the Mac) and referee (webcam in the
   the audio, quack), talking to Pollen's `robotd`, the program that controls the real duck.
 - Build it before the hardware arrives against Pollen's `duck-sim` (robotd with a simulated body; Rust build,
   Linux audio: see notes/research/sim-and-reachy-pattern.md), then point it at the real duck.
-- Known (Liz, from Pollen's material): the real beak moves, and the duck makes its own sounds.
+- Known (Liz, from Pollen's material): the real beak moves, the duck makes its own sounds, and it has a camera,
+  front and centre. So the referee can watch the player through Simon's own eyes: stream his camera to the
+  pose tracker (in the browser or on the Mac; or on the duck, if it has the compute). No screen needed, e.g.
+  Simon on the kitchen counter. Then Simon's "you cannot see" instructions change: he really is watching.
 - To check with the hardware/docs: voice through the duck's speaker or the laptop; how robotd connects
   (Wi-Fi/USB) and its latency; which moves are safe on a desk.
 - Microduck ships ~Christmas 2026. Story: "the same game, the same brain, now in a real duck."
