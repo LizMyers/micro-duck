@@ -355,6 +355,9 @@ Only the body changes. Brain (voice agent on the Mac) and referee (webcam in the
   Simon on the kitchen counter. Then Simon's "you cannot see" instructions change: he really is watching.
 - To check with the hardware/docs: voice through the duck's speaker or the laptop; how robotd connects
   (Wi-Fi/USB) and its latency; which moves are safe on a desk.
+- Battery ~1 hour (Liz): fine for games (~1 min each), and it backs the design: heavy work stays off the duck
+  (voice agent on the Mac, pose tracking in the browser/Mac); the duck streams its camera, moves and makes sound.
+  Idea: Simon says when he's low ("I'm getting sleepy… one more game?") and sits down for a nap.
 - Microduck ships ~Christmas 2026. Story: "the same game, the same brain, now in a real duck."
 
 Also open (09-26): a very fast "yes, again!" can still start a game before the score pre-warm finishes
