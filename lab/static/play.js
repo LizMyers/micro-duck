@@ -9,7 +9,7 @@ import { $, state, ctx, toast, sleep } from "/static/core.js";
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
 import { MacOS } from "/static/mac-os.js";
-import { measure, evaluatePoseDetailed, POSE_IDS, POSE_LABELS } from "/static/pose.js";
+import { measure, evaluatePoseDetailed, NodDetector, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { calibrationProblem, calibrationIssue, SETUP_LINES } from "/static/simon-says.js";
 import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
@@ -192,17 +192,22 @@ async function calibrateNow() {
 $("setup-camera").onclick = turnOnCamera;
 $("setup-calibrate").onclick = calibrateNow;
 $("setup-again").onclick = () => { cam.calibrated = false; turnOnCamera(); };
-$("play-again").onclick = () => ctx.game.start();
+$("play-again").onclick = () => sayYes();
 $("play-stop").onclick = () => ctx.game.stop("Stopped.");
 
 // ---------- The game's moments, drawn big ----------
 const game = { pose: null };
 function onGame(ev) {
-  if (ev.type === "playing") { game.pose = null; $("play-round").textContent = "Get ready"; showScreen("playing"); }
+  if (ev.type === "playing") {
+    game.pose = null;
+    game.match = ev.match;   // { game, bestOf } during a match
+    $("play-round").textContent = game.match ? `Game ${game.match.game} · best of ${game.match.bestOf}` : "Get ready";
+    showScreen("playing");
+  }
   if (ev.type === "round") {
     game.pose = ev.pose;
     game.hold = 0;
-    $("play-round").textContent = `Round ${ev.round} of ${ev.rounds}`;
+    $("play-round").textContent = (game.match ? `Game ${game.match.game} · ` : "") + `Round ${ev.round} of ${ev.rounds}`;
     setMove(ev.move);
   }
   if (ev.type === "hold") game.hold = ev.progress;
@@ -213,9 +218,16 @@ function onGame(ev) {
   if (ev.type === "over") {
     game.pose = null;
     const simon = ev.winner === "simon";
-    $("over-headline").textContent = simon ? "Simon wins!" : "You win!";
+    const m = ev.match;   // the match so far, if one's on
+    $("over-headline").textContent = m?.over ? (simon ? "Simon wins the match!" : "You win the match!") : simon ? "Simon wins!" : "You win!";
     $("over-headline").classList.toggle("simon", simon);
     $("over-why").textContent = ev.why || "";
+    $("over-match").hidden = !m;
+    if (m) $("over-match").textContent = `Simon ${m.simon} · You ${m.you} · best of ${m.bestOf}`;
+    // Simon's question ("Best two out of three?"): the big button and a nod answer it.
+    $("over-ask").hidden = !ev.ask;
+    $("over-ask").textContent = ev.ask || "";
+    $("play-again").textContent = ev.ask ? "Yes!" : m && !m.over ? "Next game" : "Play again";
     showScreen("over");
   }
   if (ev.type === "stopped") {
@@ -252,8 +264,23 @@ setInterval(() => {
     chip.querySelector(".meter").style.width = `${hold * 100}%`;
   }
   // Play again only once Simon has finished talking about the last game.
-  $("play-again").disabled = !!(ctx.game?.running || ctx.game?.starting);
+  const busy = !!(ctx.game?.running || ctx.game?.starting);
+  $("play-again").disabled = busy;
+  // A nod is a yes (Ready and Game over screens): the same as pressing the big button.
+  const asking = !busy && cam.on && cam.calibrated && ["ready", "over"].includes(panel.dataset.phase);
+  if (!asking) { nod.samples = []; return; }
+  const m = measure(cam.tracker?.latest?.landmarks, cam.tracker?.aspect);
+  if (m && cam.tracker.baseline && nod.feed(performance.now(), m.pitch - cam.tracker.baseline.pitch)) {
+    inspector.note("🙂 page: you nodded: that's a yes");
+    sayYes();
+  }
 }, 100);
+const nod = new NodDetector();
+// Yes (a nod, the big button, or saying so): play.
+function sayYes() {
+  if (ctx.game?.running || ctx.game?.starting) return;
+  ctx.game.start();
+}
 
 // ---------- Inspector / chat divider: drag the chat's title bar to share the space ----------
 // The Inspector's height is remembered as a share of the column, so it survives a resize or reload.

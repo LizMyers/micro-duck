@@ -87,6 +87,7 @@
 
           <section class="screen" data-screen="ready" aria-label="Ready to play">
             <button class="big-btn" id="ss-start" disabled>Play!</button>
+            <p class="small-note nod-hint">Or just nod.</p>
             <div class="rules">
               <div class="rule"><span class="n">1</span><span class="t">Listen to Simon</span></div>
               <div class="rule"><span class="n">2</span><span class="t">Copy the move</span></div>
@@ -107,7 +108,10 @@
           <section class="screen over" data-screen="over" aria-label="Game over">
             <p class="headline" id="over-headline">You win!</p>
             <p class="why" id="over-why"></p>
+            <p class="match-score" id="over-match" hidden></p>
+            <p class="ask" id="over-ask" hidden></p>
             <button class="big-btn" id="play-again">Play again</button>
+            <p class="small-note nod-hint">Or just nod.</p>
           </section>
 
         </div>

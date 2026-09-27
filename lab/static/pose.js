@@ -394,3 +394,26 @@ export class PoseTracker {
     ctx.restore();
   }
 }
+
+// A nod: the head dips (pitch drops by `dip` from where it was) and comes back up (to within `back` of
+// where it started), all within `within` ms. A yes for "Are you ready?" / "Play again?". A held look down
+// or a slow drift isn't a nod. Feed it pitch compared with calibration (measure().pitch - baseline.pitch).
+export class NodDetector {
+  constructor({ dip = 0.1, back = 0.04, within = 1200 } = {}) {
+    Object.assign(this, { dip, back, within });
+    this.samples = [];   // [t, pitch], the last `within` ms
+  }
+  feed(t, pitch) {
+    if (typeof pitch !== "number") return false;
+    this.samples.push([t, pitch]);
+    while (this.samples.length && t - this.samples[0][0] > this.within) this.samples.shift();
+    // Looking back from now: a start, then a low point well below it, then now back up near the start.
+    const [, start] = this.samples[0];
+    const low = Math.min(...this.samples.map(([, p]) => p));
+    if (start - low >= this.dip && Math.abs(pitch - start) <= this.back && pitch - low >= this.dip) {
+      this.samples = [];   // one nod, one yes
+      return true;
+    }
+    return false;
+  }
+}
