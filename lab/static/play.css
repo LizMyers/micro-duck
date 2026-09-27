@@ -904,3 +904,4 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .timer { display: block; }
 #panel-game .timer .track { width: 100%; }
 #panel-game .play-stop { text-align: center; }
+#panel-game { padding-top: 50px; }   /* breathing room at the top of the Simon Says panel (Liz) */

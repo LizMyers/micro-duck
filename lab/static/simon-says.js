@@ -216,6 +216,9 @@ export class SimonSaysGame {
       // Only two scores are possible after the next game.
       this.usableScore(simon + 1, you), ...taunts(simon + 1, you),
       this.usableScore(simon, you + 1), ...taunts(simon, you + 1),
+      // And three after the one after: a quick "yes, again!" starts a game before the pre-warm can run
+      // (a game in progress pauses it), so its score had to be made live, with a pause (Liz, 2026-09-26).
+      this.usableScore(simon + 2, you), this.usableScore(simon + 1, you + 1), this.usableScore(simon, you + 2),
       ...Object.keys(LABEL).map(wrongLine),
     ];
   }

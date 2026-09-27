@@ -304,6 +304,11 @@
   "file": "it-s-forty-to-twenty-five-in-my-favor.wav",
   "seconds": 2.27
  },
+ "It's forty-eight to twenty-nine in my favor.": {
+  "cut": false,
+  "file": "it-s-forty-eight-to-twenty-nine-in-my-favor.wav",
+  "seconds": 2.37
+ },
  "It's forty-five to twenty-four.": {
   "cut": false,
   "file": "it-s-forty-five-to-twenty-four.wav",
@@ -338,6 +343,11 @@
   "cut": false,
   "file": "it-s-forty-one-to-twenty-four-in-my-favor.wav",
   "seconds": 2.75
+ },
+ "It's forty-seven to thirty in my favor.": {
+  "cut": false,
+  "file": "it-s-forty-seven-to-thirty-in-my-favor.wav",
+  "seconds": 2.05
  },
  "It's forty-seven to twenty-eight.": {
   "cut": false,
