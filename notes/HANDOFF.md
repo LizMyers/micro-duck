@@ -335,5 +335,6 @@ no traps): "Show me a look left!" The camera records how far *this* player goes,
   (rematches start straight away); a "Skip warm-up" link. Tests for the fitting and the clamps.
 - Blog beat: "the game fits itself to your body" (personal calibration, not reinforcement learning).
 
-Also open: the left arm isn't recognised for Liz at all (right is fine). Needs the Inspector line
-"📏 your left arm (missed): most often …" to pick the failing check. Code is symmetric; worked earlier on 09-26.
+Left arm (fixed late 2026-09-26, play-test it): Liz's bent left raise (hand up by her face, elbow 0.40 below
+the shoulder) was read as "hand on the head". Now "resting on the head" needs the elbow out wide AND up near
+head height. Test with her numbers. If it's still missed, the 📏 arm line logs on every arm round, traps too.
