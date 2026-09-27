@@ -171,12 +171,14 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
     const up = (P(sh).y - P(w).y) / sw;   // positive = wrist above shoulder
     if (up <= 0.35) return result(false, conf(sh, w), `${side} wrist isn't above the ${side} shoulder`, up);
     if (vis(LM.nose) && dist(P(w), P(LM.nose)) < 0.7 * sw) {
-      // A raised arm can put the hand right over the head in the picture too (Liz's raised arm was read as
-      // "hand on the head" 90% of the time, 2026-09-26). The elbow tells them apart: raised, it's up above
-      // the shoulder; resting a hand on your head, it sticks out to the side.
+      // A raised arm can put the hand right by the head in the picture too. The elbow tells them apart: to
+      // rest a hand on your head the elbow sticks out to the side AND up at about head height. A raise with the
+      // elbow straight up, or bent with the elbow down (hand up like in class), is a raise. (Liz: a straight
+      // raise was read as "hand on the head" 90% of the time; then her bent left raise, elbow 0.40 shoulder-
+      // widths below the shoulder, 51% of the time, 2026-09-26.)
       const e = vis(el) ? P(el) : null;
-      const elbowRaised = e && (P(sh).y - e.y) / sw > 0.25 && Math.abs(e.x - P(sh).x) / sw < 0.5;
-      if (!elbowRaised) return result(false, conf(sh, w), `${side} hand is on the head, not raised`, up);
+      const restingOnHead = e && Math.abs(e.x - P(sh).x) / sw >= 0.5 && (P(sh).y - e.y) / sw > -0.1;
+      if (restingOnHead) return result(false, conf(sh, w), `${side} hand is on the head, not raised`, up);
     }
     return result(true, conf(sh, w), `${side} wrist is above the ${side} shoulder`, up);
   };

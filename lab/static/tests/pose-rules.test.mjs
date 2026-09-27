@@ -176,6 +176,7 @@ test("both arms up", () => {
 
 test("a hand resting on the head is not a raised arm", () => {
   const { lm, set, base } = neutral();
+  set(LM.rightElbow, 0.25, 0.42);      // resting a hand on your head: the elbow sticks out, up near the head
   set(LM.rightWrist, 0.47, 0.27);
   assert.equal(check(lm, base).right_arm_up, false);
 });
@@ -237,3 +238,11 @@ test("a hand resting on the head with the elbow out to the side is still not rai
   assert.equal(check(lm, base).right_arm_up, false);
 });
 
+
+test("a bent-arm raise (hand up by the face, elbow below the shoulder) is a raise, not 'hand on the head'", () => {
+  // Liz's left raise, 2026-09-26: wrist 0.53 shoulder-widths above the shoulder, next to her face; elbow 0.40 below.
+  const { lm, set, base } = neutral();
+  set(LM.leftElbow, 0.64, 0.58);       // elbow down, a little out from the body
+  set(LM.leftWrist, 0.55, 0.36);       // hand up beside the face
+  only(check(lm, base), "left_arm_up");
+});
