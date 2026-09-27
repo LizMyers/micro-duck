@@ -480,6 +480,7 @@ export class SimonSaysGame {
     const isArm = /arm/.test(cmd.pose);
     const armWhy = new Map();   // arms: why the camera said "not up", frame by frame (e.g. the wrist out of view)
     let armFrames = 0;
+    let armPeak = null;   // the frame where the wrist was highest (for the log)
     let lostAt = null, lost = false;
     while (live() && performance.now() < deadline) {
       // Out of view for 2 s: you can't be judged, so the round doesn't count (it used to end "Too slow!").
@@ -495,6 +496,8 @@ export class SimonSaysGame {
         const c = tracker.check(cmd.pose);
         armFrames++;
         if (c && !c.ok) armWhy.set(c.reason, (armWhy.get(c.reason) || 0) + 1);
+        const up = tracker.armDetail?.(cmd.pose);   // how high the wrist got, and how sure the camera was
+        if (up && (armPeak == null || up.up > armPeak.up)) armPeak = up;
       }
       const w = isTurn && tracker.check(cmd.pose)?.value;
       if (typeof w === "number" && (narrowest == null || w < narrowest)) narrowest = w;
@@ -528,10 +531,13 @@ export class SimonSaysGame {
       // Every look up/down round, right or wrong: the data for choosing the better tilt measure.
       this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: ears method got to ${tiltPeak.ears.toFixed(2)} ` +
         `(the judge uses this, needs ${dir > 0 ? "" : "−"}${this.app.thresholds?.pitch}); face method got to ${tiltPeak.face.toFixed(2)}`);
-    } else if (isArm && cmd.says && !seen && armFrames) {
-      // Why a raised arm wasn't counted, for tuning (a hand out of the top of the frame, 2026-09-26).
+    } else if (isArm && !seen && armFrames) {
+      // Why a raised arm wasn't counted, on every arm round, traps too (Liz raised her left arm on a trap and
+      // it wasn't seen at all, 2026-09-26). The numbers say which check failed.
       const [why, n] = [...armWhy].sort((a, b) => b[1] - a[1])[0] ?? ["it was up", 0];
-      this.app.note(`📏 ${LABEL[cmd.pose]} (missed): most often "${why}", ${Math.round((n / armFrames) * 100)}% of the time`);
+      const p = armPeak ? ` Highest: wrist ${armPeak.up.toFixed(2)} shoulder-widths above the shoulder (needs 0.35), ` +
+        `camera sure of wrist ${Math.round(armPeak.wristVis * 100)}%, elbow ${Math.round(armPeak.elbowVis * 100)}%.` : "";
+      this.app.note(`📏 ${LABEL[cmd.pose]}${cmd.says ? " (missed)" : " (trap)"}: most often "${why}", ${Math.round((n / armFrames) * 100)}% of the time.${p}`, armPeak);
     } else if (isTurn && cmd.says && narrowest != null) {
       // Every turn round, right or wrong: how far you turned, for tuning the threshold.
       this.app.note(`📏 ${LABEL[cmd.pose]}${seen ? "" : " (missed)"}: your shoulders got to ${narrowest.toFixed(2)} ` +
