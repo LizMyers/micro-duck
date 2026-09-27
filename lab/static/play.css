@@ -603,14 +603,12 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .game .simon-status .health strong { font-size: 18px; }
 .game .simon-status #health-detail { font-size: 15px; color: var(--ink); }
 
-/* The scoreboard on the sim: bottom left, level with the camera box (bottom right), always shown. */
+/* The scoreboard on the sim (placed top left: see "The sim box's corners" at the end). */
 .ss-board.on-sim {
-  position: absolute; left: 12px; bottom: 12px; z-index: 2; margin: 0;
+  position: absolute; left: 12px; top: 12px; z-index: 2; margin: 0;
   padding: 10px 12px; border-radius: 10px; background: rgb(0 0 0 / 35%); backdrop-filter: blur(4px);
 }
 .ss-board.on-sim .ss-team > b { color: #fff; order: -1; font-weight: 700; }   /* labels on top (> : not the digits inside the cards) */
-/* The cards' bottom edge sits level with the camera box's (12px up): the band's 10px padding hangs below. */
-.ss-board.on-sim { bottom: 2px; }
 
 /* Mac OS tab: reading size (15px), dark text, everything left aligned (numbers sit next to their names). */
 .mac, .mac .hint, .mac small, .mac-summary small, #ram-text, .mem-head, .mem-head .num, .mem-list small, .mem-list .top {
@@ -632,7 +630,8 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   .controls > [role="tabpanel"] { margin-right: -16px; padding-right: 12px; scrollbar-gutter: stable; }
 }
 
-/* Wide windows: the sim takes at most half the window's height; the tabs get the other half. */
+/* Wide windows: the sim takes at most half the window's height; the tabs get the other half.
+   (Simon's headroom comes from shifting his view 50px down: see view.downPx in play.js.) */
 @media (min-width: 1001px) {
   main.layout { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
 }
@@ -896,13 +895,21 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 .side.split .split-top { background: var(--simon); }
 .side.split .title-bar { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0; border-top: 0; }
 
-/* Full screen button on the sim (top right), and the sim box when it has the whole screen. */
-.sim-full { position: absolute; top: 12px; right: 12px; z-index: 3; padding: 6px 12px; border-radius: 999px;
-  border: 0; background: rgb(0 0 0 / 45%); color: #fff; font: 600 13px "Bricolage Grotesque", system-ui, sans-serif;
-  letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+/* Full screen button on the sim: an icon, bottom right, like a video player (Phosphor bold arrows). */
+.sim-full { position: absolute; right: 12px; bottom: 12px; z-index: 3; width: 40px; height: 40px; padding: 8px;
+  display: grid; place-items: center; border: 0; border-radius: 10px; background: rgb(0 0 0 / 45%); color: #fff; cursor: pointer; }
 .sim-full:hover { background: rgb(0 0 0 / 65%); }
+.sim-full svg { width: 24px; height: 24px; grid-area: 1 / 1; }
+.sim-full .ic-in, .sim-full[aria-pressed="true"] .ic-out { display: none; }
+.sim-full[aria-pressed="true"] .ic-in { display: block; }
 .sim-wrap:fullscreen { width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; border-radius: 0; }
 
 /* Inspector and Chat: the scrollbar hugs the card's right edge, with space kept for it, so it never sits on
    the text (Liz). Same as the scrolling tabs: the list reaches into the card's 16px side padding. */
 .split-top .insp-list, .split-bottom .chat { margin-right: -16px; padding-right: 12px; scrollbar-gutter: stable; }
+
+/* The sim box's corners (Liz): scores top left, your camera bottom left, full screen bottom right. */
+.ss-board.on-sim { top: 12px; bottom: auto; left: 12px; }
+.cam-pip { left: 12px; right: auto; bottom: 12px; }
+/* The full-screen button appears once a game has started (Playing and Game over), and always while full screen. */
+body:not([data-phase="playing"]):not([data-phase="over"]) .sim-full:not([aria-pressed="true"]) { display: none; }

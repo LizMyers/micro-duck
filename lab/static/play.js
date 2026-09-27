@@ -35,6 +35,8 @@ const PERSONALITY =
 const inspector = new Inspector($("inspector"), { plain: true });   // no emojis on this page
 const body = new DuckBody({
   iframe: $("sim"),   // (no mood badge or Beak / Head / Why row on this page: the sim fills the card)
+  // Framing (Liz): Simon 50 px lower in the picture, for headroom. (acrossPx would move him sideways.)
+  view: { downPx: 50 },
 });
 
 // ---------- Simon's status: one line under the sim, with Start / Restart ---------------------
@@ -118,6 +120,7 @@ function slideTo(container, key, name) {
 function showScreen(name) {
   if (panel.dataset.phase === name) return;
   panel.dataset.phase = name;
+  document.body.dataset.phase = name;   // for things outside the panel (the sim's full-screen button)
   ctx.os?.render();   // Simon's status line words itself for this screen
   slideTo(screens, "screen", name);
 }
@@ -288,14 +291,22 @@ function sayYes() {
   new ResizeObserver(align).observe(col);
 }
 
+body.onNote = (text) => inspector.note(text);   // the framing reports itself in the Inspector
+// Re-frame Simon when the sim box changes size (window resize, full screen), so his feet stay put.
+{
+  let t;
+  new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => body.shiftView(), 150); }).observe(document.querySelector(".sim-wrap"));
+}
+
 // ---------- Full screen: the sim box takes over the screen while you play ----------
 {
   const wrap = document.querySelector(".sim-wrap"), btn = $("sim-full");
   btn.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen?.());
   document.addEventListener("fullscreenchange", () => {
     const on = document.fullscreenElement === wrap;
-    btn.textContent = on ? "Exit full screen" : "Full screen";
-    btn.setAttribute("aria-pressed", String(on));
+    btn.setAttribute("aria-pressed", String(on));   // the CSS shows arrows-in while full screen
+    btn.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
+    btn.title = on ? "Exit full screen (Esc)" : "Full screen";
   });
 }
 

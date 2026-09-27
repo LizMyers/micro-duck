@@ -35,8 +35,9 @@ const WHY = {
 };
 
 export class DuckBody {
-  constructor({ iframe, moodEl, whyEl, beakBar, beakNum, headDot, headText }) {
-    Object.assign(this, { iframe, moodEl, whyEl, beakBar, beakNum, headDot, headText });
+  // view: the camera framing for faceCamera (a page can frame Simon its own way).
+  constructor({ iframe, moodEl, whyEl, beakBar, beakNum, headDot, headText, view = {} }) {
+    Object.assign(this, { iframe, moodEl, whyEl, beakBar, beakNum, headDot, headText, view });
     this.mood = "idle";
     this.pose = POSES.idle;
     this.jaw = 0;
@@ -59,7 +60,8 @@ export class DuckBody {
   // Portrait camera: stop the game's chase cam (which films the duck from behind)
   // and place the camera in front of the duck, a little above eye level.
   // Coordinates: MuJoCo is z-up; the 3D scene uses x, y-up, z = -mujoco_y.
-  faceCamera({ distance = 0.55, height = 0.22, lookHeight = 0.14 } = {}) {
+  faceCamera({ distance = this.view.distance ?? 0.55, height = this.view.height ?? 0.22,
+                lookHeight = this.view.lookHeight ?? 0.14 } = {}) {
     const rl = this.rl;
     if (!rl?.data || !rl.camera || !rl.controls) return false;
     const q = rl.data.qpos;
@@ -72,7 +74,21 @@ export class DuckBody {
     rl.camera.position.set(cx + Math.cos(yaw) * distance, height, cz - Math.sin(yaw) * distance);
     rl.camera.lookAt(rl.controls.target);
     rl.controls.update();
+    this.shiftView();
     return true;
+  }
+
+  // view.downPx / view.acrossPx: slide the picture by exact pixels (the camera's view offset), so Simon
+  // sits lower (headroom) or off centre, whatever the window size (Liz). Re-applied on every resize.
+  shiftView() {
+    const cam = this.rl?.camera, W = this.iframe?.clientWidth, H = this.iframe?.clientHeight;
+    const down = this.view.downPx ?? 0, across = this.view.acrossPx ?? 0;
+    if (!cam?.setViewOffset || !W || !H) return;
+    if (!down && !across) { cam.clearViewOffset?.(); return; }
+    // The window onto the picture moves the opposite way to Simon: up by `down`, left by `across`.
+    cam.setViewOffset(W, H, -across, -down, W, H);
+    cam.updateProjectionMatrix();
+    this.onNote?.(`🎥 page: Simon's view shifted ${down} px down, ${across} px right`);
   }
 
   // Keyboard driving from anywhere on the page: forward the simulator's keys
