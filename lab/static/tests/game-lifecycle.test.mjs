@@ -114,3 +114,10 @@ test("game page events: playing, each round (never whether it's a trap), its res
   const last = events.filter((e) => e.type === "stopped" || e.type === "over");
   assert.ok(last.length >= 1, types.join(","));
 });
+
+test("during a game only game lines speak: a chat reply is cut, game lines and chat outside a game are not", async () => {
+  const { hushDuringGame } = await import("../core.js");
+  assert.equal(hushDuringGame({ conversationId: "conv_1", gameActive: true, line: null }), true);          // chat mid-game
+  assert.equal(hushDuringGame({ conversationId: null, gameActive: true, line: { text: "Nice one!" } }), false); // a game line
+  assert.equal(hushDuringGame({ conversationId: "conv_1", gameActive: false, line: null }), false);         // chat between games
+});

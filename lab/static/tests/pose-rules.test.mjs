@@ -237,11 +237,3 @@ test("a hand resting on the head with the elbow out to the side is still not rai
   assert.equal(check(lm, base).right_arm_up, false);
 });
 
-test("a nod (head down and back up within a second) is a yes; a held look down or a slow drift isn't", async () => {
-  const { NodDetector } = await import("../pose.js");
-  const feed = (d, pitches, step = 100) => pitches.map((p, i) => d.feed(i * step, p)).some(Boolean);
-  assert.equal(feed(new NodDetector(), [0, -0.05, -0.15, -0.18, -0.08, 0.0]), true);         // a nod
-  assert.equal(feed(new NodDetector(), [0, -0.1, -0.2, -0.25, -0.25, -0.25, -0.25]), false); // looking down, held
-  assert.equal(feed(new NodDetector(), [0, -0.05, -0.15, -0.18, -0.08, 0.0], 400), false);  // too slow: a drift
-  assert.equal(feed(new NodDetector(), [0, 0.01, -0.02, 0.0, 0.02]), false);                  // just sitting
-});

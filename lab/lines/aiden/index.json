@@ -444,6 +444,46 @@
   "file": "it-s-thirteen-to-two.wav",
   "seconds": 1.25
  },
+ "It's thirty to twenty in my favor.": {
+  "cut": false,
+  "file": "it-s-thirty-to-twenty-in-my-favor.wav",
+  "seconds": 1.73
+ },
+ "It's thirty-one to nineteen in my favor.": {
+  "cut": false,
+  "file": "it-s-thirty-one-to-nineteen-in-my-favor.wav",
+  "seconds": 2.43
+ },
+ "It's thirty-one to twenty.": {
+  "cut": false,
+  "file": "it-s-thirty-one-to-twenty.wav",
+  "seconds": 1.25
+ },
+ "It's thirty-three to twenty-one.": {
+  "cut": false,
+  "file": "it-s-thirty-three-to-twenty-one.wav",
+  "seconds": 1.63
+ },
+ "It's thirty-two to nineteen.": {
+  "cut": false,
+  "file": "it-s-thirty-two-to-nineteen.wav",
+  "seconds": 1.57
+ },
+ "It's thirty-two to twenty in my favor.": {
+  "cut": false,
+  "file": "it-s-thirty-two-to-twenty-in-my-favor.wav",
+  "seconds": 1.95
+ },
+ "It's thirty-two to twenty-one in my favor.": {
+  "cut": false,
+  "file": "it-s-thirty-two-to-twenty-one-in-my-favor.wav",
+  "seconds": 2.21
+ },
+ "It's thirty-two to twenty-two.": {
+  "cut": false,
+  "file": "it-s-thirty-two-to-twenty-two.wav",
+  "seconds": 1.95
+ },
  "It's three to zero.": {
   "cut": false,
   "file": "it-s-three-to-zero.wav",
@@ -513,6 +553,11 @@
   "cut": false,
   "file": "it-s-twenty-nine-to-eighteen-in-my-favor.wav",
   "seconds": 2.37
+ },
+ "It's twenty-nine to nineteen.": {
+  "cut": false,
+  "file": "it-s-twenty-nine-to-nineteen.wav",
+  "seconds": 1.79
  },
  "It's twenty-one to eleven in my favor.": {
   "cut": false,
@@ -809,6 +854,21 @@
   "file": "that-s-the-match-i-win.wav",
   "seconds": 2.14
  },
+ "Thirty for me, nineteen for you.": {
+  "cut": false,
+  "file": "thirty-for-me-nineteen-for-you.wav",
+  "seconds": 1.98
+ },
+ "Thirty-four for me, twenty-one for you.": {
+  "cut": false,
+  "file": "thirty-four-for-me-twenty-one-for-you.wav",
+  "seconds": 2.3
+ },
+ "Thirty-three for me, twenty-two for you.": {
+  "cut": false,
+  "file": "thirty-three-for-me-twenty-two-for-you.wav",
+  "seconds": 2.14
+ },
  "Three for me, one for you.": {
   "cut": false,
   "file": "three-for-me-one-for-you.wav",
@@ -858,6 +918,11 @@
   "cut": false,
   "file": "twenty-four-for-me-ten-for-you.wav",
   "seconds": 1.82
+ },
+ "Twenty-nine for me, twenty for you.": {
+  "cut": false,
+  "file": "twenty-nine-for-me-twenty-for-you.wav",
+  "seconds": 2.85
  },
  "Twenty-seven for me, nineteen for you.": {
   "cut": false,

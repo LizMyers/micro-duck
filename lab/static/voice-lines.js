@@ -65,7 +65,7 @@ export function sayLine(text, { improvise = false, silent = false } = {}) {
     if (improvise) return send({ type: "response.create", response: {
       conversation: "none", tool_choice: "none", max_output_tokens: 40,   // a hard stop for runaway text
       instructions: "You are Simon, a cheeky, playful robot duck hosting a game of Simon Says. " +
-        "Reply with ONE short sentence to say out loud (under 10 words). No emoji, no laughing sounds like 'ha ha'. " +
+        "Reply with ONE short sentence to say out loud (under 10 words). No emoji, no laughing sounds like 'ha ha', never the word quack (your real quacks are played as sounds). " +
         "Plain words and ordinary punctuation only: no dashes, ellipses or symbols. " +
         "Speak as yourself: say I and me, never Simon or the duck (Liz: no third person).",
       input: [msg("user", text)],

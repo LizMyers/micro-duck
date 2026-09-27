@@ -7,6 +7,8 @@ import { SimonSaysGame } from "/static/simon-says.js";
 import { ensureAudio, setMic } from "/static/audio.js";
 import { cam, startCamera, calibrate } from "/static/camera.js";
 import { sayLine, prepareLine, prewarmLines, badLines, warm } from "/static/voice-lines.js";
+import { hushChat, rememberSaid } from "/static/agent.js";
+import { duckSounds } from "/static/duck-sounds.js";
 
 // setupOnPage: the page sets up and calibrates the camera before Start (the game page); otherwise the
 // game does it by voice with a countdown before each game (the lab).
@@ -20,6 +22,7 @@ export function makeGame({ beforeGame, setupOnPage = false, isSetUp, needSetup, 
     // Starting a game turns the camera on and waits until it sees you; the game then calibrates (countdown).
     prepare: async () => {
       await ensureAudio(); await state.audio.ctx.resume(); await setMic(false);
+      hushChat("a game is starting");
       beforeGame?.();
       // The illusion that Simon sees you: wherever he has wandered, the view swings round in front of
       // him, head level, so he's looking straight out at the player.
@@ -43,6 +46,10 @@ export function makeGame({ beforeGame, setupOnPage = false, isSetUp, needSetup, 
     // Simon celebrates winning: a happy head bob (up, down, up) while he gloats.
     celebrate: () => ["up", "down", "up", null].forEach((d, i) => setTimeout(() => body.lookAt(d), i * 350)),
     note: (text, data, kind) => ctx.inspector.note(text, data, kind),
+    sfx: (name) => duckSounds[name]?.(),   // Simon's real quacks and wheee, in his colour's voice
+    // After "Play again?": the question goes into the chat model's context, and the mic opens for the answer.
+    remember: (text) => rememberSaid(text),
+    listen: () => setMic(true),
     // After a game, carry on pre-warming whatever is still missing (and the next game's two scores).
     gameOver: () => setTimeout(() => prewarmLines(game.linesToWarm()), 1500),
   });

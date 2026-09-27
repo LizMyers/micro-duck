@@ -118,3 +118,12 @@ test("setup: every calibration problem has fun lines, and so does a good stance"
   assert.equal(calibrationIssue({ yaw: 0, shoulderDepth: 0 }), null);
 });
 
+
+test("duck sounds: each colour has Pollen's voice bank, and a quack never repeats back to back", async () => {
+  const { bankFor, nextChirp, VOICE_BANK } = await import("../duck-sounds.js");
+  assert.deepEqual(VOICE_BANK, { classic: "duck1", charcoal: "duck2", purple: "duck3", blue: "duck4" });
+  assert.equal(bankFor("blue"), "duck4");
+  assert.equal(bankFor(undefined), "duck1");
+  let last = "a";
+  for (let i = 0; i < 50; i++) { const c = nextChirp(last); assert.notEqual(c, last); last = c; }
+});
