@@ -263,6 +263,7 @@ export class SimonSaysGame {
     if (simonWon) {
       this.render("Simon wins!", `You got ${this.score} of ${ROUNDS}.`);
       this.app.celebrate();
+      await this.app.sfx?.("win");     // Simon won: "Wheee!" (duck sounds only at the end of a game, Liz)
       const adlib = Math.random() < ADLIB_CHANCE;
       this.app.note(adlib ? "🎭 Simon ad-libs a gloat this game" : "🎭 no ad-lib this game: straight to \"I win!\"");
       let heard = "";
@@ -277,7 +278,7 @@ export class SimonSaysGame {
       await this.sayScore(simon, you);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
-      await this.app.sfx?.("wheee");   // a good sport: "Wheee!" before he congratulates you
+      await this.app.sfx?.("lose");    // Simon lost: a deflated quack before he congratulates you
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
       const { started, done } = this.app.sayLine(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
@@ -561,9 +562,8 @@ export class SimonSaysGame {
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say the result out loud, so you can follow the game without looking at the screen (Liz).
     // All fixed lines: cached, so they play instantly.
-    // A real quack first (the simulator's own duck sounds, via app.sfx): a round won, or you caught out.
-    if (r.point && this.round < ROUNDS) { await this.app.sfx?.("chirp"); await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK); }
-    else if (!r.point && (await this.app.sfx?.("chirp"), true)) await this.speak(!cmd.says ? trapLine(TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)])
+    if (r.point && this.round < ROUNDS) await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK);
+    else if (!r.point) await this.speak(!cmd.says ? trapLine(TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)])
       : r.wrong ? wrongLine(r.wrong) : "Too slow!");
   }
 

@@ -16,7 +16,6 @@ import { clearChat } from "/static/chat.js";
 import { cam, startCamera, stopCamera, calibrate } from "/static/camera.js";
 import { startAgent, listenToServer, onAgentStatus } from "/static/server-link.js";
 import { makeGame } from "/static/game-host.js";
-import { duckSounds } from "/static/duck-sounds.js";
 
 const MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit";   // Qwen3 4B: the one Simon Says is tuned on
 // Simon's personality in chat (between games). Friendly first, cheeky only lightly: rapport before cheek.
@@ -48,7 +47,7 @@ const HEALTH = {
   starting: ["LOADING", (s) => `Simon is waking up: ${s.secs} s (usually 3 - 5 seconds).`],
   stopped: ["STOPPED", () => "Simon is asleep. Press Start Simon."],
   error: ["CRASHED", () => "Simon's voice agent stopped unexpectedly. Press Start Simon."],
-  unknown: ["?", () => "No connection to the server. Start it in Terminal, then reload."],
+  unknown: ["OFFLINE", () => "Can't reach Simon's server. Start it in Terminal, then reload this page."],
 };
 
 class SimonSettings {
@@ -166,7 +165,6 @@ async function turnOnCamera() {
     const problem = stanceNow();
     $("setup-check").textContent = setupLine(problem);
     $("setup-adjust").dataset.ok = String(!problem);
-    if (!problem && !setup.ok) duckSounds.chirp();   // a happy quack at "Perfect!"
     setup.ok = !problem;
     setup.okSince = problem ? null : setup.okSince ?? performance.now();
     if (setup.step === "adjust" && setup.okSince && performance.now() - setup.okSince >= OK_HOLD_MS) {
@@ -218,7 +216,6 @@ function onGame(ev) {
   }
   if (ev.type === "hold") game.hold = ev.progress;
   if (ev.type === "result") { game.pose = null; game.hold = 0; setMove(ev.text); }
-  if (ev.type === "ask") $("over-ask").textContent = ev.text;   // "Play again?" (then the mic opens)
   if (ev.type === "say") game.lastSaid = ev.big;   // for a stop without a message ("Simon didn't answer…")
   if (ev.type === "lost") { game.pose = null; setMove("I can't see you!"); }
   if (ev.type === "back") setMove("There you are!");
@@ -228,7 +225,6 @@ function onGame(ev) {
     $("over-headline").textContent = simon ? "Simon wins!" : "You win!";
     $("over-headline").classList.toggle("simon", simon);
     $("over-why").textContent = ev.why || "";
-    $("over-ask").textContent = "";
     showScreen("over");
   }
   if (ev.type === "stopped") {
