@@ -86,3 +86,25 @@ Built from what Simon already has: hearing/speech, body moves and head looks, an
 Not today: the brain (Qwen3 4B) runs on the Mac, offline. A `look_up` tool could run a web search (page or server)
 and hand results back. Opt-in only (it breaks "everything runs on your Mac"; show it in the Inspector); fill the
 few-second wait ("let me look that up" + a thinking nod); fine for simple facts, shaky for complex ones.
+
+## Personalisation: Simon's name tag (Liz, 2026-09-27, walk)
+Like a microchipped dog: a lost duck gets himself home. Hook: each Microduck's voice comes from its serial number,
+so his quack is his fingerprint and the serial can be his ID.
+- Owner sets up "Simon's tag" once (Info/Settings): his name, the owner's first name, a SAFE contact (a relay email
+  or link), stored on the Mac/duck. Never a home address: Simon can't tell owner from stranger, so whatever he says,
+  he says to anyone. (Pet-microchip model: the chip holds an ID, the registry holds the contact.)
+- "Where do you live? / Who do you belong to?": "I'm Simon, I belong to Liz. If you've found me, please email …"
+- **Lost mode:** powered on away from home (not on the home Wi-Fi) he introduces himself: "Hi! I'm Simon. I think
+  I'm lost…" (Liz: "genius").
+- Printed QR sticker on the real duck with the same contact, for a flat battery.
+
+## Companionship (Liz, 2026-09-27, walk)
+"It's a powerful experience when the duck can play with you and maintain healthy banter at the same time."
+- He remembers you: name, all-time score, streaks, memorable moments ("you beat me five in a row last Tuesday");
+  a small local memory file loaded at wake-up.
+- He notices: "You're back!", "It's been a few days", "You're on fire tonight."
+- Shared rituals: a signature greeting, a victory dance, inside jokes that grow; expressive moves (play dead).
+- Consistent personality: cheeky but kind; moods that fit what just happened (taunts that know who just won).
+- Healthy by design: never needy (invites once, respects "no thanks", no guilt-trips); honest (a playful robot
+  duck); your memory, your control (local, visible in the Inspector, "Simon, forget me" really forgets); kid-safe.
+- Blog post candidate: what makes a robot a good companion, and what makes a bad one.
