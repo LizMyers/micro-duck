@@ -127,3 +127,12 @@ test("duck sounds: each colour has Pollen's voice bank, and a quack never repeat
   let last = "a";
   for (let i = 0; i < 50; i++) { const c = nextChirp(last); assert.notEqual(c, last); last = c; }
 });
+
+test("taunts know who just won: ahead overall but just beaten is 'gaining on me', not 'are you even trying'", () => {
+  assert.ok(taunts(47, 33, "you").includes("Uh oh, you're gaining on me!"));
+  assert.ok(!taunts(47, 33, "you").includes("Are you even trying?"));
+  assert.ok(taunts(47, 33, "simon").includes("Are you even trying?"));
+  assert.ok(taunts(10, 20, "you").includes("You're on a roll!"));
+  assert.ok(taunts(10, 20, "simon").includes("I'm coming for you!"));
+  assert.ok(taunts(5, 5, "you").includes("All square!"));
+});
