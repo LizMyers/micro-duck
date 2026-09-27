@@ -13,7 +13,7 @@ import { measure, evaluatePoseDetailed, NodDetector, POSE_IDS, POSE_LABELS } fro
 import { calibrationProblem, calibrationIssue, SETUP_LINES } from "/static/simon-says.js";
 import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
-import { cam, startCamera, calibrate } from "/static/camera.js";
+import { cam, startCamera, stopCamera, calibrate } from "/static/camera.js";
 import { startAgent, listenToServer, onAgentStatus } from "/static/server-link.js";
 import { makeGame } from "/static/game-host.js";
 
@@ -21,11 +21,14 @@ const MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit";   // Qwen3 4B: the on
 // Simon's personality in chat (between games). Friendly first, cheeky only lightly: rapport before cheek.
 // He never says his own name (players may rename their duck). He loves to host the game, so he invites
 // you to play (Liz saw him do it unprompted and loved it; this makes it reliable, not luck).
+// (He used to "love hosting games of Simon Says" and invite people to play whenever the chat slowed, so
+// all he wanted to do was play, Liz 2026-09-26. Now he's a chatty duck who can host a game.)
 const PERSONALITY =
-  "You are a small, cheerful robot duck, a Pollen Microduck, who loves hosting games of Simon Says. " +
-  "You are friendly, curious and a little playful. Speak in the first person and never say your own name. " +
-  "Answer in one or two short sentences. When the chat winds down, or someone seems bored, " +
-  "invite them to play Simon Says. " +
+  "You are a small, cheerful robot duck, a Pollen Microduck. " +
+  "You are friendly, curious and a little playful, and happy to chat about anything. " +
+  "Speak in the first person and never say your own name. Answer in one or two short sentences. " +
+  "You can also host a game of Simon Says, but don't push it: mention it only if someone asks what you can do " +
+  "or the conversation has clearly run out, and at most once. Otherwise just chat. " +
   "Never use lists, markdown or emoji; everything you write will be spoken aloud.";
 
 const inspector = new Inspector($("inspector"), { plain: true });   // no emojis on this page
@@ -192,22 +195,22 @@ async function calibrateNow() {
 $("setup-camera").onclick = turnOnCamera;
 $("setup-calibrate").onclick = calibrateNow;
 $("setup-again").onclick = () => { cam.calibrated = false; turnOnCamera(); };
+// Put the game away: camera off (and any game stopped); the panel goes back to step 1.
+for (const b of document.querySelectorAll("[data-camera-off]")) b.onclick = () => {
+  if (ctx.game?.running) ctx.game.stop("Stopped.");
+  if (cam.on) stopCamera();
+};
 $("play-again").onclick = () => sayYes();
 $("play-stop").onclick = () => ctx.game.stop("Stopped.");
 
 // ---------- The game's moments, drawn big ----------
 const game = { pose: null };
 function onGame(ev) {
-  if (ev.type === "playing") {
-    game.pose = null;
-    game.match = ev.match;   // { game, bestOf } during a match
-    $("play-round").textContent = game.match ? `Game ${game.match.game} · best of ${game.match.bestOf}` : "Get ready";
-    showScreen("playing");
-  }
+  if (ev.type === "playing") { game.pose = null; $("play-round").textContent = "Get ready"; showScreen("playing"); }
   if (ev.type === "round") {
     game.pose = ev.pose;
     game.hold = 0;
-    $("play-round").textContent = (game.match ? `Game ${game.match.game} · ` : "") + `Round ${ev.round} of ${ev.rounds}`;
+    $("play-round").textContent = `Round ${ev.round} of ${ev.rounds}`;
     setMove(ev.move);
   }
   if (ev.type === "hold") game.hold = ev.progress;
@@ -218,16 +221,9 @@ function onGame(ev) {
   if (ev.type === "over") {
     game.pose = null;
     const simon = ev.winner === "simon";
-    const m = ev.match;   // the match so far, if one's on
-    $("over-headline").textContent = m?.over ? (simon ? "Simon wins the match!" : "You win the match!") : simon ? "Simon wins!" : "You win!";
+    $("over-headline").textContent = simon ? "Simon wins!" : "You win!";
     $("over-headline").classList.toggle("simon", simon);
     $("over-why").textContent = ev.why || "";
-    $("over-match").hidden = !m;
-    if (m) $("over-match").textContent = `Simon ${m.simon} · You ${m.you} · best of ${m.bestOf}`;
-    // Simon's question ("Best two out of three?"): the big button and a nod answer it.
-    $("over-ask").hidden = !ev.ask;
-    $("over-ask").textContent = ev.ask || "";
-    $("play-again").textContent = ev.ask ? "Yes!" : m && !m.over ? "Next game" : "Play again";
     showScreen("over");
   }
   if (ev.type === "stopped") {

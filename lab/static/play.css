@@ -891,5 +891,8 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   .side.split .title-bar, .side.split .title-bar.divider { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0; }
 }
 #panel-game .nod-hint { text-align: center; margin-top: -6px; }
-#panel-game .over .match-score { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-#panel-game .over .ask { margin: 4px 0 0; font-size: 36px; font-weight: 800; line-height: 1.1; color: var(--ink); }
+#panel-game .put-away { text-align: center; }
+
+/* Score cards: more contrast between the halves (Liz): top a touch lighter, bottom darker (was .9). */
+.ss-card .upper { filter: brightness(1.06); }
+.ss-card .lower { filter: brightness(.8); }

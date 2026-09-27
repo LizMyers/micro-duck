@@ -296,7 +296,7 @@ transitions, plus the screens side by side. One screen per phase (`data-phase`):
   "Over here, silly!"), 3 I'm ready!
 - Already calibrated: skip setup; Simon asks "Are you ready?" Yes by a **nod**, saying "yes", or the button.
   (Nod = a new move: head down then up within ~1 s.)
-- No 5 round dots. Match offers instead: Simon suggests "best 2 out of 3?", "3 out of 5?", "4 out of 7?",
+- (Rolled back, see end of day.) No 5 round dots. Match offers instead: Simon suggests "best 2 out of 3?", "3 out of 5?", "4 out of 7?",
   depending on how many games have been played.
 - Open: show the "Simon says" pill on screen (easier for kids, but it gives the trap away)?
 - **Play in the browser (Liz: yes, "for casual players like Mom")**: a game-only version with no server,
@@ -305,3 +305,21 @@ transitions, plus the screens side by side. One screen per phase (`data-phase`):
   lines; chatting with Simon stays a run-it-on-your-Mac feature. After release 1.
 - Step 1 of the redesign is built into /play (screens + slides, `onGame` events from the game); steps 2-5 next:
   fun setup feedback lines, "Are you ready?" when calibrated, nod to start, match offers.
+
+## End of day, 2026-09-26: state for the morning
+**Next: record the demo** (punchlist). Then release 1 (`microduck-simon-says`).
+
+Done today on /play (all committed, 51 tests):
+- Game panel redesign: one big screen at a time (setup wizard, one step at a time → playing → game over),
+  page slides, I SEE chip whose fill follows the referee's own hold count, calm Bricolage cut (opsz 14).
+- Setup: fun step-2 lines (SETUP_LINES), room-for-raised-arms check, "Yes, let's go!" starts the game.
+- Nod to play (NodDetector) on Ready and Game over. "Turn camera off" puts the game away.
+- Referee: turn at 0.8 of shoulder width (not when stepping back); arm up by elbow when the hand leaves the
+  frame; raised arm over the head isn't "hand on head"; no head moves while an arm is up; missed-arm log.
+- Scores in words to 99; score cards size to their number, more contrast between halves.
+- One column (mobile): Simon, game, Chat, Inspector as separate cards.
+- Simon's personality: chats about anything; mentions Simon Says only if asked or the chat runs out, once.
+- **Rolled back**: match offers (best 2 of 3...): "you're ahead" clashed with the all-time score (Liz).
+  The "Are you ready?"-by-voice idea went with it; a nod or the button starts the next game.
+
+Still open: play in the browser (HF static Space, saved lines) after release 1; iPad as a goal for it.
