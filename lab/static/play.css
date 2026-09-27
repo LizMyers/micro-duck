@@ -153,8 +153,6 @@ main { max-width: 1700px; margin: 0 auto; padding: 16px 16px 24px; }
   .side { height: auto; position: static; }
   .side.split .split-bottom { order: -1; flex: none; height: 420px; }
   .side.split .split-top { flex: none !important; height: 480px; }
-  .side.split .title-bar.divider { cursor: default; touch-action: auto; border-top: 0; }   /* nothing to drag in one column */
-  .side.split .title-bar.divider::before { display: none; }
 }
 
 .card {
@@ -406,12 +404,11 @@ kbd {
 
 /* ---------- Game page additions ---------------------------------------------------------- */
 
-/* Right column: the Inspector (why things happen) above the chat (what was said). The chat's title bar
-   is the divider between them: drag it to change their sizes (play.js remembers the split). */
+/* Right column: the Inspector (why things happen) above the chat (what was said), two cards with a gap
+   (see the end of this file; play.js sets the Inspector's height so the chat starts level with the tab bar). */
 .side.split { gap: 0; padding: 0; overflow: hidden; }
 /* The side padding lives in each panel, so the title bars can run edge to edge across the card. */
 .split-top { flex: 3; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 16px; }
-/* (Not clipped: the drag handle sits across the chat bar's top border, half over the Inspector.) */
 .split-bottom { flex: 2; min-height: 0; display: flex; flex-direction: column; overflow: visible; padding: 0 16px 12px; }
 .split-bottom .chat { max-height: none; flex: 1; }
 
@@ -424,20 +421,6 @@ kbd {
 .split-top .title-bar { border-radius: var(--radius) var(--radius) 0 0; }
 .title-bar h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; flex: 1; }
 
-.title-bar.divider { position: relative; border-top: 3px solid var(--gold);   /* deep duck yellow (was orange #f08a24) */
-  cursor: row-resize; user-select: none; touch-action: none; }
-/* The drag handle: a pill sitting on the double border, centred, the usual "grab me" sign. */
-.title-bar.divider::before {
-  content: ""; position: absolute; left: 50%; top: -7px; transform: translateX(-50%);   /* its middle on the bar's top edge (3px line + half the 8px pill) */
-  width: 44px; height: 8px; border-radius: 999px; z-index: 2;
-  background: #ffd23f; border: 1.5px solid var(--gold); box-sizing: border-box;   /* duck yellow, deep yellow outline */
-  transition: width .15s;
-}
-.title-bar.divider:hover::before, .title-bar.divider.dragging::before { width: 60px; border-width: 2px; }
-.title-bar.divider:hover { background: color-mix(in srgb, var(--duck-ink) 10%, var(--duck)); }
-.title-bar.divider button { cursor: pointer; }
-.title-bar.divider:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.title-bar.divider.dragging { background: color-mix(in srgb, var(--duck-ink) 15%, var(--duck)); }
 
 /* Tap to talk, compact: it sits under the chat without taking over. */
 .split-bottom .talk-row { margin-top: 6px; padding-top: 8px; }
@@ -887,7 +870,6 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
   .side.split .split-top, .side.split .split-bottom {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   .side.split .split-top { background: var(--simon); }
-  .side.split .title-bar, .side.split .title-bar.divider { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0; }
 }
 #panel-game .put-away { text-align: center; }
 
@@ -904,4 +886,19 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .timer { display: block; }
 #panel-game .timer .track { width: 100%; }
 #panel-game .play-stop { text-align: center; }
-#panel-game { padding-top: 50px; }   /* breathing room at the top of the Simon Says panel (Liz) */
+#panel-game { padding-top: 30px; }   /* breathing room at the top of the Simon Says panel (Liz: 50, then 30) */
+
+/* Inspector and Chat: two separate cards with the page's 16px gap at every width, like the one-column layout
+   (Liz: the drag handle between them never looked right). */
+.side.split { background: none; border: 0; box-shadow: none; gap: 16px; overflow: visible; }
+.side.split .split-top, .side.split .split-bottom {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.side.split .split-top { background: var(--simon); }
+.side.split .title-bar { border-radius: var(--radius) var(--radius) 0 0; margin-top: 0; border-top: 0; }
+
+/* Full screen button on the sim (top right), and the sim box when it has the whole screen. */
+.sim-full { position: absolute; top: 12px; right: 12px; z-index: 3; padding: 6px 12px; border-radius: 999px;
+  border: 0; background: rgb(0 0 0 / 45%); color: #fff; font: 600 13px "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+.sim-full:hover { background: rgb(0 0 0 / 65%); }
+.sim-wrap:fullscreen { width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; border-radius: 0; }

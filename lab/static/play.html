@@ -25,6 +25,8 @@
     <section class="card duck" aria-label="Simon the Microduck">
       <div class="sim-wrap">
         <iframe id="sim" title="Microduck simulator" loading="eager"></iframe>
+        <!-- Full screen: the sim box (with the scoreboard and camera) takes over the screen while you play. -->
+        <button class="sim-full" id="sim-full" aria-pressed="false">Full screen</button>
         <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
         <!-- The all-time scoreboard, on the sim: bottom left, facing your camera box on the right. -->
         <div class="ss-board on-sim" aria-label="All-time score">
@@ -164,8 +166,7 @@
 
       <div class="split-bottom">
         <!-- The chat's title bar is also the divider: drag it up or down (or focus it and use the arrow keys). -->
-        <div class="title-bar divider" id="chat-head" role="separator" aria-orientation="horizontal"
-             aria-label="Resize the Inspector and chat" tabindex="0" title="Drag to resize · double-click to reset">
+        <div class="title-bar" id="chat-head">
           <h3>Chat</h3>
           <button class="bar-link" id="clear-chat">Clear</button>
         </div>

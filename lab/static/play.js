@@ -273,50 +273,29 @@ function sayYes() {
   ctx.game.start();
 }
 
-// ---------- Inspector / chat divider: drag the chat's title bar to share the space ----------
-// The Inspector's height is remembered as a share of the column, so it survives a resize or reload.
+// ---------- Inspector and Chat: two cards with a gap (Liz: like the mobile layout, no drag handle) ----------
+// The Chat card's top starts level with the top of the left tab bar (measured, so it holds at any size).
 {
-  const top = document.querySelector(".split-top"), col = document.querySelector(".side.split"), bar = $("chat-head");
-  const MIN = 120;   // px: neither panel shrinks to nothing
-  const setTop = (px) => {
-    const max = col.clientHeight - MIN - bar.offsetHeight;
-    const h = Math.max(MIN, Math.min(max, px));
-    top.style.flex = `0 0 ${h}px`;
-    return h;
-  };
-  // Every visit starts aligned (Liz); a drag lasts for the visit only.
-  const save = () => {};
-  try { localStorage.removeItem("play-split"); } catch {}
-  // Default: the chat bar's top edge level with the top of the left tab bar (measured, so it holds at any size).
+  const top = document.querySelector(".split-top"), col = document.querySelector(".side.split");
   const tabsBar = document.querySelector(".controls .tabs");
-  const align = () => setTop(tabsBar.getBoundingClientRect().top - col.getBoundingClientRect().top);
-  let saved = null;   // true once you've dragged it this visit
+  const GAP = 16, MIN = 120;
+  const align = () => {
+    if (matchMedia("(max-width: 1000px)").matches) { top.style.flex = ""; return; }   // one column: CSS heights
+    const h = tabsBar.getBoundingClientRect().top - col.getBoundingClientRect().top - GAP;
+    top.style.flex = `0 0 ${Math.max(MIN, Math.min(col.clientHeight - MIN - GAP, h))}px`;
+  };
   align();
-  new ResizeObserver(() => { if (!saved) align(); }).observe(col);
-  let drag = null;
-  bar.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button")) return;   // Clear is still a button
-    drag = { y: e.clientY, h: top.offsetHeight };
-    bar.setPointerCapture(e.pointerId);
-    bar.classList.add("dragging");
-  });
-  bar.addEventListener("pointermove", (e) => {
-    if (!drag || Math.abs(e.clientY - drag.y) < 3) return;   // a click isn't a drag
-    drag.moved = true;
-    setTop(drag.h + e.clientY - drag.y);
-  });
-  const end = () => { if (!drag) return; if (drag.moved) saved = true; drag = null; bar.classList.remove("dragging"); };
-  bar.addEventListener("pointerup", end);
-  bar.addEventListener("pointercancel", end);
-  bar.addEventListener("dblclick", () => { saved = null; align(); });
-  // Keyboard: arrow keys move the divider.
-  bar.addEventListener("keydown", (e) => {
-    const step = { ArrowUp: -24, ArrowDown: 24 }[e.key];
-    if (!step) return;
-    e.preventDefault();
-    setTop(top.offsetHeight + step);
-    save();
-    saved = true;
+  new ResizeObserver(align).observe(col);
+}
+
+// ---------- Full screen: the sim box takes over the screen while you play ----------
+{
+  const wrap = document.querySelector(".sim-wrap"), btn = $("sim-full");
+  btn.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen?.());
+  document.addEventListener("fullscreenchange", () => {
+    const on = document.fullscreenElement === wrap;
+    btn.textContent = on ? "Exit full screen" : "Full screen";
+    btn.setAttribute("aria-pressed", String(on));
   });
 }
 
