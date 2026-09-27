@@ -69,6 +69,11 @@
   "file": "face-your-webcam-please.wav",
   "seconds": 1.41
  },
+ "Fifteen for me, seven for you.": {
+  "cut": false,
+  "file": "fifteen-for-me-seven-for-you.wav",
+  "seconds": 2.3
+ },
  "Five each.": {
   "cut": false,
   "file": "five-each.wav",
@@ -138,6 +143,11 @@
   "cut": false,
   "file": "it-s-eight-to-three-in-my-favor.wav",
   "seconds": 2.59
+ },
+ "It's eighteen to eight in my favor.": {
+  "cut": false,
+  "file": "it-s-eighteen-to-eight-in-my-favor.wav",
+  "seconds": 1.57
  },
  "It's eighteen to three.": {
   "cut": false,
@@ -224,6 +234,11 @@
   "file": "it-s-four-to-two.wav",
   "seconds": 1.09
  },
+ "It's fourteen to seven.": {
+  "cut": false,
+  "file": "it-s-fourteen-to-seven.wav",
+  "seconds": 1.5
+ },
  "It's fourteen to three in my favor.": {
   "cut": false,
   "file": "it-s-fourteen-to-three-in-my-favor.wav",
@@ -274,6 +289,16 @@
   "file": "it-s-seventeen-to-four.wav",
   "seconds": 1.79
  },
+ "It's seventeen to nine in my favor.": {
+  "cut": false,
+  "file": "it-s-seventeen-to-nine-in-my-favor.wav",
+  "seconds": 1.82
+ },
+ "It's seventeen to seven.": {
+  "cut": false,
+  "file": "it-s-seventeen-to-seven.wav",
+  "seconds": 1.18
+ },
  "It's seventeen to three in my favor.": {
   "cut": false,
   "file": "it-s-seventeen-to-three-in-my-favor.wav",
@@ -309,6 +334,16 @@
   "file": "it-s-six-to-zero-advantage-me.wav",
   "seconds": 2.69
  },
+ "It's sixteen to eight.": {
+  "cut": false,
+  "file": "it-s-sixteen-to-eight.wav",
+  "seconds": 1.09
+ },
+ "It's sixteen to seven in my favor.": {
+  "cut": false,
+  "file": "it-s-sixteen-to-seven-in-my-favor.wav",
+  "seconds": 1.82
+ },
  "It's sixteen to two.": {
   "cut": false,
   "file": "it-s-sixteen-to-two.wav",
@@ -333,6 +368,16 @@
   "cut": false,
   "file": "it-s-ten-to-two.wav",
   "seconds": 0.83
+ },
+ "It's thirteen to eight.": {
+  "cut": false,
+  "file": "it-s-thirteen-to-eight.wav",
+  "seconds": 1.09
+ },
+ "It's thirteen to seven in my favor.": {
+  "cut": false,
+  "file": "it-s-thirteen-to-seven-in-my-favor.wav",
+  "seconds": 1.89
  },
  "It's thirteen to two.": {
   "cut": false,
@@ -478,6 +523,11 @@
   "cut": false,
   "file": "seven-for-me-six-for-you.wav",
   "seconds": 2.37
+ },
+ "Seventeen for me, eight for you.": {
+  "cut": false,
+  "file": "seventeen-for-me-eight-for-you.wav",
+  "seconds": 2.21
  },
  "Seventeen for me, two for you.": {
   "cut": false,
