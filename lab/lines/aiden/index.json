@@ -119,10 +119,25 @@
   "file": "forty-for-me-twenty-four-for-you.wav",
   "seconds": 2.43
  },
+ "Forty-eight for me, twenty-eight for you.": {
+  "cut": false,
+  "file": "forty-eight-for-me-twenty-eight-for-you.wav",
+  "seconds": 2.53
+ },
+ "Forty-five for me, twenty-eight for you.": {
+  "cut": false,
+  "file": "forty-five-for-me-twenty-eight-for-you.wav",
+  "seconds": 2.3
+ },
  "Forty-four for me, twenty-six for you.": {
   "cut": false,
   "file": "forty-four-for-me-twenty-six-for-you.wav",
   "seconds": 2.53
+ },
+ "Forty-seven for me, twenty-nine for you.": {
+  "cut": false,
+  "file": "forty-seven-for-me-twenty-nine-for-you.wav",
+  "seconds": 2.62
  },
  "Four for me, zero for you.": {
   "cut": false,
@@ -294,6 +309,11 @@
   "file": "it-s-forty-five-to-twenty-four.wav",
   "seconds": 1.73
  },
+ "It's forty-five to twenty-seven.": {
+  "cut": false,
+  "file": "it-s-forty-five-to-twenty-seven.wav",
+  "seconds": 1.95
+ },
  "It's forty-five to twenty-six in my favor.": {
   "cut": false,
   "file": "it-s-forty-five-to-twenty-six-in-my-favor.wav",
@@ -318,6 +338,21 @@
   "cut": false,
   "file": "it-s-forty-one-to-twenty-four-in-my-favor.wav",
   "seconds": 2.75
+ },
+ "It's forty-seven to twenty-eight.": {
+  "cut": false,
+  "file": "it-s-forty-seven-to-twenty-eight.wav",
+  "seconds": 1.41
+ },
+ "It's forty-six to twenty-eight in my favor.": {
+  "cut": false,
+  "file": "it-s-forty-six-to-twenty-eight-in-my-favor.wav",
+  "seconds": 2.37
+ },
+ "It's forty-six to twenty-six.": {
+  "cut": false,
+  "file": "it-s-forty-six-to-twenty-six.wav",
+  "seconds": 1.79
  },
  "It's forty-three to twenty-four in my favor.": {
   "cut": false,

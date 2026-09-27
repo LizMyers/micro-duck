@@ -79,8 +79,7 @@
               <button class="step" data-step="camera" id="setup-camera"><span class="n">1</span><span class="words"><span class="t">Turn on camera</span></span></button>
               <div class="step adjust" data-step="adjust" id="setup-adjust"><span class="n">2</span><span class="words"><span class="t">Sit up and face me</span>
                 <span class="sub" id="setup-check" aria-live="polite">Head and shoulders in view</span></span></div>
-              <button class="step" data-step="go" id="setup-calibrate"><span class="n">3</span><span class="words"><span class="t">Yes, let's go!</span>
-                <span class="sub" id="setup-ready-sub"></span></span></button>
+              <button class="step" data-step="go" id="setup-calibrate"><span class="n">3</span><span class="words"><span class="t">Yes, let's go!</span></span></button>
             </div>
             <p class="small-note">The camera is the referee. Video never leaves your browser.</p>
           </section>
@@ -92,16 +91,17 @@
               <div class="rule"><span class="n">2</span><span class="t">Copy the move</span></div>
               <div class="rule"><span class="n">3</span><span class="t">Hold it for a second</span></div>
             </div>
-            <div class="seen" data-seen><div class="meter"></div><span>I see</span><strong>No move</strong></div>
             <p class="small-note"><span id="ss-ready">–</span> <button class="link" id="setup-again">Redo camera setup</button> · <button class="link" data-camera-off>Turn camera off</button></p>
           </section>
 
           <section class="screen" data-screen="playing" aria-label="Playing">
-            <div class="timer"><div class="track"><span class="fill" id="ss-timer"></span></div><span class="secs" id="ss-seconds" aria-label="Seconds left"></span></div>
-            <div class="round-row"><span class="round-word" id="play-round">Get ready</span><button class="link" id="play-stop">Stop</button></div>
+            <!-- Header: round on the left, seconds on the right, one baseline; the bar right under, full width. -->
+            <div class="play-head"><span class="round-word" id="play-round">Get ready</span><span class="secs" id="ss-seconds" aria-label="Seconds left"></span></div>
+            <div class="timer"><div class="track"><span class="fill" id="ss-timer"></span></div></div>
             <p class="move" id="play-move" aria-live="assertive">Get ready…</p>
             <div class="seen" data-seen><div class="meter"></div><span>I see</span><strong>No move</strong></div>
             <p class="small-note play-result" id="ss-result"></p>
+            <p class="small-note play-stop"><button class="link" id="play-stop">Stop game</button></p>
           </section>
 
           <section class="screen over" data-screen="over" aria-label="Game over">

@@ -152,8 +152,8 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
 
 
   // Arms up (good for playing at a desk): the wrist is well above its shoulder, measured in
-  // shoulder widths, and not resting on the head. Value = how far above, in shoulder widths.
-  const { P, vis, conf, dist } = makeGeom(lm, aspect);
+  // shoulder widths. Value = how far above, in shoulder widths.
+  const { P, vis, conf } = makeGeom(lm, aspect);
   const sw = m.shoulderWidth;
   const armUp = (side) => {
     const sh = side === "left" ? LM.leftShoulder : LM.rightShoulder;
@@ -170,16 +170,9 @@ export function evaluatePoseDetailed(lm, baseline = null, aspect = 4 / 3) {
     }
     const up = (P(sh).y - P(w).y) / sw;   // positive = wrist above shoulder
     if (up <= 0.35) return result(false, conf(sh, w), `${side} wrist isn't above the ${side} shoulder`, up);
-    if (vis(LM.nose) && dist(P(w), P(LM.nose)) < 0.7 * sw) {
-      // A raised arm can put the hand right by the head in the picture too. The elbow tells them apart: to
-      // rest a hand on your head the elbow sticks out to the side AND up at about head height. A raise with the
-      // elbow straight up, or bent with the elbow down (hand up like in class), is a raise. (Liz: a straight
-      // raise was read as "hand on the head" 90% of the time; then her bent left raise, elbow 0.40 shoulder-
-      // widths below the shoulder, 51% of the time, 2026-09-26.)
-      const e = vis(el) ? P(el) : null;
-      const restingOnHead = e && Math.abs(e.x - P(sh).x) / sw >= 0.5 && (P(sh).y - e.y) / sw > -0.1;
-      if (restingOnHead) return result(false, conf(sh, w), `${side} hand is on the head, not raised`, up);
-    }
+    // (No "hand resting on the head" exception any more: every way of telling it apart from a raise misjudged
+    // a real raise, straight, bent with the elbow down, or L-shaped with the elbow out at shoulder height,
+    // Liz 2026-09-26. In Simon Says a hand on your head is an arm move anyway.)
     return result(true, conf(sh, w), `${side} wrist is above the ${side} shoulder`, up);
   };
   // Strict (Liz, 2026-09-24): one arm means ONLY that arm. Raising both lights "Both arms up" alone.

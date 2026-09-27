@@ -803,7 +803,6 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .timer .track { flex: 1; height: 22px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 #panel-game .timer .fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--duck); }
 #panel-game .timer .secs { font-size: 36px; font-weight: 800; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
-#panel-game .round-row { display: flex; justify-content: space-between; align-items: baseline; }
 #panel-game .round-word { font-size: 18px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
 #panel-game .move { margin: 4px 0; text-align: center; font-size: 72px; font-weight: 800; line-height: 1; text-transform: uppercase; }
 #panel-game .play-result { text-align: center; font-size: 18px; font-weight: 700; color: var(--ink); min-height: 1.3em; }
@@ -841,12 +840,13 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .simon-status #health-detail { font-size: 24px; font-weight: 700; color: var(--ink); }
 #panel-game .simon-status .health[data-state="ready"] strong { display: none; }
 #panel-game .simon-status .health[data-state="ready"] #health-detail { font-size: 32px; font-weight: 800; line-height: 1.1; }
+/* The status line in capitals, like the rest of the big type in the panel (Liz: it looked like a cutout). */
+#panel-game .simon-status #health-detail { text-transform: uppercase; letter-spacing: .02em; }
 #panel-game .simon-status { margin: 0 0 16px; }
 
-/* Bricolage changes its design with size (optical sizing): big text got its quirky display cut
-   (Liz: "where did the crazy font come from?"). Pin the calm text cut (opsz 14) at every size. (Turning
-   optical sizing off made it worse: the font's default is the display cut, opsz 96.) */
-#panel-game, #panel-game * { font-variation-settings: "opsz" 14; }
+/* (The Bricolage we load from Google Fonts has one cut only, its display cut: the optical-size axis isn't in
+   the file, so it can't be changed here. Its capitals are clean; big lowercase looks quirky, so big text in
+   the game panel is set in capitals.) */
 #panel-game .step .sub:empty { display: none; }
 
 /* Setup, one step at a time: the steps share one cell and slide like the screens (Apple-style). */
@@ -863,7 +863,6 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 #panel-game .setup-steps > .step.adjust .n { background: var(--duck); color: var(--duck-ink); }
 #panel-game .setup-steps > .step.adjust .t { color: var(--ink); }
 #panel-game .setup-steps > .step.adjust .sub { font-size: 24px; font-weight: 800; color: var(--ink); }
-#panel-game .setup-steps > .step.adjust[data-ok="true"] .sub { color: var(--good); }
 @media (prefers-reduced-motion: reduce) {
   #panel-game .setup-steps > .step, #panel-game .setup-steps > .step.in, #panel-game .setup-steps > .step.out { transform: none; transition: none; }
   #panel-game .setup-steps > .step.out { visibility: hidden; }
@@ -895,3 +894,13 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* Score cards: more contrast between the halves (Liz): top a touch lighter, bottom darker (was .9). */
 .ss-card .upper { filter: brightness(1.06); }
 .ss-card .lower { filter: brightness(.8); }
+
+/* Playing screen, laid out on one column: header (round left, seconds right, same baseline), the bar
+   full width right under it, then the move, I SEE and the result; Stop game centred at the bottom (Liz:
+   the timer, Stop and round label "looked splattered"). */
+#panel-game .play-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: -8px; }
+#panel-game .play-head .round-word { font-size: 20px; font-weight: 800; letter-spacing: .06em; color: var(--ink); }
+#panel-game .play-head .secs { font-size: 36px; font-weight: 800; line-height: 1; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+#panel-game .timer { display: block; }
+#panel-game .timer .track { width: 100%; }
+#panel-game .play-stop { text-align: center; }
