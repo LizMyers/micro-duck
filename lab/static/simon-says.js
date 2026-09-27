@@ -62,6 +62,9 @@ export const SETUP_LINES = {
   ok: ["Perfect!", "Looking good!", "That's the spot!"],
 };
 
+// At the end of every game Simon asks, then opens the mic for the answer (Liz: a yes by voice, or the button).
+export const PLAY_AGAIN = ["Play again?", "Another round?", "Fancy another go?"];
+
 // Pick the next command (never the same one twice in a row).
 export function nextCommand(rand, { last = null } = {}) {
   const says = rand() < SAYS_CHANCE;
@@ -209,7 +212,7 @@ export class SimonSaysGame {
       ...Object.keys(COMMANDS).flatMap((pose) => [line({ pose, says: true }), line({ pose, says: false })]),
       ...OKS, TRAP_OK, "Last round!", "Too slow!",
       ...TRAP_OPENERS.map(trapLine),
-      "I win!", "You win!", "Well played. You win!",
+      "I win!", "You win!", "Well played. You win!", ...PLAY_AGAIN,
       // Only two scores are possible after the next game.
       this.usableScore(simon + 1, you), ...taunts(simon + 1, you),
       this.usableScore(simon, you + 1), ...taunts(simon, you + 1),
@@ -274,6 +277,7 @@ export class SimonSaysGame {
       await this.sayScore(simon, you);
     } else {
       this.render("You win!", `All ${ROUNDS} right.`);
+      await this.app.sfx?.("wheee");   // a good sport: "Wheee!" before he congratulates you
       const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
       this.app.note(`🎭 Simon's mood for losing: ${mood}`);
       const { started, done } = this.app.sayLine(`The player got all ${ROUNDS} rounds right, so the player wins this game and you lose. ` +
@@ -288,9 +292,16 @@ export class SimonSaysGame {
       await this.sayScore(simon, you);
     }
     if (!live()) return;
+    const ask = pickFresh(PLAY_AGAIN, this.lastSaid.ask);
+    this.lastSaid.ask = ask;
+    this.emit({ type: "ask", text: ask });
+    await this.speak(ask);
+    if (!live()) return;
+    this.app.remember?.(ask);   // so a spoken "yes" has context for the chat model
     this.board.add(winner);
     this.lastWinner = winner;
     this.stop(null);
+    this.app.listen?.();        // the mic opens for the answer
   }
 
   // You left the camera's view mid-round: that round doesn't count. Wait (up to 15 s) for you to come back,
@@ -550,8 +561,9 @@ export class SimonSaysGame {
     this.app.note(`🎲 ${r.text}`, { pose: cmd.pose, says: cmd.says, seen, instead: wrong, score: this.score, round: this.round });
     // Say the result out loud, so you can follow the game without looking at the screen (Liz).
     // All fixed lines: cached, so they play instantly.
-    if (r.point && this.round < ROUNDS) await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK);
-    else if (!r.point) await this.speak(!cmd.says ? trapLine(TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)])
+    // A real quack first (the simulator's own duck sounds, via app.sfx): a round won, or you caught out.
+    if (r.point && this.round < ROUNDS) { await this.app.sfx?.("chirp"); await this.speak(cmd.says ? OKS[Math.floor(Math.random() * OKS.length)] : TRAP_OK); }
+    else if (!r.point && (await this.app.sfx?.("chirp"), true)) await this.speak(!cmd.says ? trapLine(TRAP_OPENERS[Math.floor(Math.random() * TRAP_OPENERS.length)])
       : r.wrong ? wrongLine(r.wrong) : "Too slow!");
   }
 

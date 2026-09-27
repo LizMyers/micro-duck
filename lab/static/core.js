@@ -80,3 +80,10 @@ export function base64Pcm16ToFloat(b64) {
   for (let i = 0; i < pcm.length; i++) out[i] = pcm[i] / 0x8000;
   return out;
 }
+
+// During a game only game lines may speak: a chat reply (it has a conversation id; game lines are made
+// outside the conversation) is cut. (Liz, 2026-09-26: a chat reply to what she said just before a nod ran
+// 14 s over round 1, "Simon says touch your nose!" included, and she lost on the next trap.)
+export function hushDuringGame({ conversationId, gameActive, line }) {
+  return !!conversationId && !!gameActive && !line;
+}

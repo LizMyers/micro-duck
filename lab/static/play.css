@@ -896,3 +896,5 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
 /* Score cards: more contrast between the halves (Liz): top a touch lighter, bottom darker (was .9). */
 .ss-card .upper { filter: brightness(1.06); }
 .ss-card .lower { filter: brightness(.8); }
+#panel-game .over .ask { margin: 4px 0 0; font-size: 36px; font-weight: 800; line-height: 1.1; color: var(--ink); }
+#panel-game .over .ask:empty { display: none; }

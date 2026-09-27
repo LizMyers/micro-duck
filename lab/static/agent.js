@@ -3,7 +3,7 @@
 //   we get   ← speech_started/stopped, transcripts, response.output_audio.delta (Simon's voice), tool calls
 // The agent serves one reply at a time on one connection: see turn-taking.js for why that matters.
 
-import { RATE, state, ctx, toast, base64Pcm16ToFloat } from "/static/core.js";
+import { RATE, state, ctx, toast, base64Pcm16ToFloat, hushDuringGame } from "/static/core.js";
 import { setMic, setTalkLabel, stopPlayback, playChunk, isPlaying, whenQuiet } from "/static/audio.js";
 import { userBubble, renderUser, botBubble, renderBot, finishBotBubble } from "/static/chat.js";
 import { noteCancel, watchForReply, replied, nodIfBusy } from "/static/turn-taking.js";
@@ -26,7 +26,8 @@ const GAME_RULES =
 // Starting a game by voice ("I want a rematch!"). The page runs the game; the model just starts it.
 const GAME_TOOL = {
   type: "function", name: "play_simon_says",
-  description: "Start a game of Simon Says with the player (also for a rematch or playing again).",
+  description: "Start a game of Simon Says with the player (also for a rematch or playing again, or when they " +
+    "say yes to your question \"Play again?\": any yes counts, like yes, sure, why not, absolutely, you bet, OK, let's go).",
   parameters: { type: "object", properties: {}, required: [] },
 };
 
@@ -154,10 +155,16 @@ function onAgentEvent(ev) {
       break;
     case "response.created":
       state.responding = true;
+      state.chatReply = !!ev.response?.conversation_id && !state.line;
       if (ev.response?.conversation_id) replied();   // an answer to you (game lines use conversation "none")
+      if (hushDuringGame({ conversationId: ev.response?.conversation_id, gameActive: gameActive(), line: state.line })) {
+        hushChat("a chat reply started during the game");
+        break;
+      }
       if (!state.line?.silent) botBubble();
       break;
     case "response.output_audio_transcript.delta":
+      if (state.hushed && !state.line) break;   // a cut chat reply: not shown
       if (state.line) state.line.heard += ev.delta;   // what Simon actually said (checked, or shown in the game)
       if (state.line?.silent) break;
       botBubble().text += ev.delta;
@@ -166,6 +173,7 @@ function onAgentEvent(ev) {
     case "response.output_audio.delta":
       if (state.turn && !state.turn.firstAudioAt) state.turn.firstAudioAt = performance.now();
       if (state.line) { onLineAudio(state.line, ev.delta); break; }
+      if (state.hushed) break;   // a cut chat reply: its audio still in flight is dropped
       if (body.mood !== "speaking") body.setMood("speaking");
       playChunk(base64Pcm16ToFloat(ev.delta));
       break;
@@ -201,6 +209,11 @@ function onAgentEvent(ev) {
       }
       const spoke = !!state.botBubble?.text;
       state.responding = false;
+      state.chatReply = false;
+      state.hushed = false;
+      // A cancelled reply's tool calls are dropped by the agent: reporting on them only earns an error
+      // ("No function_call with call_id … found").
+      if (status === "cancelled") state.toolOutputs.length = 0;
       if (state.toolOutputs.length) {
         for (const o of state.toolOutputs.splice(0)) {
           send({ type: "conversation.item.create",
@@ -236,3 +249,20 @@ function onAgentEvent(ev) {
   }
 }
 
+
+const gameActive = () => !!(ctx.game?.running || ctx.game?.starting);
+// Cut the chat reply in progress (its words and its audio): a game is starting or running.
+export function hushChat(why) {
+  if (!state.chatReply || state.hushed) return;
+  state.hushed = true;
+  send({ type: "response.cancel" });
+  stopPlayback();
+  if (state.botBubble && !state.botBubble.done) finishBotBubble("interrupted");
+  ctx.inspector.note(`🤫 page: cut Simon's chat reply: ${why} (only game lines speak during a game)`, null, "warn");
+}
+
+// Something Simon said as a fixed line (made outside the conversation), added to the chat model's context,
+// so after "Play again?" a plain "yes" means play. Adding an item doesn't make the model reply.
+export function rememberSaid(text) {
+  send({ type: "conversation.item.create", item: { type: "message", role: "assistant", content: [{ type: "output_text", text }] } });
+}

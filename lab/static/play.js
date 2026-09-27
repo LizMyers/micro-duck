@@ -9,13 +9,14 @@ import { $, state, ctx, toast, sleep } from "/static/core.js";
 import { DuckBody } from "/static/duck-body.js";
 import { Inspector } from "/static/inspector.js";
 import { MacOS } from "/static/mac-os.js";
-import { measure, evaluatePoseDetailed, NodDetector, POSE_IDS, POSE_LABELS } from "/static/pose.js";
+import { measure, evaluatePoseDetailed, POSE_IDS, POSE_LABELS } from "/static/pose.js";
 import { calibrationProblem, calibrationIssue, SETUP_LINES } from "/static/simon-says.js";
 import { setMic, releaseMicAfterSilence, cancelMicRelease } from "/static/audio.js";
 import { clearChat } from "/static/chat.js";
 import { cam, startCamera, stopCamera, calibrate } from "/static/camera.js";
 import { startAgent, listenToServer, onAgentStatus } from "/static/server-link.js";
 import { makeGame } from "/static/game-host.js";
+import { duckSounds } from "/static/duck-sounds.js";
 
 const MODEL = "mlx-community/Qwen3-4B-Instruct-2507-4bit";   // Qwen3 4B: the one Simon Says is tuned on
 // Simon's personality in chat (between games). Friendly first, cheeky only lightly: rapport before cheek.
@@ -27,6 +28,7 @@ const PERSONALITY =
   "You are a small, cheerful robot duck, a Pollen Microduck. " +
   "You are friendly, curious and a little playful, and happy to chat about anything. " +
   "Speak in the first person and never say your own name. Answer in one or two short sentences. " +
+  "Never say or spell out the word quack: your real quacks are played as sounds. " +
   "You can also host a game of Simon Says, but don't push it: mention it only if someone asks what you can do " +
   "or the conversation has clearly run out, and at most once. Otherwise just chat. " +
   "Never use lists, markdown or emoji; everything you write will be spoken aloud.";
@@ -43,7 +45,7 @@ const HEALTH = {
   ready: ["READY", () => $("panel-game").dataset.phase !== "setup" ? "Simon is ready to play! Are you?"
     : !cam.on ? "Simon is ready. Your camera is OFF." : setup.step === "go" ? "Are you ready?" : "Simon is ready. Look at him."],
   busy: ["BUSY", () => "Another tab is connected to Simon (he talks to one page at a time). Close the other tabs."],
-  starting: ["LOADING", (s) => `Simon is waking up: ${s.secs} s (usually 1–3 minutes).`],
+  starting: ["LOADING", (s) => `Simon is waking up: ${s.secs} s (usually 3 - 5 seconds).`],
   stopped: ["STOPPED", () => "Simon is asleep. Press Start Simon."],
   error: ["CRASHED", () => "Simon's voice agent stopped unexpectedly. Press Start Simon."],
   unknown: ["?", () => "No connection to the server. Start it in Terminal, then reload."],
@@ -164,6 +166,7 @@ async function turnOnCamera() {
     const problem = stanceNow();
     $("setup-check").textContent = setupLine(problem);
     $("setup-adjust").dataset.ok = String(!problem);
+    if (!problem && !setup.ok) duckSounds.chirp();   // a happy quack at "Perfect!"
     setup.ok = !problem;
     setup.okSince = problem ? null : setup.okSince ?? performance.now();
     if (setup.step === "adjust" && setup.okSince && performance.now() - setup.okSince >= OK_HOLD_MS) {
@@ -215,6 +218,7 @@ function onGame(ev) {
   }
   if (ev.type === "hold") game.hold = ev.progress;
   if (ev.type === "result") { game.pose = null; game.hold = 0; setMove(ev.text); }
+  if (ev.type === "ask") $("over-ask").textContent = ev.text;   // "Play again?" (then the mic opens)
   if (ev.type === "say") game.lastSaid = ev.big;   // for a stop without a message ("Simon didn't answer…")
   if (ev.type === "lost") { game.pose = null; setMove("I can't see you!"); }
   if (ev.type === "back") setMove("There you are!");
@@ -224,6 +228,7 @@ function onGame(ev) {
     $("over-headline").textContent = simon ? "Simon wins!" : "You win!";
     $("over-headline").classList.toggle("simon", simon);
     $("over-why").textContent = ev.why || "";
+    $("over-ask").textContent = "";
     showScreen("over");
   }
   if (ev.type === "stopped") {
@@ -262,17 +267,8 @@ setInterval(() => {
   // Play again only once Simon has finished talking about the last game.
   const busy = !!(ctx.game?.running || ctx.game?.starting);
   $("play-again").disabled = busy;
-  // A nod is a yes (Ready and Game over screens): the same as pressing the big button.
-  const asking = !busy && cam.on && cam.calibrated && ["ready", "over"].includes(panel.dataset.phase);
-  if (!asking) { nod.samples = []; return; }
-  const m = measure(cam.tracker?.latest?.landmarks, cam.tracker?.aspect);
-  if (m && cam.tracker.baseline && nod.feed(performance.now(), m.pitch - cam.tracker.baseline.pitch)) {
-    inspector.note("🙂 page: you nodded: that's a yes");
-    sayYes();
-  }
 }, 100);
-const nod = new NodDetector();
-// Yes (a nod, the big button, or saying so): play.
+// Yes (the big button; a spoken yes goes through the chat model's play_simon_says): play.
 function sayYes() {
   if (ctx.game?.running || ctx.game?.starting) return;
   ctx.game.start();
