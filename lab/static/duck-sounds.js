@@ -29,7 +29,8 @@ async function load(url) {
 }
 
 // Plays one file through the beak; resolves when it has finished. Never throws (a missing file is silent).
-async function play(file, gain = 0.8) {
+// rate < 1 plays it slower and lower (a deflated quack).
+async function play(file, gain = 0.8, rate = 1) {
   const { state, ctx } = await page();
   try {
     const url = `/sim/assets/voices/${bankFor(ctx.body?.colour)}/${file}.wav`;
@@ -39,6 +40,7 @@ async function play(file, gain = 0.8) {
     const g = ac.createGain();
     g.gain.value = gain;
     src.buffer = buf;
+    src.playbackRate.value = rate;
     src.connect(g).connect(ctx.body?.attachAudio ? ctx.body.attachAudio(ac) : ac.destination);
     src.start();
     await new Promise((r) => (src.onended = r));
@@ -47,17 +49,18 @@ async function play(file, gain = 0.8) {
   }
 }
 
+// Only at the end of a game (Liz: not after every move), from Simon's side, in his colour's voice.
 let lastChirp = null;
 export const duckSounds = {
-  // A quack: a won round, a caught trap, a "Perfect!" in setup.
-  chirp() {
-    lastChirp = nextChirp(lastChirp);
-    return play(`chirp_${lastChirp}`);
-  },
-  // "Wheee!": you win a game (Simon is a good sport about it).
-  async wheee() {
+  // Simon wins: "Wheee!"
+  async win() {
     const take = Math.random() < 0.5 ? "a" : "b";
     await play(`wheee_start_${take}`, 0.7);
     await play(`wheee_end_${take}`, 0.7);
+  },
+  // Simon loses: a deflated quack (a chirp, slower and lower).
+  lose() {
+    lastChirp = nextChirp(lastChirp);
+    return play(`chirp_${lastChirp}`, 0.8, 0.7);
   },
 };
