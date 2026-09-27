@@ -114,6 +114,11 @@ so his quack is his fingerprint and the serial can be his ID.
 - Consistent personality: cheeky but kind; moods that fit what just happened (taunts that know who just won).
 - Healthy by design: never needy (invites once, respects "no thanks", no guilt-trips); honest (a playful robot
   duck); your memory, your control (local, visible in the Inspector, "Simon, forget me" really forgets); kid-safe.
+- **Secret handshakes and "our thing"** (Liz): a gesture sequence (fist bump, thumbs up, wave, via the hand library)
+  that he answers with his part (head bob, spin, happy quack); a different one per person he knows; "Simon, learn our
+  handshake" (show it twice). Different reactions per person (with face recognition): cheeky banter for Liz, gentle
+  for Mom, silly for kids, polite for strangers. Inside jokes and callbacks that grow ("remember when I called your
+  left arm a hand on your head?"). For fun and closeness, never security.
 - Blog post candidate: what makes a robot a good companion, and what makes a bad one.
 
 ## Shared web board for board games (Liz, 2026-09-27)
