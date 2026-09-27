@@ -35,8 +35,9 @@ const PERSONALITY =
 const inspector = new Inspector($("inspector"), { plain: true });   // no emojis on this page
 const body = new DuckBody({
   iframe: $("sim"),   // (no mood badge or Beak / Head / Why row on this page: the sim fills the card)
-  // Framing (Liz): Simon 50 px lower in the picture, for headroom. (acrossPx would move him sideways.)
-  view: { downPx: 50 },
+  // Framing (Liz): Simon 40 px lower in the picture (headroom) and 140 px to the right (towards the right edge).
+  view: { downPx: 40, acrossPx: 200, zoom: 1.1,     // and zoomed in to 110%
+          fullscreen: { downPx: 90 } },            // full screen: 50px lower still (Liz)
 });
 
 // ---------- Simon's status: one line under the sim, with Start / Restart ---------------------
@@ -292,6 +293,20 @@ function sayYes() {
 }
 
 body.onNote = (text) => inspector.note(text);   // the framing reports itself in the Inspector
+// The scores and your camera box are centred in the open space left of Simon (Liz): the page is told where he
+// stands and sizes that space. SIMON_HALF_PX: about half his width on screen, plus a little air.
+const SIMON_HALF_PX = 110;
+// In full screen the scores grow with your camera box (Liz): --board-zoom is the full-screen sim's width over
+// its normal width (the camera box is a share of that width, so both grow by the same amount).
+let normalSimW = 0;
+body.onFramed = ({ W, simonX }) => {
+  const wrap = document.querySelector(".sim-wrap");
+  const full = document.fullscreenElement === wrap;
+  if (!full) normalSimW = W;
+  wrap.style.setProperty("--sim-w", `${W}px`);
+  wrap.style.setProperty("--left-space", `${Math.max(200, simonX - SIMON_HALF_PX)}px`);
+  wrap.style.setProperty("--board-zoom", full && normalSimW ? (W / normalSimW).toFixed(3) : "1");
+};
 // Re-frame Simon when the sim box changes size (window resize, full screen), so his feet stay put.
 {
   let t;
@@ -304,6 +319,7 @@ body.onNote = (text) => inspector.note(text);   // the framing reports itself in
   btn.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : wrap.requestFullscreen?.());
   document.addEventListener("fullscreenchange", () => {
     const on = document.fullscreenElement === wrap;
+    setTimeout(() => body.shiftView(), 200);   // re-frame Simon for full screen (or back)
     btn.setAttribute("aria-pressed", String(on));   // the CSS shows arrows-in while full screen
     btn.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
     btn.title = on ? "Exit full screen (Esc)" : "Full screen";

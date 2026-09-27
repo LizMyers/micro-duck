@@ -29,15 +29,17 @@
              Icons: Phosphor, bold (arrows-out-simple / arrows-in-simple), MIT licence. -->
         <button class="sim-full" id="sim-full" aria-pressed="false" aria-label="Full screen" title="Full screen"><svg class="ic-out" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M220,48V96a12,12,0,0,1-24,0V77l-39.51,39.52a12,12,0,0,1-17-17L179,60H160a12,12,0,0,1,0-24h48A12,12,0,0,1,220,48ZM99.51,139.51,60,179V160a12,12,0,0,0-24,0v48a12,12,0,0,0,12,12H96a12,12,0,0,0,0-24H77l39.52-39.51a12,12,0,0,0-17-17Z"/></svg><svg class="ic-in" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216.49,56.48,177,96h19a12,12,0,0,1,0,24H148a12,12,0,0,1-12-12V60a12,12,0,0,1,24,0V79l39.51-39.52a12,12,0,0,1,17,17ZM108,136H60a12,12,0,0,0,0,24H79L39.51,199.51a12,12,0,0,0,17,17L96,177v19a12,12,0,0,0,24,0V148A12,12,0,0,0,108,136Z"/></svg></button>
         <p class="sim-missing" id="sim-missing" hidden>Simulator not built yet.</p>
-        <!-- The all-time scoreboard, on the sim: bottom left, facing your camera box on the right. -->
-        <div class="ss-board on-sim" aria-label="All-time score">
-          <div class="ss-team"><span class="ss-card" id="ss-card-simon">0</span><b>Simon</b></div>
-          <div class="ss-team"><span class="ss-card" id="ss-card-you">0</span><b>You</b></div>
-        </div>
-        <!-- Your webcam, the referee. Video never leaves this browser. -->
-        <div class="cam-pip" id="cam-pip" hidden>
-          <video id="cam-video" playsinline muted hidden></video>
-          <canvas id="cam-canvas" width="640" height="480" aria-label="Your webcam with pose skeleton"></canvas>
+        <!-- Bottom left: the scores, centred above your camera box, 30px apart (Liz). -->
+        <div class="sim-left">
+          <div class="ss-board on-sim" aria-label="All-time score">
+            <div class="ss-team"><span class="ss-card" id="ss-card-simon">0</span><b>Simon</b></div>
+            <div class="ss-team"><span class="ss-card" id="ss-card-you">0</span><b>You</b></div>
+          </div>
+          <!-- Your webcam, the referee. Video never leaves this browser. -->
+          <div class="cam-pip" id="cam-pip" hidden>
+            <video id="cam-video" playsinline muted hidden></video>
+            <canvas id="cam-canvas" width="640" height="480" aria-label="Your webcam with pose skeleton"></canvas>
+          </div>
         </div>
       </div>
 

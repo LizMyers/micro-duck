@@ -908,8 +908,41 @@ button, .talk, .split-bottom .talk, .bar-link, .title-bar .bar-link, .ram-warnin
    the text (Liz). Same as the scrolling tabs: the list reaches into the card's 16px side padding. */
 .split-top .insp-list, .split-bottom .chat { margin-right: -16px; padding-right: 12px; scrollbar-gutter: stable; }
 
-/* The sim box's corners (Liz): scores top left, your camera bottom left, full screen bottom right. */
-.ss-board.on-sim { top: 12px; bottom: auto; left: 12px; }
-.cam-pip { left: 12px; right: auto; bottom: 12px; }
+/* The scores centred above your camera box (20px apart), the pair centred top to bottom in the sim and left to
+   right in the open space left of Simon (Liz). play.js sets --left-space (the sim's left edge to just before
+   Simon) and --sim-w (the sim's width) after framing him. */
+.sim-left { position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; width: var(--left-space, 50%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.sim-left .cam-pip { position: static; width: calc(var(--sim-w, 600px) * .3); min-width: 180px; max-width: calc(100% - 24px); }
+.sim-left .ss-board.on-sim { position: static; }
 /* The full-screen button appears once a game has started (Playing and Game over), and always while full screen. */
 body:not([data-phase="playing"]):not([data-phase="over"]) .sim-full:not([aria-pressed="true"]) { display: none; }
+
+/* One edge line for the bottom card, 32px in, matching your camera box on the sim (Liz): the first tab label,
+   the end of the colour-dot band, and the panels' content all sit 32px from the card's edges. (The tab
+   button has 12px of padding, so the bar gets 20px.) */
+.card.controls { padding-left: 32px; padding-right: 32px; }
+.controls .tabs { margin-left: -32px; margin-right: -32px; padding-left: 20px; padding-right: 32px; }
+.controls .tabs .bar-dots { margin-right: 0; }
+@media (min-width: 1001px) {
+  .controls > [role="tabpanel"] { margin-right: -32px; padding-right: 28px; }   /* scrollbar still at the card edge */
+}
+.sim-left { pointer-events: none; }   /* the space itself lets clicks through to the sim */
+.sim-left > * { pointer-events: auto; }
+/* Full screen: the scores and their labels grow in step with your camera box (play.js sets --board-zoom). */
+.sim-wrap:fullscreen .sim-left .ss-board.on-sim { zoom: var(--board-zoom, 1); }
+
+/* A plain dot pattern behind the game panel and the chat (Liz): a light tint of the chosen duck colour (14%), so
+   it changes with it (and works in dark mode). The game panel's dots show only while the Game tab is open. */
+:root { --dots: radial-gradient(circle, color-mix(in srgb, var(--duck) 14%, transparent) 1.5px, transparent 2px); }
+.card.controls:has(#panel-game:not([hidden])), .split-bottom .chat {
+  background-image: var(--dots); background-size: 20px 20px; background-position: 10px 10px;
+}
+.split-bottom .chat { background-attachment: local; }   /* the dots scroll with the messages */
+
+/* The full-screen button, bigger and bolder (Liz): a 60px button with a 40px icon on a darker backing. */
+.sim-full { right: 16px; bottom: 16px; width: 60px; height: 60px; padding: 10px; border-radius: 14px; background: rgb(0 0 0 / 60%); }
+.sim-full:hover { background: rgb(0 0 0 / 78%); }
+.sim-full svg { width: 40px; height: 40px; }
+/* In full screen it grows with the scores and their labels (the same --board-zoom). */
+.sim-wrap:fullscreen .sim-full { zoom: var(--board-zoom, 1); }
