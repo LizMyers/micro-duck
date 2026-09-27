@@ -122,6 +122,9 @@ function showScreen(name) {
   if (panel.dataset.phase === name) return;
   panel.dataset.phase = name;
   document.body.dataset.phase = name;   // for things outside the panel (the sim's full-screen button)
+  // Simon stands off centre (room for the scores and your camera) only during a game and its result; before a
+  // game and once you end one, he glides back to the middle (Liz).
+  body.shiftView({ centred: name === "setup" || name === "ready", glideMs: 700 });
   ctx.os?.render();   // Simon's status line words itself for this screen
   slideTo(screens, "screen", name);
 }

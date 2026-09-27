@@ -80,20 +80,31 @@ export class DuckBody {
 
   // view.downPx / view.acrossPx: slide the picture by exact pixels (the camera's view offset), so Simon
   // sits lower (headroom) or off centre, whatever the window size (Liz). Re-applied on every resize.
-  shiftView() {
+  // centred: true puts him back in the middle across (the page does this between games); the change glides.
+  shiftView({ centred = this.centred, glideMs = 0 } = {}) {
+    this.centred = centred;
     const cam = this.rl?.camera, W = this.iframe?.clientWidth, H = this.iframe?.clientHeight;
     // In full screen a page can frame him differently (view.fullscreen: { downPx, acrossPx, zoom }).
     const full = this.iframe?.ownerDocument?.fullscreenElement && this.view.fullscreen ? this.view.fullscreen : {};
-    const down = full.downPx ?? this.view.downPx ?? 0, across = full.acrossPx ?? this.view.acrossPx ?? 0;
+    const down = full.downPx ?? this.view.downPx ?? 0;
+    const across = centred ? 0 : full.acrossPx ?? this.view.acrossPx ?? 0;
     const zoom = full.zoom ?? this.view.zoom ?? 1;
     if (!cam?.setViewOffset || !W || !H) return;
     cam.zoom = zoom;   // view.zoom: 1.1 = 110% (closer), without moving the camera
-    if (!down && !across) { cam.clearViewOffset?.(); cam.updateProjectionMatrix(); this.onFramed?.({ W, H, simonX: W / 2 }); return; }
-    // The window onto the picture moves the opposite way to Simon: up by `down`, left by `across`.
-    cam.setViewOffset(W, H, -across, -down, W, H);
-    cam.updateProjectionMatrix();
+    cancelAnimationFrame(this.glide);
+    const from = this.across ?? across, start = performance.now();
+    const frame = (now) => {
+      const t = glideMs ? Math.min(1, (now - start) / glideMs) : 1;
+      const x = from + (across - from) * (1 - (1 - t) ** 3);   // eases out
+      this.across = x;
+      // The window onto the picture moves the opposite way to Simon: up by `down`, left by `x`.
+      if (!down && !x) cam.clearViewOffset?.(); else cam.setViewOffset(W, H, -x, -down, W, H);
+      cam.updateProjectionMatrix();
+      this.onFramed?.({ W, H, simonX: W / 2 + x });   // where Simon stands across the picture, in px
+      if (t < 1) this.glide = requestAnimationFrame(frame);
+    };
+    frame(start);
     this.onNote?.(`🎥 page: Simon's view shifted ${down} px down, ${across} px right, zoom ${Math.round(zoom * 100)}%`);
-    this.onFramed?.({ W, H, simonX: W / 2 + across });   // where Simon stands across the picture, in px
   }
 
   // Keyboard driving from anywhere on the page: forward the simulator's keys
