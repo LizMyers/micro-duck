@@ -26,9 +26,7 @@ const GAME_RULES =
 // Starting a game by voice ("I want a rematch!"). The page runs the game; the model just starts it.
 const GAME_TOOL = {
   type: "function", name: "play_simon_says",
-  description: "Start a game of Simon Says with the player (also for a rematch or playing again, " +
-    "or when they say yes to your offer of another game or a match, like \"Best two out of three?\". " +
-    "Any yes counts: yes, sure, why not, absolutely, you bet, OK, let's go, bring it on).",
+  description: "Start a game of Simon Says with the player (also for a rematch or playing again).",
   parameters: { type: "object", properties: {}, required: [] },
 };
 
@@ -238,9 +236,3 @@ function onAgentEvent(ev) {
   }
 }
 
-// Something Simon said as a fixed line (outside the conversation), added to the chat model's context so it
-// knows what was asked: after "Best two out of three?", a plain "yes" means play (Liz: nod, yes or button).
-// Adding an item doesn't make the model reply.
-export function rememberSaid(text) {
-  send({ type: "conversation.item.create", item: { type: "message", role: "assistant", content: [{ type: "output_text", text }] } });
-}
