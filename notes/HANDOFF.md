@@ -358,6 +358,12 @@ Only the body changes. Brain (voice agent on the Mac) and referee (webcam in the
 - Battery ~1 hour (Liz): fine for games (~1 min each), and it backs the design: heavy work stays off the duck
   (voice agent on the Mac, pose tracking in the browser/Mac); the duck streams its camera, moves and makes sound.
   Idea: Simon says when he's low ("I'm getting sleepy… one more game?") and sits down for a nap.
+- Expressive moves (Liz): the game only uses his head today. Streak reactions: 1st loss the deflated quack;
+  2nd in a row a sulky sit-down; 3rd in a row PLAY DEAD, then pops up for the rematch. Winning streak: a
+  victory roll (roulade). Existing policies (Hub pollen-robotics/microduck-policies): walk, stand, sit/stand,
+  ground pick, roulade, kicks, skates; community bow (fffiloni/microduck-polite-bow). "Play dead" would be a new
+  policy trained in microduck_rl (MuJoCo): the one place this project would use reinforcement learning itself.
+  Works in the sim first (window.rl.loadCustomPolicy), then on the real duck. Also fun in chat, not just games.
 - Microduck ships ~Christmas 2026. Story: "the same game, the same brain, now in a real duck."
 
 Also open (09-26): a very fast "yes, again!" can still start a game before the score pre-warm finishes
