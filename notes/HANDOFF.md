@@ -368,3 +368,14 @@ Only the body changes. Brain (voice agent on the Mac) and referee (webcam in the
 
 Also open (09-26): a very fast "yes, again!" can still start a game before the score pre-warm finishes
 (paused at 3 of 5 when Liz spoke), so an end-of-game score is occasionally made live, with a short pause.
+
+## After the demo: rock-paper-scissors + a hand gesture library (Liz, 2026-09-27)
+Decided: build AFTER the demo (release 1 ships what's tested); RPS gets its OWN all-time scoreboard.
+1. `hands.js` (next to pose.js): MediaPipe Gesture Recognizer in the browser. Built-ins: Closed_Fist = rock,
+   Open_Palm = paper, Victory = scissors, Thumb_Up / Thumb_Down = yes / no, Pointing_Up, ILoveYou (easter egg);
+   21 hand points for our own gestures later (finger count, wave). Live "I SEE" readout; Inspector says why. Tests.
+2. The game, voice-first: Simon picks his throw BEFORE yours and logs it (proof he can't cheat); one cached
+   "Rock… paper… scissors… shoot!" line for a steady rhythm; your hand is read in a window around "shoot"
+   (too early: "no peeking!", too late: "too slow!"); result said aloud + banter; both throws shown big.
+   Simon has no hands: he announces his throw (real duck: a head flourish). Separate scoreboard.
+3. Thumbs up = yes for "Play again?" (silent answer).
