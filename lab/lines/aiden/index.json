@@ -444,6 +444,26 @@
   "file": "it-s-twenty-to-ten.wav",
   "seconds": 1.47
  },
+ "It's twenty-five to eleven.": {
+  "cut": false,
+  "file": "it-s-twenty-five-to-eleven.wav",
+  "seconds": 1.41
+ },
+ "It's twenty-five to ten in my favor.": {
+  "cut": false,
+  "file": "it-s-twenty-five-to-ten-in-my-favor.wav",
+  "seconds": 1.95
+ },
+ "It's twenty-four to eleven in my favor.": {
+  "cut": false,
+  "file": "it-s-twenty-four-to-eleven-in-my-favor.wav",
+  "seconds": 2.21
+ },
+ "It's twenty-four to twelve.": {
+  "cut": false,
+  "file": "it-s-twenty-four-to-twelve.wav",
+  "seconds": 1.31
+ },
  "It's twenty-one to eleven in my favor.": {
   "cut": false,
   "file": "it-s-twenty-one-to-eleven-in-my-favor.wav",
@@ -728,6 +748,16 @@
   "cut": false,
   "file": "twenty-for-me-eight-for-you.wav",
   "seconds": 2.14
+ },
+ "Twenty-four for me, ten for you.": {
+  "cut": false,
+  "file": "twenty-four-for-me-ten-for-you.wav",
+  "seconds": 1.82
+ },
+ "Twenty-three for me, eleven for you.": {
+  "cut": false,
+  "file": "twenty-three-for-me-eleven-for-you.wav",
+  "seconds": 2.3
  },
  "Well played. You win!": {
   "cut": false,

@@ -27,7 +27,8 @@ const GAME_RULES =
 const GAME_TOOL = {
   type: "function", name: "play_simon_says",
   description: "Start a game of Simon Says with the player (also for a rematch or playing again, " +
-    "or when they say yes to your offer of another game or a match, like \"Best two out of three?\").",
+    "or when they say yes to your offer of another game or a match, like \"Best two out of three?\". " +
+    "Any yes counts: yes, sure, why not, absolutely, you bet, OK, let's go, bring it on).",
   parameters: { type: "object", properties: {}, required: [] },
 };
 
