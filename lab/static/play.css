@@ -940,9 +940,11 @@ body:not([data-phase="playing"]):not([data-phase="over"]) .sim-full:not([aria-pr
 }
 .split-bottom .chat { background-attachment: local; }   /* the dots scroll with the messages */
 
-/* The full-screen button, bigger and bolder (Liz): a 60px button with a 40px icon on a darker backing. */
-.sim-full { right: 16px; bottom: 16px; width: 60px; height: 60px; padding: 10px; border-radius: 14px; background: rgb(0 0 0 / 60%); }
-.sim-full:hover { background: rgb(0 0 0 / 78%); }
-.sim-full svg { width: 40px; height: 40px; }
+/* The full-screen button, bigger and bolder (Liz): a 44px grey-glass circle (white at 20%, so it shows on the sim's
+   black background) hugging a 28px white icon. */
+.sim-full { right: 16px; bottom: 16px; width: 44px; height: 44px; padding: 8px; border-radius: 50%;
+  background: rgb(255 255 255 / 20%); color: #fff; }
+.sim-full:hover { background: rgb(255 255 255 / 32%); }
+.sim-full svg { width: 28px; height: 28px; }
 /* In full screen it grows with the scores and their labels (the same --board-zoom). */
 .sim-wrap:fullscreen .sim-full { zoom: var(--board-zoom, 1); }
