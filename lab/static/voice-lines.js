@@ -12,7 +12,7 @@
 // goes on an avoid list (bad.json) and the game uses another. Why: notes/03-saved-voice-lines.md,
 // notes/04-who-goes-first.md.
 
-import { RATE, state, ctx, sleep, base64Pcm16ToFloat } from "/static/core.js";
+import { RATE, state, ctx, sleep, base64Pcm16ToFloat, freeMax, answerAfterCut } from "/static/core.js";
 import { send, whenIdle, sessionUpdate } from "/static/agent.js";
 import { ensureAudio, playChunk, whenQuiet, stopPlayback } from "/static/audio.js";
 import { waitingForReply } from "/static/turn-taking.js";
@@ -20,6 +20,7 @@ import { waitingForReply } from "/static/turn-taking.js";
 // `started` resolves true at the first sound (false if none within 15 s); `done` when it has played.
 const LINE_MAX = 3.5;
 const FREE_MAX = 7;            // made-up lines are under 10 words (~4 s); a 13-word one ran on to 10 s
+                               // (the most freeMax allows, once Simon's words are in: see core.js)
 export const lineCache = new Map();   // text -> Float32Array chunks
 
 // improvise: instead of an exact line, `text` describes what happened and Simon makes up one short
@@ -94,6 +95,7 @@ export function onLineAudio(l, delta) {
   l.chunks.push(samples);
   l.samples += samples.length;
   const said = l.improvise ? l.heard || "(made-up line)" : l.text;   // improvised: l.text is the prompt, not the words
+  if (l.improvise && l.heard) l.max = freeMax(l.heard);
   // Gone quiet mid-line: after real speech, a second of silence means the voice model dropped the rest (it does
   // at a long dash: "the duck in you—congrats" was 4 s of speech then 3 s of silence, 2026-09-27). Cut it now,
   // not at the run-on limit.
@@ -141,7 +143,21 @@ export function finishLine(l, status) {
   if (!l.improvise && (l.cut || wentQuiet)) ctx.inspector.note(`💾 page: not saved "${l.text}": it ${l.mumbled ? "mumbled" : wentQuiet ? "went silent" : "ran on"}`, null, "warn");
   if (keep) { lineCache.set(l.text, l.chunks); saveLine(l.text, l.chunks, l.cut); }
   else if (l.silent) ctx.inspector.note(`🔥 not kept: asked for "${l.text}", Simon said "${l.heard}"`);
+  // You spoke while a background line was being made, and the page cut that line: the agent drops your turn along
+  // with it ("Let's play again" got no answer, 2026-09-27). So ask it to answer you now (or once your words are in).
+  const answer = answerAfterCut({ silent: l.silent, cut: l.cut, waiting: waitingForReply(), speaking: state.userSpeaking });
+  if (answer === "now") answerYou(`"${l.text}" was cut while you were waiting`);
+  if (answer === "when-heard") state.answerDue = true;
   l.onDone(status);
+}
+
+// Ask the agent to answer what you just said (a normal reply: it can still start a game), unless it already is.
+export function answerYou(why) {
+  setTimeout(() => whenIdle(() => {
+    if (!waitingForReply() || state.responding) return;
+    ctx.inspector.note(`🙋 page: ${why}, so I asked Simon to answer you now`, null, "tool");
+    send({ type: "response.create" });
+  }), 300);
 }
 
 // Where the sound stops: the voice model sometimes says a few words and then pads with silence.

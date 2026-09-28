@@ -87,3 +87,20 @@ export function base64Pcm16ToFloat(b64) {
 export function hushDuringGame({ conversationId, gameActive, line }) {
   return !!conversationId && !!gameActive && !line;
 }
+
+// A made-up line's run-on limit (seconds) from the words Simon actually says: about 0.55 s a word plus a second,
+// at least 2.5 s, at most 7. ("Aw shucks! You won, way to go!" ran on to the old flat 7 s; its 7 words get 4.85 s.)
+// The agent sends each sentence's words before its audio, so the count is in before the sound it limits.
+export function freeMax(heard) {
+  const words = heard.trim().split(/\s+/).filter(Boolean).length;
+  return Math.min(7, Math.max(2.5, words * 0.55 + 1));
+}
+
+// The page cut a background line (silent) while you were talking to Simon: the agent drops your turn with it.
+// "now": your words are in and unanswered, ask for the answer; "when-heard": you're still talking, ask once your
+// words are in; null: nothing to do.
+export function answerAfterCut({ silent, cut, waiting, speaking }) {
+  if (!silent || !cut) return null;
+  if (waiting) return "now";
+  return speaking ? "when-heard" : null;
+}
