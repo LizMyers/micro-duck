@@ -7,7 +7,7 @@ import { RATE, state, ctx, toast, base64Pcm16ToFloat, hushDuringGame } from "/st
 import { setMic, setTalkLabel, stopPlayback, playChunk, isPlaying, whenQuiet } from "/static/audio.js";
 import { userBubble, renderUser, botBubble, renderBot, finishBotBubble } from "/static/chat.js";
 import { noteCancel, watchForReply, replied, nodIfBusy } from "/static/turn-taking.js";
-import { onLineAudio, finishLine, loadSavedLines, prewarmLines, resumeWarm, warm } from "/static/voice-lines.js";
+import { onLineAudio, finishLine, loadSavedLines, prewarmLines, resumeWarm, warm, answerYou } from "/static/voice-lines.js";
 
 // Added to every personality: small models happily *say* "I'm sitting!" without actually calling the
 // tool, so the lab spells out that Simon has a body to move (only when it offers the move tools).
@@ -152,6 +152,8 @@ function onAgentEvent(ev) {
       renderUser(ev.item_id);
       state.lastHeard = ev.transcript;
       watchForReply(ev.transcript);
+      // Your words came in after a background line was cut mid-turn: answer them (see finishLine).
+      if (state.answerDue) { state.answerDue = false; answerYou("a background line was cut while you were talking"); }
       break;
     case "response.created":
       state.responding = true;

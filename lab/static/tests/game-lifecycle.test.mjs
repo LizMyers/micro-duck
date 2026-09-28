@@ -136,3 +136,19 @@ test("pre-warm covers every taunt, so a new one is never made live mid-game", as
   for (const t of [...taunts(9, 1, "simon"), ...taunts(9, 1, "you"), ...taunts(1, 9, "you"), ...taunts(1, 9, "simon"), ...taunts(5, 5)])
     assert.ok(lines.includes(t), t);
 });
+
+test("a made-up line's run-on limit follows its words (2.5 s to 7 s)", async () => {
+  const { freeMax } = await import("../core.js");
+  assert.ok(Math.abs(freeMax("Aw shucks! You won, way to go!") - 4.85) < 1e-9);   // 7 words: 4.85 s, not the old flat 7 s
+  assert.equal(freeMax("Ha!"), 2.5);                                          // never shorter than 2.5 s
+  assert.equal(freeMax("one two three four five six seven eight nine ten eleven twelve"), 7);   // never longer than 7 s
+});
+
+test("a cut background line while you talk: Simon answers you (the agent dropped your turn)", async () => {
+  const { answerAfterCut } = await import("../core.js");
+  assert.equal(answerAfterCut({ silent: true, cut: true, waiting: true, speaking: false }), "now");
+  assert.equal(answerAfterCut({ silent: true, cut: true, waiting: false, speaking: true }), "when-heard");
+  assert.equal(answerAfterCut({ silent: true, cut: true, waiting: false, speaking: false }), null);   // nobody waiting
+  assert.equal(answerAfterCut({ silent: false, cut: true, waiting: true, speaking: false }), null);  // a heard line
+  assert.equal(answerAfterCut({ silent: true, cut: false, waiting: true, speaking: false }), null);  // finished fine
+});
