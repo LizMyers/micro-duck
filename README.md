@@ -1,4 +1,4 @@
-# 🤗 Simon Says
+e# 🤗 Simon Says
 
 **Simon, as we call our virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/), is a biped
 robot duck from Pollen Robotics (Hugging Face).** He's 25 cm tall, has no arms, and out of the box he doesn't speak
