@@ -723,7 +723,7 @@ def port_busy(port: int) -> bool:
 
 
 def main() -> None:
-    url = f"http://localhost:{LAB_PORT}"
+    url = f"http://localhost:{LAB_PORT}/play"
     # Check our port *before* anything else. The startup step (auto-starting the agent) runs
     # before the web server claims the port, so a second copy of the lab used to stop the
     # first copy's agent and then fail. Now it stops here and points you at the first one.

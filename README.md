@@ -1,105 +1,77 @@
-e# 🤗 Simon Says
+# Simon Says with Microduck
 
-**Simon, as we call our virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/), is a biped
-robot duck from Pollen Robotics (Hugging Face).** He's 25 cm tall, has no arms, and out of the box he doesn't speak
-words; he quacks. We gave him ears and a brain. Tell him *"take two steps forward, turn left, sit down"* and he does it,
-using only open models running on a laptop.
+**A tiny robot duck. A cheeky voice. A game you already know.**
 
-Next, Simon will play Simon Says with you. He calls the moves, tries to catch you out, and your webcam is the referee.
+Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/) from Pollen Robotics. He calls the moves, tries to catch you out, and celebrates when he wins. Your webcam is the referee.
 
-> Status: work in progress. Voice control of the simulated duck works end to end. The Simon Says game is next.
+Open models running on a Mac give Simon his voice and personality. Chat between games, then play seated at your desk, with head turns and raised arms.
 
-## What it does today
-- 🎙 **Speak to Simon** in the browser. A fully local voice agent —
-  [huggingface/speech-to-speech](https://github.com/huggingface/speech-to-speech) with Parakeet (speech-to-text),
-  Qwen3-4B via MLX (language model) and Qwen3-TTS (voice) — hears you and decides what to do.
-- 🚶 **Simon moves for real (in simulation).** The model calls tools (`step_forward`, `turn_left`, `sit_down`, `bow`,
-  `skates_on`, …) which drive Pollen's trained walking policies in their browser simulator (MuJoCo + ONNX).
-- 📏 **Honest moves.** Every move is measured (centimetres walked, degrees turned). If Simon didn't actually move,
-  he's told — and says so — instead of claiming success.
-- 🧍 **Body language.** He looks up at you while listening, glances away while thinking, and his beak moves with his voice.
-- 🔎 **The Inspector.** A live, readable log of every message between the page and the agent, plus live move
-  traces. Most bugs in this project were found by looking at it.
-- 🏁 **The relay race.** Where the time goes, per turn: listening → turn detection → speech-to-text → thinking → voice.
-- 📷 **Webcam referee (in progress).** In-browser pose tracking (MediaPipe) — video never leaves your machine.
+[The design story on LizM.dev](https://lizm.dev) · [Development notes](notes/)
 
-Everything runs locally: no API keys, nothing sent to the cloud (models download once from the Hugging Face Hub).
+## One round with Simon
 
-## Things we learned (and fixed upstream)
-Building a real demo on top of `speech-to-speech` surfaced a few rough edges in the library. Fixes, with tests, on a
-branch of the library (full test suite passing):
+| Simon says… | Your move | What happens |
+| --- | --- | --- |
+| **“Simon says, look left.”** | Look left and hold it. | The webcam checks your move. You’re through! |
+| **“Raise both arms!”** | Stay still. He didn’t say Simon says. | Nice try, Simon. |
+| **“Simon says, raise your right arm.”** | Raise your left arm instead. | He catches you out — and gets his moment to gloat. |
 
-1. **Positional tool arguments were silently dropped** — small models often write `turn_left(360)`;
-   now bound to parameters in order when unambiguous.
-2. **Native tool-call syntax was read aloud** — after a few tool turns, Qwen switches to its native
-   `<tool_call>{json}</tool_call>` format (because chat templates render earlier calls that way); it's now recognised.
-3. **Tool markup leaked into speech when tools were disabled** for a response; now stripped.
+Get all five rounds right to win a game. Make a mistake and Simon wins. The scoreboard keeps your running totals, and he asks for a rematch.
 
-And about robots: Pollen's walking policy won't start from a standstill on a pure "walk backwards" or "turn on the spot"
-command — but will if you combine them, just like arrow-up + arrow-left on the keyboard. So Simon turns while creeping
-forward, and backs up with a gentle zig-zag. (Found by a human with a keyboard, confirmed with a physics-stepped test.)
+Before you play, camera setup helps you face forward and leave enough room for your arms. Moves must be held for a second; the response timer starts after Simon finishes the command. If you leave the camera’s view mid-round, that round doesn’t count.
 
-The full story, with commands, timings and gotchas, is in the devlog: [`notes/`](notes/).
+Simon has no arms, so he can call arm moves but can’t demonstrate them. 
 
-## Run it (macOS, Apple Silicon)
-Tested on an M3 Pro with 18 GB. The agent uses about 8 GB of memory.
+## Fair rules. Plenty of personality.
 
-1. **The voice agent** (from source, so the fixes above are included):
-   ```bash
-   git clone https://github.com/huggingface/speech-to-speech.git
-   cd speech-to-speech && uv sync --python 3.11
-   ```
-   *(Until the fixes are merged upstream, check out the `tool-call-positional-args` branch from this project's fork.)*
-2. **The simulator** — Pollen's browser sim with a small embed patch (see [`sim/README.md`](sim/README.md)):
-   download the Space, apply `sim/embed-and-jaw.patch`, `npm ci && VITE_BASE=/sim/ npm run build`.
-3. **Duck Lab** (this repo):
-   ```bash
-   cd micro-duck && uv run duck-lab      # or double-click "Duck Lab.command"
-   ```
-   Open **http://localhost:8770**, click **Start agent**, wait for green **Ready** (first run downloads ~7.5 GB of
-   models), then **Tap to talk**: *"Take two steps forward."*
+**The browser runs the game.** Code chooses commands and traps, checks poses, and records the result. Simon’s language model doesn’t decide whether you won.
 
-> ⚠️ If model downloads fail with `CERTIFICATE_VERIFY_FAILED`, your Python lacks root certificates;
-> the lab sets `SSL_CERT_FILE` to certifi's bundle for you. See [`notes/01-local-voice-agent.md`](notes/01-local-voice-agent.md).
+**The voice makes it feel alive.** Qwen3-TTS gives Simon his expressive Aiden voice. Repeated commands and score lines use saved, checked audio, avoiding fresh generation on every turn. If a command can’t be spoken cleanly, the game skips it rather than judging you against a broken instruction.
 
-## How it's built
+**Conversation leaves room for surprise.** Between games, a local voice agent handles chat. Generated reactions add variety, while head movements, quacks, and a moving beak bring the simulated duck to life.
+
+Speech processing runs on your Mac; webcam pose tracking runs in your browser. No cloud inference or API keys. Model downloads and CDN-hosted pose assets still need internet access.
+
+## Run it on your Mac
+
+Tested on Apple Silicon: M3 Pro, 18 GB memory. The voice agent uses roughly 8 GB; its models download on first use.
+
+One-time setup includes installing [speech-to-speech from source](notes/01-local-voice-agent.md#1-install-from-source-so-we-can-contribute-back-later) with `uv` and Python 3.11, and [building the patched simulator](sim/README.md) with Node/npm. The voice-agent integration also relies on local changes described in the [tool-call notes](notes/upstream-pr-tool-calls.md); this repo does not ship those changes or an automated setup script.
+
+Once those dependencies are installed:
+
+```bash
+cd micro-duck
+uv run duck-lab
 ```
- browser (Duck Lab)                                   your Mac
- ┌───────────────────────────────┐   WebSocket    ┌──────────────────────────────────────┐
- │ mic ─► Realtime client ───────┼──────────────► │ speech-to-speech                     │
- │        ◄─ audio, transcripts, │ ◄───────────── │ VAD → Parakeet → Qwen3-4B → Qwen3-TTS │
- │           tool calls          │                └──────────────────────────────────────┘
- │ tool call ─► duck-tools.js ─► │  window.rl     ┌──────────────────────────────────────┐
- │   (measured, honest)          ├──────────────► │ Pollen's Microduck sim (iframe)       │
- │ Inspector · relay race        │                │ MuJoCo (WASM) + ONNX walking policies │
- └───────────────────────────────┘                └──────────────────────────────────────┘
-        ▲ stage timings (SSE) from lab/server.py, which starts/stops the agent
-```
-| File | Role |
-|---|---|
-| `lab/server.py` | Starts/stops the agent, streams its timings, serves the page, sim and moves |
-| `lab/static/app.js` | Browser voice client (OpenAI Realtime protocol), UI, tool handling |
-| `lab/static/duck-tools.js` | Simon's moves, measured |
-| `lab/static/duck-body.js` | Head poses, beak, camera, keyboard |
-| `lab/static/inspector.js` | The Inspector |
-| `lab/static/pose.js` | Webcam pose tracking (tested with `node --test lab/static/tests/pose-rules.test.mjs`) |
 
-## Roadmap — and a mini tutorial series
-1. An open voice agent on your laptop — and where the latency goes
-2. Talking to a robot: tools, honest agents, and building the Inspector first
-3. Your webcam as a referee: body tracking in the browser
-4. Build a voice game master: **Simon (the duck) says…**
-5. *Take it further:* multiplayer Simon Says over peer-to-peer WebRTC
+Or double-click **Duck Lab.command** in Finder. The launcher opens **http://localhost:8770/play** and starts the voice agent. Wait for **READY**, complete camera setup, and press **Play!**
 
-Also on the list: a creature voice (Simon quacks instead of talking), and a Hugging Face Space to try it in a browser.
+For conversation, tap the talk button or hold Space. For diagnostics, open **http://localhost:8770**. If your dependency folders are elsewhere, set `S2S_DIR` and `SIM_DIST`; see [running the lab](notes/running-the-lab.md) for logs and restart controls.
 
-## Credits & licences
-- **Microduck**, its simulator and trained policies: [Pollen Robotics](https://github.com/pollen-robotics) (Hugging Face).
-  Microduck's software stack is open source; its hardware design is not. This repo does **not** redistribute the
-  simulator — it ships a small patch (`sim/embed-and-jaw.patch`) applied to your own download.
-- The "polite bow" move is a community-trained policy by [fffiloni](https://huggingface.co/fffiloni/microduck-polite-bow-b1d864),
-  downloaded at runtime.
-- Voice agent: [huggingface/speech-to-speech](https://github.com/huggingface/speech-to-speech). Pose tracking:
-  [MediaPipe](https://ai.google.dev/edge/mediapipe) (loaded from a CDN).
+<details>
+<summary><strong>Under the hood</strong></summary>
+
+| Part | Responsibility |
+| --- | --- |
+| Silero VAD + Smart Turn | Speech activity and turn detection |
+| Parakeet TDT 0.6B v3 | Speech to text via MLX |
+| Qwen3 4B Instruct | Local conversation and tool calls |
+| Qwen3-TTS 1.7B CustomVoice | Speech and saved voice lines |
+| MediaPipe Pose Landmarker | Browser webcam referee |
+| MuJoCo + ONNX policies | Microduck simulation and movement |
+| FastAPI + speech-to-speech | Local server and voice-agent connection |
+
+Game rules: `lab/static/simon-says.js`. Pose checks: `pose.js`. Voice caching: `voice-lines.js`. Player UI: `play.js`. The Inspector shows messages, movement traces, and voice timings.
+
+Run the game and pose tests with `node --test lab/static/tests/*.test.mjs`.
+
+</details>
+
+## Credits
+
+[Microduck and its simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator): Pollen Robotics. Voice pipeline: [Hugging Face speech-to-speech](https://github.com/huggingface/speech-to-speech). Pose tracking: [MediaPipe](https://ai.google.dev/edge/mediapipe). Community bow policy: [fffiloni](https://huggingface.co/fffiloni/microduck-polite-bow-b1d864).
+
+This repo includes a simulator patch, not the simulator itself. See [sim/README.md](sim/README.md) for setup and licence notes.
 
 Made by [Liz Myers](https://github.com/LizMyers), with Claude.

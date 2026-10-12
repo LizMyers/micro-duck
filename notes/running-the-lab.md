@@ -33,7 +33,8 @@ That's why the page is sometimes already "Loading…" before you've touched anyt
    Once it's running, restart from the page: Simon OS → **Restart server**.
    *(Earlier today we used `uv run duck-lab 2>&1 | tee lab/logs/lab.log`: `2>&1` merges output and
    errors, `tee` copies them to a file. Not needed any more.)*
-3. Open **http://localhost:8770** (`localhost`, not 127.0.0.0).
+3. The launcher opens the game at **http://localhost:8770/play**. For Duck Lab diagnostics,
+   open **http://localhost:8770** (`localhost`, not 127.0.0.0).
 
 ## Simon OS and Help: the same thing, in the page
 Starting the lab now **always** starts the agent too, with the model it used last
