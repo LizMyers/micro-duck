@@ -6,7 +6,7 @@ Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/int
 
 Open models running on a Mac give Simon his voice and personality. Chat between games, then play seated at your desk, with head turns and raised arms.
 
-[The design story on LizM.dev](https://lizm.dev) · [Development notes](notes/)
+[The design story on LizM.dev](https://lizm.dev)
 
 ## One round with Simon
 
@@ -36,7 +36,7 @@ Speech processing runs on your Mac; webcam pose tracking runs in your browser. N
 
 Tested on Apple Silicon: M3 Pro, 18 GB memory. The voice agent uses roughly 8 GB; its models download on first use.
 
-One-time setup includes installing [speech-to-speech from source](notes/01-local-voice-agent.md#1-install-from-source-so-we-can-contribute-back-later) with `uv` and Python 3.11, and [building the patched simulator](sim/README.md) with Node/npm. The voice-agent integration also relies on local changes described in the [tool-call notes](notes/upstream-pr-tool-calls.md); this repo does not ship those changes or an automated setup script.
+One-time setup includes installing [speech-to-speech from source](notes/01-local-voice-agent.md#1-install-from-source-so-we-can-contribute-back-later) with `uv` and Python 3.11, and [building the patched simulator](sim/README.md) with Node/npm. The voice-agent integration also relies on local changes described in the [tool-call fixes (PR #721)](https://github.com/huggingface/speech-to-speech/pull/721); this repo does not ship those changes or an automated setup script.
 
 Once those dependencies are installed:
 
