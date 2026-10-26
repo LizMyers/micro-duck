@@ -58,16 +58,47 @@ For conversation, tap the talk button or hold Space. For diagnostics, open **htt
 
 ## How it works
 
-![How Simon comes to life: local Python servers connect to the JavaScript game interface in Chrome, which controls Microduck's simulated body. Arrows show app delivery, speech and tool calls, movement commands, and measured results.](docs/how-it-works.png)
+```mermaid
+flowchart LR
+    subgraph PY["Local Python processes"]
+        F["FastAPI · :8770<br/>App, assets and saved audio"]
+        V["Speech agent · :8765<br/>Turn detection → speech recognition<br/>Qwen3 → speech synthesis"]
+    end
 
-On your Mac, **FastAPI (:8770)** serves the interface and saved audio, while a separate **speech-to-speech server (:8765)** gives Simon his voice. **JavaScript in Chrome** runs the game, checks webcam poses, and exchanges audio and tool calls directly with the voice server. It drives **Microduck's simulated body** and returns measured movement results to the model.
+    subgraph CH["Chrome · JavaScript"]
+        J["Interface and audio client<br/>Mic capture · playback · tool dispatch"]
+        P["Webcam → MediaPipe"]
+        G["Game engine<br/>Commands · timing · scoring"]
+        D["Microduck simulator<br/>MuJoCo + ONNX<br/>Head · beak · locomotion"]
+    end
+
+    F -. "Launches" .-> V
+    F -. "HTTP: app and saved audio" .-> J
+    J <-->|"Realtime WebSocket<br/>Audio, text and tool events"| V
+    P -->|"Player poses"| G
+    G -->|"Voice lines"| J
+    G -->|"Head cues"| D
+    J -->|"Body control / movement tools¹"| D
+    D -->|"State for movement checks¹"| J
+
+    classDef component fill:#ffffff,stroke:#64748b,color:#172033,stroke-width:1px;
+    class F,V,J,P,G,D component;
+    style PY fill:#f8fafc,stroke:#cbd5e1,color:#172033
+    style CH fill:#f8fafc,stroke:#cbd5e1,color:#172033
+```
+
+All components run on one Mac. The browser connects directly to the speech agent over a local WebSocket; FastAPI serves the app and manages the agent process.
+
+**The browser owns the game.** MediaPipe supplies player poses to deterministic JavaScript rules. Fixed voice lines replay from the browser cache; missing lines and improvised reactions use the speech agent. Webcam video stays in the browser.
+
+**¹ Movement tools are enabled in Duck Lab (`/`).** The game page (`/play`) offers the `play_simon_says` tool and controls the duck's head and beak locally. In Duck Lab, JavaScript acknowledges that a movement has started, checks simulator state, and reports failures to the agent. The duck is a browser simulation.
 
 - **Speech-to-speech pipeline.** Hugging Face's [speech-to-speech](https://github.com/huggingface/speech-to-speech) runs as a local Python server with models from the Hub: Parakeet for speech to text, Smart Turn for end-of-turn detection, Qwen3 4B as the language model and Qwen3-TTS for the voice. The browser talks to it over the OpenAI Realtime protocol.
 - **Voice and latency.** Qwen3-TTS is slower than Kokoro, so we save the audio for fixed game lines. After the first take, every command and score line plays instantly.
 - **Game logic in plain JavaScript.** The browser runs the game: rounds, timing, scoring and the nine commands. Game lines are sent as out-of-band responses, so they never grow the model's conversation history.
 - **Turn-taking.** The mic stays open for the whole session. Smart Turn decides when you've finished speaking from how you stopped, not just from silence. If you speak during a reply, the reply pauses rather than being dropped.
 - **Webcam referee.** MediaPipe pose tracking compares each move to your starting stance. A move only counts if you hold it for a second, and 57 unit tests cover the rules, including mirrored left and right. Video never leaves your laptop.
-- **Moves as tools.** The robot's 11 moves (step, turn, sit, bow, kick, skates and more) are exposed to the model as tools. Each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
+- **Moves as tools.** In Duck Lab, the robot's 11 moves (step, turn, sit, bow, kick, skates and more) are exposed to the model as tools. JavaScript drives Pollen's trained walking policies and checks the resulting simulator state. The model receives a start acknowledgement; if a movement fails, JavaScript sends failure feedback and requests a spoken explanation.
 
 <details>
 <summary><strong>Models and where things live</strong></summary>
