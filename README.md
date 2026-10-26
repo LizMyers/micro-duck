@@ -58,40 +58,13 @@ For conversation, tap the talk button or hold Space. For diagnostics, open **htt
 
 ## How it works
 
-```mermaid
-flowchart LR
-    subgraph PY["Local Python processes"]
-        F["FastAPI · :8770<br/>App, assets and saved audio"]
-        V["Speech agent · :8765<br/>Turn detection → speech recognition<br/>Qwen3 → speech synthesis"]
-    end
-
-    subgraph CH["Chrome · JavaScript"]
-        J["Interface and audio client<br/>Mic capture · playback · tool dispatch"]
-        P["Webcam → MediaPipe"]
-        G["Game engine<br/>Commands · timing · scoring"]
-        D["Microduck simulator<br/>MuJoCo + ONNX<br/>Head · beak · locomotion"]
-    end
-
-    F -. "Launches" .-> V
-    F -. "HTTP: app and saved audio" .-> J
-    J <-->|"Realtime WebSocket<br/>Audio, text and tool events"| V
-    P -->|"Player poses"| G
-    G -->|"Voice lines"| J
-    G -->|"Head cues"| D
-    J -->|"Body control / movement tools¹"| D
-    D -->|"State for movement checks¹"| J
-
-    classDef component fill:#ffffff,stroke:#64748b,color:#172033,stroke-width:1px;
-    class F,V,J,P,G,D component;
-    style PY fill:#f8fafc,stroke:#cbd5e1,color:#172033
-    style CH fill:#f8fafc,stroke:#cbd5e1,color:#172033
-```
+![Microduck system architecture: FastAPI serves the app and starts a separate speech agent. The JavaScript browser application exchanges audio and tool events with the agent over a local WebSocket and controls the Microduck simulator. Webcam pose tracking and game rules run in the browser.](docs/how-it-works.png)
 
 All components run on one Mac. The browser connects directly to the speech agent over a local WebSocket; FastAPI serves the app and manages the agent process.
 
 **The browser owns the game.** MediaPipe supplies player poses to deterministic JavaScript rules. Fixed voice lines replay from the browser cache; missing lines and improvised reactions use the speech agent. Webcam video stays in the browser.
 
-**¹ Movement tools are enabled in Duck Lab (`/`).** The game page (`/play`) offers the `play_simon_says` tool and controls the duck's head and beak locally. In Duck Lab, JavaScript acknowledges that a movement has started, checks simulator state, and reports failures to the agent. The duck is a browser simulation.
+**Movement tools are enabled in Duck Lab (`/`).** The game page (`/play`) offers the `play_simon_says` tool and controls the duck's head and beak locally. In Duck Lab, JavaScript acknowledges that a movement has started, checks simulator state, and reports failures to the agent. The duck is a browser simulation.
 
 - **Speech-to-speech pipeline.** Hugging Face's [speech-to-speech](https://github.com/huggingface/speech-to-speech) runs as a local Python server with models from the Hub: Parakeet for speech to text, Smart Turn for end-of-turn detection, Qwen3 4B as the language model and Qwen3-TTS for the voice. The browser talks to it over the OpenAI Realtime protocol.
 - **Voice and latency.** Qwen3-TTS is slower than Kokoro, so we save the audio for fixed game lines. After the first take, every command and score line plays instantly.
