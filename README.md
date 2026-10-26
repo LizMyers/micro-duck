@@ -115,6 +115,8 @@ A third bug, positional arguments being dropped (`turn_left(360)` lost its value
 
 ## Credits
 
+Diagram duck-head reference: [Pollen Robotics’ Microduck artwork](https://pollen-robotics.com/microduck/press-kit/).
+
 [Microduck and its simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator): Pollen Robotics. Voice pipeline: [Hugging Face speech-to-speech](https://github.com/huggingface/speech-to-speech). Pose tracking: [MediaPipe](https://ai.google.dev/edge/mediapipe). Community bow policy: [fffiloni](https://huggingface.co/fffiloni/microduck-polite-bow-b1d864).
 
 This repo includes a simulator patch, not the simulator itself. See [sim/README.md](sim/README.md) for setup and licence notes. Licensed under [Apache 2.0](LICENSE).
