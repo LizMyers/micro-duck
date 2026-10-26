@@ -58,15 +58,9 @@ For conversation, tap the talk button or hold Space. For diagnostics, open **htt
 
 ## How it works
 
-```
-Mic ────────► Parakeet ──► Smart Turn ──► Qwen3 4B ──► Qwen3-TTS ──► Speaker
-             speech to text  end of turn   language model   voice (Aiden)
-                                              │
-                                              └─ tool calls ──► Microduck simulator
-                                                                (MuJoCo + ONNX walking policies)
+![How Simon comes to life: local Python servers connect to the JavaScript game interface in Chrome, which controls Microduck's simulated body. Arrows show app delivery, speech and tool calls, movement commands, and measured results.](docs/how-it-works.png)
 
-Webcam ──► MediaPipe pose tracking, in the browser ──► checks each move
-```
+On your Mac, **FastAPI (:8770)** serves the interface and saved audio, while a separate **speech-to-speech server (:8765)** gives Simon his voice. **JavaScript in Chrome** runs the game, checks webcam poses, and exchanges audio and tool calls directly with the voice server. It drives **Microduck's simulated body** and returns measured movement results to the model.
 
 - **Speech-to-speech pipeline.** Hugging Face's [speech-to-speech](https://github.com/huggingface/speech-to-speech) runs as a local Python server with models from the Hub: Parakeet for speech to text, Smart Turn for end-of-turn detection, Qwen3 4B as the language model and Qwen3-TTS for the voice. The browser talks to it over the OpenAI Realtime protocol.
 - **Voice and latency.** Qwen3-TTS is slower than Kokoro, so we save the audio for fixed game lines. After the first take, every command and score line plays instantly.
