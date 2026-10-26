@@ -58,15 +58,7 @@ For conversation, tap the talk button or hold Space. For diagnostics, open **htt
 
 ## How it works
 
-```
-Mic ────────► Parakeet ──► Smart Turn ──► Qwen3 4B ──► Qwen3-TTS ──► Speaker
-             speech to text  end of turn   language model   voice (Aiden)
-                                              │
-                                              └─ tool calls ──► Microduck simulator
-                                                                (MuJoCo + ONNX walking policies)
-
-Webcam ──► MediaPipe pose tracking, in the browser ──► checks each move
-```
+![System architecture. Python processes: a FastAPI server on port 8770 serves the app, assets and saved audio, and starts and stops the speech agent on port 8765 (Silero and Smart Turn for turn detection, Parakeet for speech recognition, Qwen3 for conversation and tool calls, Qwen3-TTS for speech). Chrome: the browser application exchanges mic audio, text requests and tool feedback with the speech agent over a Realtime WebSocket, and receives speech audio, transcripts and tool calls. It sends body control to the Microduck simulator (an iframe with MuJoCo physics and ONNX movement policies) and gets its state back. Game logic runs only in the browser: webcam and MediaPipe, then rules and scoring, then cached voice playback; missing lines and improvised reactions use the speech agent.](docs/architecture.png)
 
 - **Speech-to-speech pipeline.** Hugging Face's [speech-to-speech](https://github.com/huggingface/speech-to-speech) runs as a local Python server with models from the Hub: Parakeet for speech to text, Smart Turn for end-of-turn detection, Qwen3 4B as the language model and Qwen3-TTS for the voice. The browser talks to it over the OpenAI Realtime protocol.
 - **Voice and latency.** Qwen3-TTS is slower than Kokoro, so we save the audio for fixed game lines. After the first take, every command and score line plays instantly.
