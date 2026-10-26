@@ -8,8 +8,6 @@ Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/int
 
 Open models running on a Mac give Simon his voice and personality. Chat between games, then play seated at your desk, with head turns and raised arms.
 
-[The design story on LizM.dev](https://lizm.dev)
-
 ## One round with Simon
 
 | Simon says… | Your move | What happens |
@@ -123,4 +121,4 @@ A third bug, positional arguments being dropped (`turn_left(360)` lost its value
 
 This repo includes a simulator patch, not the simulator itself. See [sim/README.md](sim/README.md) for setup and licence notes. Licensed under [Apache 2.0](LICENSE).
 
-Made by [Liz Myers](https://github.com/LizMyers), with Claude.
+Made by [Liz Myers](https://lizm.dev/#microduck), with Claude.
