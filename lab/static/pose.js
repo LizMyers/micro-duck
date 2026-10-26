@@ -8,12 +8,13 @@
 // evaluatePoseDetailed(), a pure function of the landmarks, so they can be
 // unit-tested without a camera (tests/pose-rules.test.mjs).
 
-// Pinned versions (verified to exist): the library, its WASM runtime, the model.
+// The library, its WASM runtime and the model are served by the lab itself
+// (static/vendor/mediapipe, see its README), so the referee works offline.
 export const TASKS_VISION_VERSION = "1.0.1";
-const TASKS_VISION_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/+esm`;
-const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
-const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+const VENDOR = "/static/vendor/mediapipe";
+const TASKS_VISION_URL = `${VENDOR}/vision_bundle.js`;
+const WASM_URL = `${VENDOR}/wasm`;
+const MODEL_URL = `${VENDOR}/pose_landmarker_lite.task`;
 
 // MediaPipe's landmark numbers. Left/right are the PERSON's own left/right,
 // whatever the mirrored video looks like.

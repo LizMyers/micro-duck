@@ -30,7 +30,7 @@ Simon has no arms, so he can call arm moves but can’t demonstrate them.
 
 **Conversation leaves room for surprise.** Between games, a local voice agent handles chat. Generated reactions add variety, while head movements, quacks, and a moving beak bring the simulated duck to life.
 
-Speech processing runs on your Mac; webcam pose tracking runs in your browser. No cloud inference or API keys. Model downloads and CDN-hosted pose assets still need internet access.
+Speech processing runs on your Mac; webcam pose tracking runs in your browser. No cloud inference or API keys. After setup, Simon works offline: the voice models download once, and the webcam referee's files ship with this repo.
 
 ## Run it on your Mac
 
