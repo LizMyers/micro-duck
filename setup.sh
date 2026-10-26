@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-time setup for Duck Lab. Installs the two companions next to this repo:
+# One-time setup for Simon Says. Installs the two companions next to this repo:
 #   ../speech-to-speech       Hugging Face's voice agent
 #   ../microduck-simulator    Pollen Robotics' simulator, patched and built
 # Safe to run again: finished steps are skipped.
@@ -22,7 +22,7 @@ fail() { printf '\n\033[31mError:\033[0m %s\n' "$1" >&2; exit 1; }
 
 step "Checking requirements"
 [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ] \
-  || fail "Duck Lab needs an Apple Silicon Mac (the voice agent runs on MLX)."
+  || fail "Simon Says needs an Apple Silicon Mac (the voice agent runs on MLX)."
 for tool in git uv node npm; do
   command -v "$tool" >/dev/null 2>&1 || case "$tool" in
     uv)       fail "uv not found. Install it: https://docs.astral.sh/uv/" ;;
@@ -30,7 +30,7 @@ for tool in git uv node npm; do
     *)        fail "$tool not found." ;;
   esac
 done
-[ -d "/Applications/Google Chrome.app" ] || echo "Note: Google Chrome not found in /Applications. The lab runs in Chrome."
+[ -d "/Applications/Google Chrome.app" ] || echo "Note: Google Chrome not found in /Applications. The game runs in Chrome."
 echo "OK"
 
 step "Speech-to-speech (voice agent) in $S2S"
@@ -63,5 +63,5 @@ else
 fi
 
 step "Done"
-echo "Start the lab with:  uv run duck-lab   (or double-click Duck Lab.command)"
+echo "Start the game with:  uv run simon-says   (or double-click Simon Says.command)"
 echo "The first start downloads the voice models, which takes a few minutes."

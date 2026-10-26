@@ -9,7 +9,8 @@ dependencies = [
 ]
 
 [project.scripts]
-duck-lab = "lab.server:main"
+simon-says = "lab.server:main"
+duck-lab = "lab.server:main"   # the older name, kept working
 
 [build-system]
 requires = ["hatchling"]

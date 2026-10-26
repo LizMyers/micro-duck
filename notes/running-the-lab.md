@@ -5,7 +5,7 @@
 ## Two programs, not one
 | Program | What it is | Port | What starts it |
 |---|---|---|---|
-| **The lab** | The web page plus a small FastAPI server behind it (`lab/server.py`) | 8770 | You: `uv run duck-lab` or double-click `Duck Lab.command` |
+| **The lab** | The web page plus a small FastAPI server behind it (`lab/server.py`) | 8770 | You: `uv run simon-says` or double-click `Simon Says.command` (`uv run duck-lab` still works) |
 | **The agent** | HF speech-to-speech: listens, thinks (Qwen3 4B), speaks. About 8 GB of memory | 8765 | The **Start agent** button, *or the lab on its own* (see below) |
 
 The web page itself never starts anything. It asks the lab, and the lab starts or stops the agent.
@@ -24,10 +24,10 @@ That's why the page is sometimes already "Loading…" before you've touched anyt
 ## Restarting it yourself (the shared way)
 1. **Stop:** in the Terminal window running the lab, press **Ctrl+C** (or close the window).
    The lab shuts the agent down on its way out.
-2. **Start:** double-click **Duck Lab.command**, or in Terminal:
+2. **Start:** double-click **Simon Says.command**, or in Terminal:
    ```
    cd ~/Documents/Development/micro-duck
-   uv run duck-lab
+   uv run simon-says
    ```
    The server writes its own `lab/logs/lab.log` (same lines as the Terminal), so Claude can read it.
    Once it's running, restart from the page: Simon OS → **Restart server**.

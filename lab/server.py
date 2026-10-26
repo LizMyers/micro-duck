@@ -306,6 +306,9 @@ def footprint_mb(pid: int) -> int | None:
     return round(float(m.group(1)) * {"K": 1 / 1024, "M": 1, "G": 1024}[m.group(2)])
 
 
+LAB_COMMANDS = r"bin/(simon-says|duck-lab)"  # how this server shows up in `ps`
+
+
 def find_pids(pattern: str) -> list[int]:
     out = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True).stdout
     return [int(p) for p in out.split()]
@@ -315,10 +318,11 @@ def leftovers() -> list[dict]:
     """Other copies of the lab, and agents that no lab owns (e.g. from a hard restart)."""
     ours = {os.getpid(), agent.proc.pid if agent.proc else -1}
     found = []
-    for kind, pattern in (("lab", "bin/duck-lab"), ("agent", "speech-to-speech serve")):
+    # The lab runs as "simon-says" (players) or "duck-lab" (the older name, kept working).
+    for kind, pattern in (("lab", LAB_COMMANDS), ("agent", "speech-to-speech serve")):
         for pid in find_pids(pattern):
             info = process_info(pid)
-            if pid in ours or not info or (kind == "lab" and "bin/duck-lab" not in info["command"]):
+            if pid in ours or not info or (kind == "lab" and not re.search(LAB_COMMANDS, info["command"])):
                 continue
             found.append({**info, "kind": kind})
     return found
@@ -363,7 +367,7 @@ async def no_cache(request, call_next):
 async def _startup() -> None:
     agent.loop = asyncio.get_running_loop()
     lab_log(f"Server started: pid {os.getpid()}, http://localhost:{LAB_PORT}.",
-            cmd="uv run duck-lab   (or double-click Duck Lab.command)")
+            cmd="uv run simon-says   (or double-click Simon Says.command)")
     for p in await asyncio.to_thread(leftovers):
         lab_log(f"Stray process: {describe(p)}. Stop strays stops it.", cmd=f"kill {p['pid']}", level="warn")
     await asyncio.to_thread(make_test_prompts)
@@ -541,9 +545,9 @@ async def system(check: bool = False) -> dict:
                 cmd=f"cat {STATE_FILE_REL}")
         if s["leftovers"]:
             for p in s["leftovers"]:
-                lab_log(f"Stray process: {describe(p)}.", cmd='ps -ef | grep -E "duck-lab|speech-to-speech"', level="warn")
+                lab_log(f"Stray process: {describe(p)}.", cmd='ps -ef | grep -E "simon-says|duck-lab|speech-to-speech"', level="warn")
         else:
-            lab_log("No stray processes.", cmd='ps -ef | grep -E "duck-lab|speech-to-speech"',
+            lab_log("No stray processes.", cmd='ps -ef | grep -E "simon-says|duck-lab|speech-to-speech"',
                     level="good")
     return s
 
@@ -659,7 +663,7 @@ def restart_lab() -> dict:
     """Replace this lab with a fresh copy of itself (same pid, same Terminal, same log)."""
     lab_log("Restarting server: stopping the model, loading fresh code, starting the model again. "
             "The page reloads when it's back.",
-            cmd="Ctrl+C in the server's Terminal, then: uv run duck-lab")
+            cmd="Ctrl+C in the server's Terminal, then: uv run simon-says")
 
     def later() -> None:
         time.sleep(0.5)

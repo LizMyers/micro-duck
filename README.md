@@ -47,14 +47,14 @@ You'll need:
 git clone https://github.com/LizMyers/micro-duck.git
 cd micro-duck
 ./setup.sh
-uv run duck-lab
+uv run simon-says
 ```
 
 `setup.sh` installs Hugging Face [speech-to-speech](https://github.com/huggingface/speech-to-speech) (the voice agent) and builds Pollen Robotics' [Microduck simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator) with this repo's patch. Both go in folders next to this repo, and it's safe to run again. Until the [tool-call fixes (PR #721)](https://github.com/huggingface/speech-to-speech/pull/721) are merged upstream, it installs speech-to-speech from the PR's branch.
 
-Instead of `uv run duck-lab`, you can double-click **Duck Lab.command** in Finder. The launcher opens **http://localhost:8770/play** and starts the voice agent. Wait for **READY**, complete camera setup, and press **Play!**
+Instead of `uv run simon-says`, you can double-click **Simon Says.command** in Finder. It opens **http://localhost:8770/play** and starts the voice agent. Wait for **READY**, complete camera setup, and press **Play!**
 
-For conversation, tap the talk button or hold Space. For diagnostics, open **http://localhost:8770**. If your dependency folders are elsewhere, set `S2S_DIR` and `SIM_DIST`; see [running the lab](notes/running-the-lab.md) for logs and restart controls.
+For conversation, tap the talk button or hold Space. If your dependency folders are elsewhere, set `S2S_DIR` and `SIM_DIST`.
 
 ## How it works
 
@@ -93,6 +93,8 @@ For conversation, tap the talk button or hold Space. For diagnostics, open **htt
 | `notes/` | The build diary: decisions, timings and what we learned |
 
 The Inspector shows messages, movement traces, and voice timings.
+
+**The workshop.** **http://localhost:8770** is the lab we built Simon in: model and voice controls, the Inspector, logs and restart controls. You don't need it to play. See [running the lab](notes/running-the-lab.md).
 
 Run the game and pose tests with `node --test lab/static/tests/*.test.mjs`.
 
