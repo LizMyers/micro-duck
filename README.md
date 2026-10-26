@@ -8,9 +8,9 @@ Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/int
 
 Open models running on a Mac give Simon his voice and personality. Chat between games, then play seated at your desk, with head turns and raised arms.
 
-[![Watch the 45-second demo on YouTube: Simon tricks Liz with "Look up!", then she wins the rematch](docs/demo.jpg)](https://youtu.be/Rr_oDcU3-9M)
+[![Watch the 45-second demo on YouTube: Simon tricks Liz with "Look up!", then she wins the rematch](docs/demo.jpg)](https://youtu.be/OYO-a5_Stlw)
 
-**▶ [Watch the 45-second demo](https://youtu.be/Rr_oDcU3-9M)**: Simon tricks Liz in round one, then she wins the rematch.
+**▶ [Watch the 45-second demo](https://youtu.be/OYO-a5_Stlw)**: Simon tricks Liz in round one, then she wins the rematch.
 
 ## One round with Simon
 
