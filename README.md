@@ -118,4 +118,4 @@ A third bug, positional arguments being dropped (`turn_left(360)` lost its value
 
 This repo includes a simulator patch, not the simulator itself. See [sim/README.md](sim/README.md) for setup and licence notes. Licensed under [Apache 2.0](LICENSE).
 
-Made by [Liz Myers](https://lizm.dev/#microduck), with Claude.
+Made by [Liz Myers](https://lizm.dev/#microduck), with Claude Code.
