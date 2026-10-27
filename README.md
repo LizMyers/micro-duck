@@ -71,7 +71,7 @@ For conversation, tap the talk button or hold Space. If your dependency folders 
 - **Moves as tools.** The robot's 11 moves (step, turn, sit, bow, kick, skates and more) are exposed to the model as tools. Each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
 
 <details>
-<summary><strong>Models and where things live</strong></summary>
+<summary><strong>Model Details</strong></summary>
 
 | Part | Responsibility |
 | --- | --- |
