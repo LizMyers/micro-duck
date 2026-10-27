@@ -71,7 +71,7 @@ For conversation, tap the talk button or hold Space. If your dependency folders 
 - **Poses and moves.** *Poses* are what you do in the game: the nine looks, turns and arm raises the webcam referee checks. *Moves* are what Simon's own body does. In the game, the model has one tool, starting a game, so "Let's go again!" starts a rematch by voice. In the workshop (localhost:8770), Simon's 11 robot moves (step, turn, sit, bow, kick, skates and more) are tools too: each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
 
 <details>
-<summary><strong>Model Details</strong></summary>
+<summary><strong>Models Used</strong></summary>
 
 | Part | Responsibility |
 | --- | --- |
