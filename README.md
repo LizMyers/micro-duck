@@ -4,7 +4,7 @@
 
 **A tiny robot duck. A cheeky voice. A game you already know.**
 
-Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/) from Pollen Robotics. He calls the moves, tries to catch you out, and celebrates when he wins. Your webcam is the referee.
+Meet Simon: a virtual [Microduck](https://pollen-robotics.com/microduck/blog/introducing-microduck/) from Pollen Robotics. He calls the poses, tries to catch you out, and celebrates when he wins. Your webcam is the referee.
 
 Open models running on a Mac give Simon his voice and personality. Chat between games, then play seated at your desk, with head turns and raised arms.
 
@@ -14,15 +14,15 @@ Open models running on a Mac give Simon his voice and personality. Chat between 
 
 ## One round with Simon
 
-| Simon says… | Your move | What happens |
+| Simon says… | Your pose | What happens |
 | --- | --- | --- |
-| **“Simon says, look left.”** | Look left and hold it. | The webcam checks your move. You’re through! |
+| **“Simon says, look left.”** | Look left and hold it. | The webcam checks your pose. You’re through! |
 | **“Raise both arms!”** | Stay still. He didn’t say Simon says. | Nice try, Simon. |
 | **“Simon says, raise your right arm.”** | Raise your left arm instead. | He catches you out — and gets his moment to gloat. |
 
 Get all five rounds right to win a game. Make a mistake and Simon wins. The scoreboard keeps your running totals, and he asks for a rematch.
 
-Before you play, camera setup helps you face forward and leave enough room for your arms. Moves must be held for a second; the response timer starts after Simon finishes the command. If you leave the camera’s view mid-round, that round doesn’t count.
+Before you play, camera setup helps you face forward and leave enough room for your arms. Poses must be held for a second; the response timer starts after Simon finishes the command. If you leave the camera’s view mid-round, that round doesn’t count.
 
 
 ## Fair rules. Plenty of personality.
@@ -42,7 +42,7 @@ Tested on Apple Silicon: M3 Pro, 18 GB memory. The voice agent uses roughly 8 GB
 You'll need:
 
 - An Apple Silicon Mac (the voice agent runs on MLX)
-- Google Chrome, a webcam and a microphone (headphones recommended)
+- Google Chrome, a webcam and a microphone. Speakers are fine (the browser cancels echo); headphones help in a noisy room.
 - [uv](https://docs.astral.sh/uv/) and Git
 - Node.js with npm, to build the simulator once
 
@@ -67,8 +67,8 @@ For conversation, tap the talk button or hold Space. If your dependency folders 
 - **Voice and latency.** Qwen3-TTS is slower than Kokoro, so we save the audio for fixed game lines. After the first take, every command and score line plays instantly.
 - **Game logic in plain JavaScript.** The browser runs the game: rounds, timing, scoring and the nine commands. Game lines are sent as out-of-band responses, so they never grow the model's conversation history.
 - **Turn-taking.** The mic stays open for the whole session. Smart Turn decides when you've finished speaking from how you stopped, not just from silence. If you speak during a reply, the reply pauses rather than being dropped.
-- **Webcam referee.** MediaPipe pose tracking compares each move to your starting stance. A move only counts if you hold it for a second, and 57 unit tests cover the rules, including mirrored left and right. Video never leaves your laptop.
-- **Moves as tools.** The robot's 11 moves (step, turn, sit, bow, kick, skates and more) are exposed to the model as tools. Each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
+- **Webcam referee.** MediaPipe pose tracking compares each pose to your starting stance. A pose only counts if you hold it for a second, and 57 unit tests cover the rules, including mirrored left and right. Video never leaves your laptop.
+- **Poses and moves.** *Poses* are what you do in the game: the nine looks, turns and arm raises the webcam referee checks. *Moves* are what Simon's own body does. In the game, the model has one tool, starting a game, so "Let's go again!" starts a rematch by voice. In the workshop (localhost:8770), Simon's 11 robot moves (step, turn, sit, bow, kick, skates and more) are tools too: each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
 
 <details>
 <summary><strong>Model Details</strong></summary>
@@ -87,7 +87,7 @@ For conversation, tap the talk button or hold Space. If your dependency folders 
 | --- | --- |
 | `lab/server.py` | Starts the voice agent and serves the game, the simulator and the moves |
 | `lab/static/simon-says.js` | The game: rounds, rules, scoring |
-| `lab/static/pose.js` | Pose tracking that checks your moves |
+| `lab/static/pose.js` | Pose tracking that checks your poses |
 | `lab/static/voice-lines.js` | Saved voice lines |
 | `lab/static/turn-taking.js` | Turn-taking and interruptions |
 | `lab/static/duck-tools.js` | The robot's moves, as tools the model can call |
