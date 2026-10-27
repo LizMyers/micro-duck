@@ -4,7 +4,7 @@ Duck Lab embeds Pollen Robotics' Microduck browser simulator
 ([Space: pollen-robotics/microduck-simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator)),
 with a tiny patch: `?embed=1` (just the 3D duck, no HUD/title menu) and `window.rl.setJaw(0..1)` (beak control).
 
-> The Space declares **no licence**. Fine for local use; ask Pollen before publishing a modified copy.
+> The Space is **Apache 2.0** (it had no licence until Oct 2026): a hosted copy must include the licence, note our changes and credit Pollen. We asked them about credit and using the "Microduck" name (27 Oct).
 
 ## Build it (one time)
 ```bash
