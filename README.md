@@ -24,7 +24,6 @@ Get all five rounds right to win a game. Make a mistake and Simon wins. The scor
 
 Before you play, camera setup helps you face forward and leave enough room for your arms. Moves must be held for a second; the response timer starts after Simon finishes the command. If you leave the camera’s view mid-round, that round doesn’t count.
 
-Simon has no arms, so he can call arm moves but can’t demonstrate them. 
 
 ## Fair rules. Plenty of personality.
 
