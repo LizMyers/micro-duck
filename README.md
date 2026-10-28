@@ -68,7 +68,7 @@ For conversation, tap the talk button or hold Space. If your dependency folders 
 - **Game logic in plain JavaScript.** The browser runs the game: rounds, timing, scoring and the nine commands. Game lines are sent as out-of-band responses, so they never grow the model's conversation history.
 - **Turn-taking.** The mic stays open for the whole session. Smart Turn decides when you've finished speaking from how you stopped, not just from silence. If you speak during a reply, the reply pauses rather than being dropped.
 - **Webcam referee.** MediaPipe pose tracking compares each pose to your starting stance. A pose only counts if you hold it for a second, and 57 unit tests cover the rules, including mirrored left and right. Video never leaves your laptop.
-- **Poses and moves.** *Poses* are what you do in the game: the nine looks, turns and arm raises the webcam referee checks. *Moves* are what Simon's own body does. In the game, the model has one tool, starting a game, so "Let's go again!" starts a rematch by voice. In the workshop (localhost:8770), Simon's 11 robot moves (step, turn, sit, bow, kick, skates and more) are tools too: each call drives Pollen's trained walking policies and is measured, and the result goes back to the model, so it never reports a move that didn't happen.
+- **Poses and moves.** *Poses* are what you do in the game: the nine looks, turns and arm raises the webcam referee checks. *Moves* are what Simon's own body does. In the game, the model has one tool, starting a game, so "Let's go again!" starts a rematch by voice. In the workshop (localhost:8770), Simon's 11 robot moves (step, turn, sit, bow, kick, skates and more) are tools too. Each call drives Pollen's trained walking policies, and the model hears "started" straight away. The page then measures what the duck actually did; if a move failed, it tells the model and Simon says so, so he never claims a move that didn't happen.
 
 <details>
 <summary><strong>Models Used</strong></summary>
@@ -113,6 +113,8 @@ Building a real game on speech-to-speech with a small local model surfaced tool-
 A third bug, positional arguments being dropped (`turn_left(360)` lost its value), had already been fixed upstream in #579.
 
 ## Credits
+
+Diagram duck-head reference: [Pollen Robotics’ Microduck artwork](https://pollen-robotics.com/microduck/press-kit/).
 
 [Microduck and its simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator): Pollen Robotics. Voice pipeline: [Hugging Face speech-to-speech](https://github.com/huggingface/speech-to-speech). Pose tracking: [MediaPipe](https://ai.google.dev/edge/mediapipe). Community bow policy: [fffiloni](https://huggingface.co/fffiloni/microduck-polite-bow-b1d864).
 
