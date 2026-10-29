@@ -53,7 +53,7 @@ cd micro-duck
 uv run simon-says
 ```
 
-`setup.sh` installs Hugging Face [speech-to-speech](https://github.com/huggingface/speech-to-speech) (the voice agent) and builds Pollen Robotics' [Microduck simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator) with this repo's patch. Both go in folders next to this repo, and it's safe to run again. Until the [tool-call fixes (PR #721)](https://github.com/huggingface/speech-to-speech/pull/721) are merged upstream, it installs speech-to-speech from the PR's branch.
+`setup.sh` installs Hugging Face [speech-to-speech](https://github.com/huggingface/speech-to-speech) (the voice agent) and builds Pollen Robotics' [Microduck simulator](https://huggingface.co/spaces/pollen-robotics/microduck-simulator) with this repo's patch. Both go in folders next to this repo, and it's safe to run again. It installs Hugging Face's own speech-to-speech, which includes our [tool-call fixes (PR #721)](https://github.com/huggingface/speech-to-speech/pull/721), merged in October 2026.
 
 Instead of `uv run simon-says`, you can double-click **Simon Says.command** in Finder. It opens **http://localhost:8770/play** and starts the voice agent. Wait for **READY**, complete camera setup, and press **Play!**
 
@@ -103,9 +103,9 @@ Run the game and pose tests with `node --test lab/static/tests/*.test.mjs`.
 
 </details>
 
-## Fixes sent upstream
+## Fixes merged upstream
 
-Building a real game on speech-to-speech with a small local model surfaced tool-calling bugs: the agent lost a tool call, or read tool-call markup aloud. [PR #721](https://github.com/huggingface/speech-to-speech/pull/721) fixes two of them, with unit tests:
+Building a real game on speech-to-speech with a small local model surfaced tool-calling bugs: the agent lost a tool call, or read tool-call markup aloud. [PR #721](https://github.com/huggingface/speech-to-speech/pull/721) fixes two of them, with unit tests, and Hugging Face merged it on 29 October 2026:
 
 1. **Native `<tool_call>` blocks were spoken.** After a few tool turns, Qwen switches to its native `<tool_call>{json}</tool_call>` syntax, and the block went straight to the voice. Now it's parsed as a tool call.
 2. **Tool markup was spoken when tools were off.** A reply with `tool_choice: "none"` could still contain a tool call, which was read aloud. Now it's stripped from speech and never run.

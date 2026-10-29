@@ -5,17 +5,16 @@
 # Safe to run again: finished steps are skipped.
 #
 # Overrides:
-#   S2S_REPO, S2S_BRANCH   where to clone speech-to-speech from. Default: Liz's fork, on the branch with
-#                          the tool-call fixes in huggingface/speech-to-speech#721. Once that PR is merged,
-#                          use upstream: S2S_REPO=https://github.com/huggingface/speech-to-speech.git S2S_BRANCH=main
+#   S2S_REPO, S2S_BRANCH   where to clone speech-to-speech from. Default: Hugging Face's own repo, main
+#                          branch, which includes our tool-call fixes (huggingface/speech-to-speech#721, merged 29 Oct 2026).
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PARENT="$(dirname "$HERE")"
 S2S="$PARENT/speech-to-speech"
 SIM="$PARENT/microduck-simulator"
-S2S_REPO="${S2S_REPO:-https://github.com/LizMyers/speech-to-speech.git}"
-S2S_BRANCH="${S2S_BRANCH:-pr/tool-call-fixes}"
+S2S_REPO="${S2S_REPO:-https://github.com/huggingface/speech-to-speech.git}"
+S2S_BRANCH="${S2S_BRANCH:-}"
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 fail() { printf '\n\033[31mError:\033[0m %s\n' "$1" >&2; exit 1; }
